@@ -129,7 +129,10 @@ namespace Display
 
         for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
         {
-            renderClimateZone(data.climateZones[i], 6 * i + 2);
+            if (data.climateZones[i].isSet)
+            {
+                renderClimateZone(data.climateZones[i], 6 * i + 2);
+            }
         }
 
         lcd.setCursor(19, 0);

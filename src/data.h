@@ -1,7 +1,19 @@
 #ifndef TERRARIUM_DATA
 #define TERRARIUM_DATA
 
-const int MAX_CLIMATE_ZONES = 3;
+#include "config.h"
+
+// todo: add different type of events
+class Schedule
+{
+public:
+    int sinceHour;
+    int sinceMinute;
+    int untilHour;
+    int untilMinute;
+    float temperature;
+    bool isSet = false;
+};
 
 class DataClimateZone
 {
@@ -11,6 +23,7 @@ public:
     float humidity;
     bool heatingPhase;
     bool heaterStatus;
+    bool isSet = false;
 };
 
 class Metadata
