@@ -2,9 +2,90 @@
 
 namespace Utils
 {
+
+    const int SET_INDEX = 0;
+    const int WIFI_SSID_INDEX = 1;
+    const int WIFI_SSID_LEN = 32;
+    const int WIFI_PASS_INDEX = WIFI_SSID_INDEX + WIFI_SSID_LEN;
+    const int WIFI_PASS_LEN = 32;
+
     void log(const char str[])
     {
         Serial.print(str);
+    }
+
+    bool isMemorySet()
+    {
+        return bool(EEPROM.read(SET_INDEX));
+    }
+
+    bool setMemory()
+    {
+        EEPROM.write(SET_INDEX, true);
+        EEPROM.commit();
+    }
+
+    std::string readWiFiSSIDFromMemory()
+    {
+        char ssid[WIFI_SSID_LEN];
+
+        for (int i = 0; i < WIFI_SSID_LEN; ++i)
+        {
+            ssid[i] = char(EEPROM.read(i + WIFI_SSID_INDEX));
+        }
+
+        Serial.print("SSID: ");
+        Serial.println(ssid);
+        return std::string(ssid);
+    }
+
+    std::string readWiFiPassFromMemory()
+    {
+        char pass[WIFI_PASS_LEN];
+
+        for (int i = 0; i < WIFI_PASS_LEN; ++i)
+        {
+            pass[i] = char(EEPROM.read(i + WIFI_PASS_INDEX));
+        }
+        Serial.print("PASS: ");
+        Serial.println(pass);
+        return std::string(pass);
+    }
+
+    void writeWiFiSSIDToMemory(std::string ssid)
+    {
+        Serial.println("clearing eeprom");
+        for (int i = 0; i < WIFI_SSID_LEN; ++i)
+        {
+            EEPROM.write(i + WIFI_SSID_INDEX, 0);
+        }
+        Serial.println("writing eeprom ssid:");
+        // TODO add 32 max limit
+        for (int i = 0; i < ssid.length(); ++i)
+        {
+            EEPROM.write(i + WIFI_SSID_INDEX, ssid[i]);
+            Serial.print("Wrote: ");
+            Serial.println(ssid[i]);
+        }
+        EEPROM.commit();
+    }
+
+    void writeWiFiPassToMemory(std::string pass)
+    {
+        Serial.println("clearing eeprom");
+        for (int i = 0; i < 32; ++i)
+        {
+            EEPROM.write(i + WIFI_PASS_INDEX, 0);
+        }
+        Serial.println("writing eeprom ssid:");
+        // TODO add 32 max limit
+        for (int i = 0; i < pass.length(); ++i)
+        {
+            EEPROM.write(i + WIFI_PASS_INDEX, pass[i]);
+            //Serial.print("Wrote: ");
+            //Serial.println(pass[i]);
+        }
+        EEPROM.commit();
     }
 
     void TCA9548A(uint8_t bus)

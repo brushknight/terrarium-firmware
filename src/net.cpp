@@ -1,5 +1,6 @@
 #include "net.h"
 #include "secrets.h"
+#include "utils.h"
 
 namespace Net
 {
@@ -30,7 +31,10 @@ namespace Net
 
         int attempts = 0;
 
-        WiFi.begin(WIFI_SSID, WIFI_PASS);
+        Serial.println(Utils::readWiFiSSIDFromMemory().c_str());
+        Serial.println(Utils::readWiFiPassFromMemory().c_str());
+
+        WiFi.begin(Utils::readWiFiSSIDFromMemory().c_str(), Utils::readWiFiPassFromMemory().c_str());
 
         while (!WiFi.isConnected())
         {

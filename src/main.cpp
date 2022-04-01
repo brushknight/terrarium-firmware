@@ -1,8 +1,10 @@
 #include <Arduino.h>
+#include <EEPROM.h>
 #include "display.h"
 #include "data.h"
 #include "climate.h"
 #include "real_time.h"
+#include "secrets.h"
 
 Data data;
 
@@ -54,6 +56,15 @@ void setup()
       1,
       NULL,
       1);
+
+  EEPROM.begin(512);
+
+  if (!Utils::isMemorySet())
+  {
+    Utils::writeWiFiSSIDToMemory(WIFI_SSID);
+    Utils::writeWiFiPassToMemory(WIFI_PASS);
+    Utils::setMemory();
+  }
 
   Climate::setup();
   Climate::enableSensors();

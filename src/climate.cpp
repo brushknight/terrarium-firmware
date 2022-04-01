@@ -190,7 +190,7 @@ namespace Climate
             float sumHumid = 0;
             for (int i = 0; i < MAX_DHT22_SENSORS_IN_CLIMATE_ZONE; i++)
             {
-                if (sensorsDHT22[i].isSet())
+                if (sensorsDHT22[i].isSet() && sensorsDHT22[i].success())
                 {
                     sensorsEnabledCount++;
                     sumTemp += sensorsDHT22[i].current.t;
