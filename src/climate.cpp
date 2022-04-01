@@ -330,7 +330,7 @@ namespace Climate
     {
         //Status::setClimateStatus(Status::WARNING);
         disableSensors();
-        delay(100);
+        delay(1000);
         enableSensors();
         delay(3000); // wait for sensros to boot
         //Status::setClimateStatus(Status::IDLE);

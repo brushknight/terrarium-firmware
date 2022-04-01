@@ -113,7 +113,7 @@ namespace Display
         lcd.createChar(6, WiFi);
         lcd.createChar(7, Cross);
         // out of range
-        lcd.createChar(7, Bluetooth);
+        //lcd.createChar(7, Bluetooth);
         Serial.println("display setup: ok");
     }
 
@@ -136,13 +136,20 @@ namespace Display
         }
 
         lcd.setCursor(19, 0);
-        lcd.write(6);
+        if (data.WiFiStatus)
+        {
+            lcd.write(6);
+        }
+        else
+        {
+            lcd.write(7);
+        }
 
-        lcd.setCursor(19, 1);
-        lcd.write(7);
+        // lcd.setCursor(19, 0);
+        // lcd.write(6);
 
-        lcd.setCursor(19, 2);
-        lcd.write(8);
+        // lcd.setCursor(19, 2);
+        // lcd.write(8);
 
         lcd.setCursor(0, 3);
         lcd.print("ID:");

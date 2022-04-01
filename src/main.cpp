@@ -6,11 +6,55 @@
 
 Data data;
 
+void displayRender(void *parameter)
+{
+  vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+  for (;;)
+  {
+    Display::render(data);
+    vTaskDelay(DISPLAY_RENDER_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+  }
+}
+
+void climateControl(void *parameter)
+{
+  for (;;)
+  {
+    DataClimateZone *result = Climate::control(RealTime::getHour(), RealTime::getMinute());
+
+    for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+    {
+      data.climateZones[i] = result[i];
+    }
+
+    vTaskDelay(CLIMATE_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+  }
+}
+
+void netWatcher(void *parameter)
+{
+  for (;;)
+  {
+    data.WiFiStatus = Net::isConnected();
+    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+  }
+}
 
 void setup()
 {
   Serial.begin(115200);
+
   Display::setup();
+
+  xTaskCreatePinnedToCore(
+      displayRender,
+      "displayRender",
+      2048,
+      NULL,
+      1,
+      NULL,
+      1);
+
   Climate::setup();
   Climate::enableSensors();
   RealTime::setup(true);
@@ -34,21 +78,31 @@ void setup()
   data.climateZones[2].heatingPhase = false;
   data.climateZones[2].heaterStatus = false;
 
-  data.WiFiStatus = true;
-  data.BluetoothStatus = true;
+  data.WiFiStatus = false;
+  data.BluetoothStatus = false;
 
   data.metadata.id = 5;
+
+  xTaskCreatePinnedToCore(
+      climateControl,
+      "climateControl",
+      4192,
+      NULL,
+      1,
+      NULL,
+      0);
+
+  xTaskCreatePinnedToCore(
+      netWatcher,
+      "netWatcher",
+      1024,
+      NULL,
+      2,
+      NULL,
+      0);
 }
 
 void loop()
 {
-  DataClimateZone *result = Climate::control(RealTime::getHour(), RealTime::getMinute());
-
-  for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-  {
-    data.climateZones[i] = result[i];
-  }
-
-  Display::render(data);
-  sleep(1);
+  vTaskDelete(NULL);
 }

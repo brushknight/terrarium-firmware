@@ -4,6 +4,11 @@
 namespace Net
 {
 
+    bool isConnected()
+    {
+        return WiFi.isConnected();
+    }
+
     void connect(bool interactive)
     {
 

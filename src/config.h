@@ -25,4 +25,7 @@
 #define MAX_SENSOR_RETRY int(3)
 #define MAX_SCHEDULE_COUNT int(10)
 
+#define CLIMATE_LOOP_INTERVAL_SEC 5
+#define DISPLAY_RENDER_INTERVAL_SEC 1
+
 #endif

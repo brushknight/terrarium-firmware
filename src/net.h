@@ -8,6 +8,7 @@
 
 namespace Net
 {
+     bool isConnected();
      void connect(bool interactive);
      char *statusToString(int code);
 }
