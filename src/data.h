@@ -5,12 +5,12 @@
 
 // todo: add different type of events
 
-class InitialSetup{
-    public:
+class InitialSetup
+{
+public:
     bool isInSetupMode = false;
     std::string apName;
     std::string ipAddr;
-
 };
 
 class DataClimateZone
@@ -28,6 +28,7 @@ class Metadata
 {
 public:
     int id;
+    std::string wifiName;
 };
 
 class Data

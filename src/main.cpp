@@ -48,12 +48,11 @@ void netWatcher(void *parameter)
 
 void setup()
 {
+  data = Data();
   EEPROM.begin(512);
   //Utils::resetMemory();
   Serial.begin(115200);
-
   Display::setup();
-
   xTaskCreatePinnedToCore(
       displayRender,
       "displayRender",
@@ -68,7 +67,7 @@ void setup()
     initialSetupMode = true;
     data.initialSetup.apName = Net::setupAP();
     data.initialSetup.isInSetupMode = true;
-    data.initialSetup.ipAddr = HttpServer::setup();
+    data.initialSetup.ipAddr = HttpServer::setup(&data, true);
     return;
   }
 
@@ -79,36 +78,13 @@ void setup()
   //   Utils::setMemory();
   // }
 
-  // load config
-  
-
   Climate::setup(loadConfig());
   Climate::enableSensors();
+  if (RealTime::isWiFiRequired())
+  {
+    Net::connect(&data, false);
+  }
   RealTime::setup(true);
-  data = Data();
-
-  data.climateZones[0].name = "hot corner";
-  data.climateZones[0].humidity = 75.5;
-  data.climateZones[0].temperature = 31.3;
-  data.climateZones[0].heatingPhase = true;
-  data.climateZones[0].heaterStatus = true;
-
-  data.climateZones[1].name = "warm area";
-  data.climateZones[1].humidity = 78.5;
-  data.climateZones[1].temperature = 27.3;
-  data.climateZones[1].heatingPhase = true;
-  data.climateZones[1].heaterStatus = true;
-
-  data.climateZones[2].name = "cold corner";
-  data.climateZones[2].humidity = 85.1;
-  data.climateZones[2].temperature = 23.4;
-  data.climateZones[2].heatingPhase = false;
-  data.climateZones[2].heaterStatus = false;
-
-  data.WiFiStatus = false;
-  data.BluetoothStatus = false;
-
-  data.metadata.id = 5;
 
   xTaskCreatePinnedToCore(
       climateControl,
@@ -127,17 +103,12 @@ void setup()
       2,
       NULL,
       0);
+
+  Net::connect(&data, false);
+  HttpServer::setup(&data, false);
 }
 
 void loop()
 {
-
-  if (initialSetupMode)
-  {
-    HttpServer::handleClientLoop();
-  }
-  else
-  {
-    vTaskDelete(NULL);
-  }
+  HttpServer::handleClientLoop();
 }

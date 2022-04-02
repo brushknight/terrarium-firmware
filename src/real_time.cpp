@@ -22,6 +22,16 @@ namespace RealTime
 
     RTC_DS3231 rtc;
 
+    bool isWiFiRequired()
+    {
+        if (!rtc.begin())
+        {
+            Serial.println("Couldn't find RTC, check wiring!");
+            return true;
+        }
+        return rtc.lostPower();
+    }
+
     void setup(bool rtcEnabled)
     {
         // Status::setFetchingTimeStatus(Status::WORKING);
@@ -103,7 +113,6 @@ namespace RealTime
     void syncFromNTP()
     {
         Serial.println("RealTime: sync from NTP");
-        Net::connect(false);
         struct tm timeinfo;
         int attempts = 0;
         while (!getLocalTime(&timeinfo))

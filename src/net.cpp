@@ -29,13 +29,15 @@ namespace Net
         return std::string(ssid);
     }
 
-    void connect(bool interactive)
+    void connect(Data *givenData, bool interactive)
     {
 
         if (WiFi.isConnected())
         {
             return;
         }
+
+        Serial.println("Connection to wifi");
 
         // Status::setConnectingToWiFiStatus(Status::WORKING);
 
@@ -50,8 +52,10 @@ namespace Net
 
         int attempts = 0;
 
-        Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
-        Serial.println(Eeprom::readWiFiPassFromMemory().c_str());
+        // Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
+        // Serial.println(Eeprom::readWiFiPassFromMemory().c_str());
+
+        (*givenData).metadata.wifiName = Eeprom::readWiFiSSIDFromMemory().c_str();
 
         WiFi.begin(Eeprom::readWiFiSSIDFromMemory().c_str(), Eeprom::readWiFiPassFromMemory().c_str());
 

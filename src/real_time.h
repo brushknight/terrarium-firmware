@@ -12,6 +12,7 @@
 namespace RealTime
 {
     void setup(bool rtcEnabled);
+    bool isWiFiRequired();
     void syncFromRTC();
     void syncFromNTP();
     bool saveTimeToRTC();

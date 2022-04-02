@@ -5,19 +5,40 @@ namespace HttpServer
 
     WebServer server(80);
     String header;
+    Data *data;
 
     void handleRoot()
     {
         server.send(200, "text/html", WIFI_FORM);
     }
 
-    std::string setup()
+    std::string setup(Data *givenData, bool isSetupMode)
     {
+        data = givenData;
         server.on("/", handleRoot);
+        server.on("/metrics", handlePromMetrics);
         server.on("/set-wifi", handleWiFiFormSubmit);
         server.begin();
-        IPAddress IP = WiFi.softAPIP();
-        return std::string(IP.toString().c_str());
+
+        IPAddress ip;
+        if (isSetupMode)
+        {
+            ip = WiFi.softAPIP();
+        }
+        else
+        {
+            ip = WiFi.localIP();
+        }
+        return std::string(ip.toString().c_str());
+    }
+
+    void handlePromMetrics()
+    {
+        String message = "wifi_network ";
+        Serial.println((*data).metadata.wifiName.c_str());
+        message += (*data).metadata.wifiName.c_str();
+        message += "\n";
+        server.send(200, "text/plain", message);
     }
 
     void handleWiFiFormSubmit()
