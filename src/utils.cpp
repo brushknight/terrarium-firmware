@@ -16,12 +16,18 @@ namespace Utils
 
     bool isMemorySet()
     {
-        return bool(EEPROM.read(SET_INDEX));
+        return EEPROM.read(SET_INDEX) == 1;
     }
 
-    bool setMemory()
+    void setMemory()
     {
-        EEPROM.write(SET_INDEX, true);
+        EEPROM.write(SET_INDEX, 1);
+        EEPROM.commit();
+    }
+
+    void resetMemory()
+    {
+        EEPROM.write(SET_INDEX, 0);
         EEPROM.commit();
     }
 
@@ -60,12 +66,13 @@ namespace Utils
             EEPROM.write(i + WIFI_SSID_INDEX, 0);
         }
         Serial.println("writing eeprom ssid:");
+        Serial.println(ssid.c_str());
         // TODO add 32 max limit
         for (int i = 0; i < ssid.length(); ++i)
         {
             EEPROM.write(i + WIFI_SSID_INDEX, ssid[i]);
-            Serial.print("Wrote: ");
-            Serial.println(ssid[i]);
+            //Serial.print("Wrote: ");
+            //Serial.println(ssid[i]);
         }
         EEPROM.commit();
     }
@@ -77,7 +84,8 @@ namespace Utils
         {
             EEPROM.write(i + WIFI_PASS_INDEX, 0);
         }
-        Serial.println("writing eeprom ssid:");
+        Serial.print("writing eeprom ssid:");
+        Serial.println(pass.c_str());
         // TODO add 32 max limit
         for (int i = 0; i < pass.length(); ++i)
         {

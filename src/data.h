@@ -15,6 +15,14 @@ public:
     bool isSet = false;
 };
 
+class InitialSetup{
+    public:
+    bool isInSetupMode = false;
+    std::string apName;
+    std::string ipAddr;
+
+};
+
 class DataClimateZone
 {
 public:
@@ -42,6 +50,7 @@ public:
     bool WiFiStatus;
     bool BluetoothStatus;
     Metadata metadata;
+    InitialSetup initialSetup;
     // terrarium metadata
 };
 

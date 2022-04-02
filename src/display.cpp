@@ -121,41 +121,61 @@ namespace Display
     {
         lcd.clear();
 
-        lcd.setCursor(0, 1);
-        lcd.write(4);
-
-        lcd.setCursor(0, 2);
-        lcd.write(5);
-
-        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+        if (data.initialSetup.isInSetupMode)
         {
-            if (data.climateZones[i].isSet)
-            {
-                renderClimateZone(data.climateZones[i], 6 * i + 2);
-            }
-        }
-
-        lcd.setCursor(19, 0);
-        if (data.WiFiStatus)
-        {
-            lcd.write(6);
+            renderInitialSetup(data.initialSetup);
         }
         else
         {
-            lcd.write(7);
+            lcd.setCursor(0, 1);
+            lcd.write(4);
+
+            lcd.setCursor(0, 2);
+            lcd.write(5);
+
+            for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+            {
+                if (data.climateZones[i].isSet)
+                {
+                    renderClimateZone(data.climateZones[i], 6 * i + 2);
+                }
+            }
+
+            lcd.setCursor(19, 0);
+            if (data.WiFiStatus)
+            {
+                lcd.write(6);
+            }
+            else
+            {
+                lcd.write(7);
+            }
+
+            // lcd.setCursor(19, 0);
+            // lcd.write(6);
+
+            // lcd.setCursor(19, 2);
+            // lcd.write(8);
+
+            lcd.setCursor(0, 3);
+            lcd.print("ID:");
+            lcd.print(data.metadata.id);
         }
 
-        // lcd.setCursor(19, 0);
-        // lcd.write(6);
-
-        // lcd.setCursor(19, 2);
-        // lcd.write(8);
-
-        lcd.setCursor(0, 3);
-        lcd.print("ID:");
-        lcd.print(data.metadata.id);
-
         Serial.println("display render");
+    }
+
+    void renderInitialSetup(InitialSetup data)
+    {
+        lcd.setCursor(0, 0);
+        lcd.print("Hi - connect to wifi");
+        //lcd.write(6);
+        lcd.setCursor(0, 1);
+        lcd.print(data.apName.c_str());
+        lcd.setCursor(0, 2);
+        lcd.print("And visit");
+        lcd.setCursor(0, 3);
+        lcd.print(data.ipAddr.c_str());
     }
 
     void renderClimateZone(DataClimateZone data, int offset)

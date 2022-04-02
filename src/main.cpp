@@ -5,8 +5,11 @@
 #include "climate.h"
 #include "real_time.h"
 #include "secrets.h"
+#include "http_server.h"
 
 Data data;
+
+bool initialSetupMode = false;
 
 void displayRender(void *parameter)
 {
@@ -44,6 +47,8 @@ void netWatcher(void *parameter)
 
 void setup()
 {
+  EEPROM.begin(512);
+  //Utils::resetMemory();
   Serial.begin(115200);
 
   Display::setup();
@@ -57,14 +62,25 @@ void setup()
       NULL,
       1);
 
-  EEPROM.begin(512);
+  Serial.print("is controller set already");
+  Serial.println(Utils::isMemorySet());
 
   if (!Utils::isMemorySet())
   {
-    Utils::writeWiFiSSIDToMemory(WIFI_SSID);
-    Utils::writeWiFiPassToMemory(WIFI_PASS);
-    Utils::setMemory();
+
+    initialSetupMode = true;
+    data.initialSetup.apName = Net::setupAP();
+    data.initialSetup.isInSetupMode = true;
+    data.initialSetup.ipAddr = HttpServer::setup();
+    return;
   }
+
+  // if (!Utils::isMemorySet())
+  // {
+  //   Utils::writeWiFiSSIDToMemory(WIFI_SSID);
+  //   Utils::writeWiFiPassToMemory(WIFI_PASS);
+  //   Utils::setMemory();
+  // }
 
   Climate::setup();
   Climate::enableSensors();
@@ -115,5 +131,13 @@ void setup()
 
 void loop()
 {
-  vTaskDelete(NULL);
+
+  if (initialSetupMode)
+  {
+    HttpServer::handleClientLoop();
+  }
+  else
+  {
+    vTaskDelete(NULL);
+  }
 }

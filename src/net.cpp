@@ -10,6 +10,25 @@ namespace Net
         return WiFi.isConnected();
     }
 
+    std::string setupAP()
+    {
+        WiFi.mode(WIFI_AP);
+        IPAddress IP = {10, 0, 0, 1};
+        IPAddress NMask = IPAddress (255, 255, 255, 0);
+        WiFi.softAPConfig(IP, IP, NMask);
+        // Connect to Wi - Fi network with SSID and password
+        Serial.print("Setting AP (Access Point)…");
+        // Remove the password parameter, if you want the AP (Access Point) to be open
+        const char *ssid = "Terrarium Controller";
+        const char *pass = "1234567890";
+        WiFi.softAP(ssid, pass);
+
+        IPAddress finalIp = WiFi.softAPIP();
+        Serial.print("AP IP address: ");
+        Serial.println(finalIp);
+        return std::string(ssid);
+    }
+
     void connect(bool interactive)
     {
 

@@ -12,6 +12,7 @@ namespace Display
      void setup();
      void render(Data data);
      void renderClimateZone(DataClimateZone data, int offset);
+     void renderInitialSetup(InitialSetup data);
      char *floatToString(double value);
 }
 #endif
