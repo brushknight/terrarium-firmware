@@ -4,16 +4,6 @@
 #include "config.h"
 
 // todo: add different type of events
-class Schedule
-{
-public:
-    int sinceHour;
-    int sinceMinute;
-    int untilHour;
-    int untilMinute;
-    float temperature;
-    bool isSet = false;
-};
 
 class InitialSetup{
     public:

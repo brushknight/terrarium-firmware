@@ -31,10 +31,10 @@ namespace HttpServer
         String ssid = server.arg("ssid");
         String pass = server.arg("password");
 
-        Utils::writeWiFiPassToMemory(std::string(pass.c_str()));
-        Utils::writeWiFiSSIDToMemory(std::string(ssid.c_str()));
+        Eeprom::writeWiFiPassToMemory(std::string(pass.c_str()));
+        Eeprom::writeWiFiSSIDToMemory(std::string(ssid.c_str()));
 
-        Utils::setMemory();
+        Eeprom::setMemory();
 
         server.send(200, "text/plain", "Wifi credentials saved, controller will reboot in 3 seconds and will connect to wifi");
 

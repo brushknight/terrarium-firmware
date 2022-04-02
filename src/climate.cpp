@@ -4,19 +4,6 @@ namespace Climate
 {
 
 #define DHTTYPE DHT22
-#define SENSORS_ENABLE_PIN 32
-
-// DHT22 sensors pins
-#define DHT_0 int(16) // #0
-#define DHT_1 int(17) // #1
-#define DHT_2 int(18) // #2
-#define DHT_3 int(19) // #3
-#define DHT_4 int(27) // #4
-#define DHT_5 int(26) // #5
-// relay pins
-#define RELAY_0_PIN 4
-#define RELAY_1_PIN 25
-#define RELAY_2_PIN 5
 
     DHTStable DHT;
 
@@ -279,7 +266,7 @@ namespace Climate
 
     ClimateZone climateZones[MAX_CLIMATE_ZONES];
 
-    void setup()
+    void setup(Config config)
     {
         pinMode(SENSORS_ENABLE_PIN, OUTPUT);
         pinMode(RELAY_0_PIN, OUTPUT);
@@ -288,15 +275,18 @@ namespace Climate
         digitalWrite(RELAY_0_PIN, LOW);
         digitalWrite(RELAY_1_PIN, LOW);
         digitalWrite(RELAY_2_PIN, LOW);
-        int sensors[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE] = {DHT_0, DHT_1, DHT_2};
-        Schedule schedule[MAX_SCHEDULE_COUNT];
-        schedule[0].sinceHour = 9;
-        schedule[0].sinceMinute = 0;
-        schedule[0].untilHour = 18;
-        schedule[0].untilMinute = 0;
-        schedule[0].temperature = 29;
-        schedule[0].isSet = true;
-        climateZones[0] = ClimateZone(std::string("hot corner"), sensors, RELAY_0_PIN, schedule);
+
+        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+        {
+            if (config.climateZoneConfigs[i].isSet)
+            {
+                climateZones[i] = ClimateZone(
+                    "todo: name",
+                    config.climateZoneConfigs[i].dht22SensorPins,
+                    config.climateZoneConfigs[i].relayPin,
+                    config.climateZoneConfigs[i].schedule);
+            }
+        }
     }
 
     DataClimateZone *control(int hour, int minute)

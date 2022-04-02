@@ -1,6 +1,6 @@
 #include "net.h"
 #include "secrets.h"
-#include "utils.h"
+#include "eeprom.h"
 
 namespace Net
 {
@@ -50,10 +50,10 @@ namespace Net
 
         int attempts = 0;
 
-        Serial.println(Utils::readWiFiSSIDFromMemory().c_str());
-        Serial.println(Utils::readWiFiPassFromMemory().c_str());
+        Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
+        Serial.println(Eeprom::readWiFiPassFromMemory().c_str());
 
-        WiFi.begin(Utils::readWiFiSSIDFromMemory().c_str(), Utils::readWiFiPassFromMemory().c_str());
+        WiFi.begin(Eeprom::readWiFiSSIDFromMemory().c_str(), Eeprom::readWiFiPassFromMemory().c_str());
 
         while (!WiFi.isConnected())
         {

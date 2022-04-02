@@ -12,7 +12,7 @@
 
 namespace Climate
 {
-    void setup();
+    void setup(Config config);
     DataClimateZone *control(int hour, int minute);
     void enableSensors();
     void disableSensors();

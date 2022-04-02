@@ -6,6 +6,7 @@
 #include "real_time.h"
 #include "secrets.h"
 #include "http_server.h"
+#include "eeprom.h"
 
 Data data;
 
@@ -62,12 +63,8 @@ void setup()
       NULL,
       1);
 
-  Serial.print("is controller set already");
-  Serial.println(Utils::isMemorySet());
-
-  if (!Utils::isMemorySet())
+  if (!Eeprom::isMemorySet())
   {
-
     initialSetupMode = true;
     data.initialSetup.apName = Net::setupAP();
     data.initialSetup.isInSetupMode = true;
@@ -82,7 +79,10 @@ void setup()
   //   Utils::setMemory();
   // }
 
-  Climate::setup();
+  // load config
+  
+
+  Climate::setup(loadConfig());
   Climate::enableSensors();
   RealTime::setup(true);
   data = Data();
