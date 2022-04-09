@@ -6,9 +6,10 @@
 #include "climate_data.h"
 #include "config.h"
 #include "data.h"
+#include "utils.h"
+#include "real_time.h"
 //#include "thermistor.h"
 //#include "HardwareSerial.h"
-
 
 namespace Climate
 {
@@ -17,7 +18,6 @@ namespace Climate
     void enableSensors();
     void disableSensors();
     void rebootSensorsWithWait();
-    std::string hourMinuteToString(int hour, int minute);
 }
 
 #endif

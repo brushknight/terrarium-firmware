@@ -253,4 +253,18 @@ namespace RealTime
     {
         return esp_timer_get_time() / 1000000;
     }
+
+    bool checkScheduleTimeWindow(std::string now, std::string since, std::string until)
+    {
+
+
+        if (since.compare(until) < 0)
+        {
+            return since.compare(now) <= 0 && until.compare(now) > 0;
+        }
+        else
+        {
+            return since.compare(now) <= 0 || until.compare(now) > 0;
+        }
+    }
 }

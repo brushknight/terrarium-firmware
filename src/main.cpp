@@ -56,7 +56,7 @@ void setup()
   xTaskCreatePinnedToCore(
       displayRender,
       "displayRender",
-      2048,
+      4192,
       NULL,
       1,
       NULL,

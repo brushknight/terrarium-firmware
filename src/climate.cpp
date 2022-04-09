@@ -110,6 +110,7 @@ namespace Climate
     {
     public:
         std::string name;
+        std::string slug;
         int relayPin;
         DHT22CustomSensor sensorsDHT22[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE];
         Schedule schedule[MAX_SCHEDULE_COUNT];
@@ -118,18 +119,18 @@ namespace Climate
         float averageTemp;
         float averageHumid;
 
+        float targetTemperature;
+
         HeaterPhase heaterPhase;
 
         ClimateZone() {}
-        ClimateZone(std::string givenName, int DHT22SensorPins[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE], int givenRelayPin, Schedule givenSchedule[MAX_SCHEDULE_COUNT])
+        ClimateZone(std::string givenName, std::string givenSlug, int DHT22SensorPins[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE], int givenRelayPin, Schedule givenSchedule[MAX_SCHEDULE_COUNT])
         {
             name = givenName;
+            slug = givenSlug;
             for (int i = 0; i < MAX_DHT22_SENSORS_IN_CLIMATE_ZONE; i++)
             {
-                if (DHT22SensorPins[i] != 0)
-                {
-                    sensorsDHT22[i] = DHT22CustomSensor(DHT22SensorPins[i]);
-                }
+                sensorsDHT22[i] = DHT22CustomSensor(DHT22SensorPins[i]);
             }
             relayPin = givenRelayPin;
 
@@ -190,41 +191,27 @@ namespace Climate
             // find current schedule
             // wrap into a func and write tests
             Schedule currentSchedule;
-            std::string now = hourMinuteToString(hour, minute);
+            std::string now = Utils::hourMinuteToString(hour, minute);
             for (int i = 0; i < MAX_SCHEDULE_COUNT; i++)
             {
 
                 if (schedule[i].isSet)
                 {
-                    std::string since = hourMinuteToString(schedule[i].sinceHour, schedule[i].sinceMinute);
-                    std::string until = hourMinuteToString(schedule[i].untilHour, schedule[i].untilMinute);
-                    if (since.compare(now) <= 0 && until.compare(now) > 0)
+                    std::string since = Utils::hourMinuteToString(schedule[i].sinceHour, schedule[i].sinceMinute);
+                    std::string until = Utils::hourMinuteToString(schedule[i].untilHour, schedule[i].untilMinute);
+
+                    if (RealTime::checkScheduleTimeWindow(now, since, until))
                     {
                         currentSchedule = schedule[i];
                     }
                 }
-
-                // // event in the same hour
-                // if (schedule[i].sinceHour == hour && schedule[i].untilHour == hour)
-                // {
-                //     if (schedule[i].sinceMinute <= minute && schedule[i].untilMinute > minute)
-                //     {
-                //         currentSchedule = schedule[i];
-                //     }
-                // }
-                // else if (schedule[i].sinceHour == hour)
-                // {
-                //     if (schedule[i].sinceMinute <= minute && schedule[i].untilHour > hour)
-                // }
-
-                // if (schedule[i].sinceHour <= hour && schedule[i].sinceMinute <= minute && schedule[i].untilHour >= hour && schedule[i].untilMinute > minute)
-                // {
-                //     currentSchedule = schedule[i];
-                // }
             }
+
+            targetTemperature = currentSchedule.temperature;
+
             // check with schedule for adjustments
             bool heaterOn = false;
-            if (averageTemp > currentSchedule.temperature)
+            if (averageTemp > targetTemperature)
             {
                 heaterOn = false;
             }
@@ -255,8 +242,10 @@ namespace Climate
 
             dataClimateZone.humidity = averageHumid;
             dataClimateZone.temperature = averageTemp;
+            dataClimateZone.targetTemperature = targetTemperature;
 
             dataClimateZone.name = name;
+            dataClimateZone.slug = slug;
 
             dataClimateZone.isSet = true;
 
@@ -281,7 +270,8 @@ namespace Climate
             if (config.climateZoneConfigs[i].isSet)
             {
                 climateZones[i] = ClimateZone(
-                    "todo: name",
+                    config.climateZoneConfigs[i].name,
+                    config.climateZoneConfigs[i].slug,
                     config.climateZoneConfigs[i].dht22SensorPins,
                     config.climateZoneConfigs[i].relayPin,
                     config.climateZoneConfigs[i].schedule);
@@ -326,11 +316,4 @@ namespace Climate
         //Status::setClimateStatus(Status::IDLE);
     }
 
-    std::string hourMinuteToString(int hour, int minute)
-    {
-        static char buffer[10];
-        sprintf(buffer, "%02d:%02d", hour, minute);
-        //Serial.println(buffer);
-        return std::string(buffer);
-    }
 }

@@ -17,7 +17,9 @@ class DataClimateZone
 {
 public:
     std::string name;
+    std::string slug;
     float temperature;
+    float targetTemperature;
     float humidity;
     bool heatingPhase;
     bool heaterStatus;

@@ -60,8 +60,9 @@ class ClimateZoneConfig
 {
 public:
     std::string name;
+    std::string slug;
     int relayPin = 0;
-    int dht22SensorPins[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE] = {};
+    int dht22SensorPins[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE] = {0,0,0};
     bool isSet = false;
     Schedule schedule[MAX_SCHEDULE_COUNT];
 };

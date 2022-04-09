@@ -17,6 +17,7 @@ namespace HttpServer
         data = givenData;
         server.on("/", handleRoot);
         server.on("/metrics", handlePromMetrics);
+        server.on("/api/metrics", handleAPIMetrics);
         server.on("/set-wifi", handleWiFiFormSubmit);
         server.begin();
 
@@ -30,6 +31,34 @@ namespace HttpServer
             ip = WiFi.localIP();
         }
         return std::string(ip.toString().c_str());
+    }
+
+    void handleAPIMetrics()
+    {
+
+        DynamicJsonDocument doc(1024);
+
+        doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
+        doc["metadata"]["id"] = (*data).metadata.id;
+
+        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+        {
+            if ((*data).climateZones[i].isSet)
+            {
+                std::string slug = (*data).climateZones[i].slug;
+
+                doc["climate"][slug]["name"] = (*data).climateZones[i].name;
+                doc["climate"][slug]["heating"] = (*data).climateZones[i].heatingPhase;
+                doc["climate"][slug]["temperature"] = (*data).climateZones[i].temperature;
+                doc["climate"][slug]["targetTemperature"] = (*data).climateZones[i].targetTemperature;
+                doc["climate"][slug]["humidity"] = (*data).climateZones[i].humidity;
+            }
+        }
+
+        std::string requestBody;
+        serializeJson(doc, requestBody);
+
+        server.send(200, "application/json", requestBody.c_str());
     }
 
     void handlePromMetrics()

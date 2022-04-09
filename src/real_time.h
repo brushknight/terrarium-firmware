@@ -7,6 +7,7 @@
 #include "display.h"
 #include "net.h"
 #include "utils.h"
+#include <string>
 // #include "status.h"
 
 namespace RealTime
@@ -23,6 +24,7 @@ namespace RealTime
     int getUptimeSec();
     int getBatteryPercent();
     int getBatteryVoltage();
+    bool checkScheduleTimeWindow(std::string now, std::string since, std::string until);
 }
 
 #endif
