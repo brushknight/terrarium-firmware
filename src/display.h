@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include "config.h"
 #include "data.h"
+#include "real_time.h"
 
 namespace Display
 {

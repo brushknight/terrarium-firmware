@@ -14,6 +14,7 @@ bool initialSetupMode = false;
 
 void displayRender(void *parameter)
 {
+  // add display reset if needed each N minutes
   vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
   for (;;)
   {
@@ -50,7 +51,7 @@ void setup()
 {
   data = Data();
   EEPROM.begin(512);
-  //Utils::resetMemory();
+  //Eeprom::resetMemory();
   Serial.begin(115200);
   Display::setup();
   xTaskCreatePinnedToCore(
@@ -68,8 +69,12 @@ void setup()
     data.initialSetup.apName = Net::setupAP();
     data.initialSetup.isInSetupMode = true;
     data.initialSetup.ipAddr = HttpServer::setup(&data, true);
+    Serial.println(data.initialSetup.apName.c_str());
+    Serial.println(data.initialSetup.ipAddr.c_str());
     return;
   }
+
+  data.metadata.id = Eeprom::readIDFromMemory();
 
   // if (!Utils::isMemorySet())
   // {

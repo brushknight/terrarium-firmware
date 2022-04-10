@@ -16,53 +16,105 @@ Config loadConfig()
 
     config.climateZoneConfigs[0].relayPin = RELAY_0_PIN;
 
-    // night
-    config.climateZoneConfigs[0].schedule[0].sinceHour = 18;
-    config.climateZoneConfigs[0].schedule[0].sinceMinute = 0;
-    config.climateZoneConfigs[0].schedule[0].untilHour = 8;
-    config.climateZoneConfigs[0].schedule[0].untilMinute = 0;
+    int hourOffset = -2;
+
+    // night + base 23
+    config.climateZoneConfigs[1].schedule[0].sinceHour = 9 + hourOffset;
+    config.climateZoneConfigs[1].schedule[0].sinceMinute = 0;
+    config.climateZoneConfigs[1].schedule[0].untilHour = 9 + hourOffset;
+    config.climateZoneConfigs[1].schedule[0].untilMinute = 0;
     config.climateZoneConfigs[0].schedule[0].temperature = 23;
     config.climateZoneConfigs[0].schedule[0].isSet = true;
+    
     // morning warming up 1
-
-    config.climateZoneConfigs[0].schedule[1].sinceHour = 8;
+    config.climateZoneConfigs[0].schedule[1].sinceHour = 10 + hourOffset;
     config.climateZoneConfigs[0].schedule[1].sinceMinute = 0;
-    config.climateZoneConfigs[0].schedule[1].untilHour = 8;
+    config.climateZoneConfigs[0].schedule[1].untilHour = 10 + hourOffset;
     config.climateZoneConfigs[0].schedule[1].untilMinute = 30;
     config.climateZoneConfigs[0].schedule[1].temperature = 25;
     config.climateZoneConfigs[0].schedule[1].isSet = true;
 
     // morning warming up 2
-    config.climateZoneConfigs[0].schedule[2].sinceHour = 8;
+    config.climateZoneConfigs[0].schedule[2].sinceHour = 10 + hourOffset;
     config.climateZoneConfigs[0].schedule[2].sinceMinute = 30;
-    config.climateZoneConfigs[0].schedule[2].untilHour = 9;
-    config.climateZoneConfigs[0].schedule[2].untilMinute = 00;
+    config.climateZoneConfigs[0].schedule[2].untilHour = 11 + hourOffset;
+    config.climateZoneConfigs[0].schedule[2].untilMinute = 0;
     config.climateZoneConfigs[0].schedule[2].temperature = 27;
     config.climateZoneConfigs[0].schedule[2].isSet = true;
 
     // day
-    config.climateZoneConfigs[0].schedule[3].sinceHour = 9;
+    config.climateZoneConfigs[0].schedule[3].sinceHour = 11 + hourOffset;
     config.climateZoneConfigs[0].schedule[3].sinceMinute = 0;
-    config.climateZoneConfigs[0].schedule[3].untilHour = 17;
-    config.climateZoneConfigs[0].schedule[3].untilMinute = 00;
-    config.climateZoneConfigs[0].schedule[3].temperature = 30;
+    config.climateZoneConfigs[0].schedule[3].untilHour = 19 + hourOffset;
+    config.climateZoneConfigs[0].schedule[3].untilMinute = 0;
+    config.climateZoneConfigs[0].schedule[3].temperature = 29;
     config.climateZoneConfigs[0].schedule[3].isSet = true;
 
     // evening cooling 1
-    config.climateZoneConfigs[0].schedule[4].sinceHour = 17;
+    config.climateZoneConfigs[0].schedule[4].sinceHour = 19 + hourOffset;
     config.climateZoneConfigs[0].schedule[4].sinceMinute = 0;
-    config.climateZoneConfigs[0].schedule[4].untilHour = 17;
+    config.climateZoneConfigs[0].schedule[4].untilHour = 19 + hourOffset;
     config.climateZoneConfigs[0].schedule[4].untilMinute = 30;
     config.climateZoneConfigs[0].schedule[4].temperature = 27;
     config.climateZoneConfigs[0].schedule[4].isSet = true;
 
     // evening cooling 2
-    config.climateZoneConfigs[0].schedule[4].sinceHour = 17;
-    config.climateZoneConfigs[0].schedule[4].sinceMinute = 30;
-    config.climateZoneConfigs[0].schedule[4].untilHour = 18;
-    config.climateZoneConfigs[0].schedule[4].untilMinute = 0;
-    config.climateZoneConfigs[0].schedule[4].temperature = 25;
-    config.climateZoneConfigs[0].schedule[4].isSet = true;
+    config.climateZoneConfigs[0].schedule[5].sinceHour = 19 + hourOffset;
+    config.climateZoneConfigs[0].schedule[5].sinceMinute = 30;
+    config.climateZoneConfigs[0].schedule[5].untilHour = 20 + hourOffset;
+    config.climateZoneConfigs[0].schedule[5].untilMinute = 0;
+    config.climateZoneConfigs[0].schedule[5].temperature = 25;
+    config.climateZoneConfigs[0].schedule[5].isSet = true;
+
+    // test schedule
+
+    // // night
+    // config.climateZoneConfigs[0].schedule[0].sinceHour = 15;
+    // config.climateZoneConfigs[0].schedule[0].sinceMinute = 15;
+    // config.climateZoneConfigs[0].schedule[0].untilHour = 12;
+    // config.climateZoneConfigs[0].schedule[0].untilMinute = 15;
+    // config.climateZoneConfigs[0].schedule[0].temperature = 23;
+    // config.climateZoneConfigs[0].schedule[0].isSet = true;
+    // // morning warming up 1
+
+    // config.climateZoneConfigs[0].schedule[1].sinceHour = 12;
+    // config.climateZoneConfigs[0].schedule[1].sinceMinute = 15;
+    // config.climateZoneConfigs[0].schedule[1].untilHour = 12;
+    // config.climateZoneConfigs[0].schedule[1].untilMinute = 45;
+    // config.climateZoneConfigs[0].schedule[1].temperature = 25;
+    // config.climateZoneConfigs[0].schedule[1].isSet = true;
+
+    // // morning warming up 2
+    // config.climateZoneConfigs[0].schedule[2].sinceHour = 12;
+    // config.climateZoneConfigs[0].schedule[2].sinceMinute = 45;
+    // config.climateZoneConfigs[0].schedule[2].untilHour = 13;
+    // config.climateZoneConfigs[0].schedule[2].untilMinute = 15;
+    // config.climateZoneConfigs[0].schedule[2].temperature = 27;
+    // config.climateZoneConfigs[0].schedule[2].isSet = true;
+
+    // // day
+    // config.climateZoneConfigs[0].schedule[3].sinceHour = 13;
+    // config.climateZoneConfigs[0].schedule[3].sinceMinute = 15;
+    // config.climateZoneConfigs[0].schedule[3].untilHour = 14;
+    // config.climateZoneConfigs[0].schedule[3].untilMinute = 15;
+    // config.climateZoneConfigs[0].schedule[3].temperature = 30;
+    // config.climateZoneConfigs[0].schedule[3].isSet = true;
+
+    // // evening cooling 1
+    // config.climateZoneConfigs[0].schedule[4].sinceHour = 14;
+    // config.climateZoneConfigs[0].schedule[4].sinceMinute = 15;
+    // config.climateZoneConfigs[0].schedule[4].untilHour = 14;
+    // config.climateZoneConfigs[0].schedule[4].untilMinute = 45;
+    // config.climateZoneConfigs[0].schedule[4].temperature = 27;
+    // config.climateZoneConfigs[0].schedule[4].isSet = true;
+
+    // // evening cooling 2
+    // config.climateZoneConfigs[0].schedule[4].sinceHour = 14;
+    // config.climateZoneConfigs[0].schedule[4].sinceMinute = 45;
+    // config.climateZoneConfigs[0].schedule[4].untilHour = 15;
+    // config.climateZoneConfigs[0].schedule[4].untilMinute = 15;
+    // config.climateZoneConfigs[0].schedule[4].temperature = 25;
+    // config.climateZoneConfigs[0].schedule[4].isSet = true;
 
     config.climateZoneConfigs[1].isSet = true;
     config.climateZoneConfigs[1].name = "cold zone";
@@ -75,13 +127,12 @@ Config loadConfig()
     config.climateZoneConfigs[1].relayPin = RELAY_1_PIN;
 
     // constant 23
-    config.climateZoneConfigs[1].schedule[0].sinceHour = 9;
+    config.climateZoneConfigs[1].schedule[0].sinceHour = 9 + hourOffset;
     config.climateZoneConfigs[1].schedule[0].sinceMinute = 0;
-    config.climateZoneConfigs[1].schedule[0].untilHour = 9;
+    config.climateZoneConfigs[1].schedule[0].untilHour = 9 + hourOffset;
     config.climateZoneConfigs[1].schedule[0].untilMinute = 0;
     config.climateZoneConfigs[1].schedule[0].temperature = 23;
     config.climateZoneConfigs[1].schedule[0].isSet = true;
-
 
     config.climateZoneConfigs[2].isSet = false;
 

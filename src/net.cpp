@@ -46,7 +46,7 @@ namespace Net
         delay(100);
 
         char buffer[100];
-        sprintf(buffer, "%s#%d", "Terrarium controller ID", TERRARIUM_ID);
+        sprintf(buffer, "%s#%s", "Terrarium controller ID", Eeprom::readIDFromMemory());
 
         WiFi.setHostname(buffer);
 

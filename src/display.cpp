@@ -133,11 +133,28 @@ namespace Display
             lcd.setCursor(0, 2);
             lcd.write(5);
 
+            int enabledClimateZones = 0;
+
             for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
             {
                 if (data.climateZones[i].isSet)
                 {
-                    renderClimateZone(data.climateZones[i], 6 * i + 2);
+                    enabledClimateZones++;
+                }
+            }
+
+            for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+            {
+                if (data.climateZones[i].isSet)
+                {
+                    if (enabledClimateZones == 2)
+                    {
+                        renderClimateZone(data.climateZones[i], 12 * i + 2);
+                    }
+                    else
+                    {
+                        renderClimateZone(data.climateZones[i], 6 * i + 2);
+                    }
                 }
             }
 
@@ -158,8 +175,10 @@ namespace Display
             // lcd.write(8);
 
             lcd.setCursor(0, 3);
-            lcd.print("ID:");
-            lcd.print(data.metadata.id);
+            lcd.printf("ID:%s", data.metadata.id.c_str());
+
+            lcd.setCursor(15, 3);
+            lcd.print(Utils::hourMinuteToString(RealTime::getHour(), RealTime::getMinute()).c_str());
         }
 
         Serial.println("display render");

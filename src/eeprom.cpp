@@ -8,6 +8,8 @@ namespace Eeprom
     const int WIFI_SSID_LEN = 32;
     const int WIFI_PASS_INDEX = WIFI_SSID_INDEX + WIFI_SSID_LEN;
     const int WIFI_PASS_LEN = 32;
+    const int ID_INDEX = WIFI_PASS_INDEX + WIFI_PASS_LEN;
+    const int ID_INDEX_LEN = 10;
 
     bool isMemorySet()
     {
@@ -53,6 +55,19 @@ namespace Eeprom
         return std::string(pass);
     }
 
+    std::string readIDFromMemory()
+    {
+        char id[ID_INDEX_LEN];
+
+        for (int i = 0; i < ID_INDEX_LEN; ++i)
+        {
+            id[i] = char(EEPROM.read(i + ID_INDEX));
+        }
+        Serial.print("ID: ");
+        Serial.println(id);
+        return std::string(id);
+    }
+
     void writeWiFiSSIDToMemory(std::string ssid)
     {
         Serial.println("clearing eeprom");
@@ -87,6 +102,22 @@ namespace Eeprom
             EEPROM.write(i + WIFI_PASS_INDEX, pass[i]);
             //Serial.print("Wrote: ");
             //Serial.println(pass[i]);
+        }
+        EEPROM.commit();
+    }
+
+    void writeIDToMemory(std::string id)
+    {
+        Serial.println("clearing eeprom");
+        for (int i = 0; i < ID_INDEX_LEN; ++i)
+        {
+            EEPROM.write(i + ID_INDEX, 0);
+        }
+        Serial.print("writing eeprom id:");
+        Serial.println(id.c_str());
+        for (int i = 0; i < id.length(); ++i)
+        {
+            EEPROM.write(i + ID_INDEX, id[i]);
         }
         EEPROM.commit();
     }

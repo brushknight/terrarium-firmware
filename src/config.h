@@ -4,7 +4,7 @@
 #include <string>
 
 //#define SENSORS_COUNT 2
-#define TERRARIUM_ID 100
+// #define TERRARIUM_ID 1
 
 //#define VERSION "v0.0.0-dev"
 
@@ -21,6 +21,8 @@
 
 //#define TEST_BOARD false
 //#define DEMO_BOARD true
+
+#define EXTERNAL_EEPROM false
 
 #define MAX_DHT22_SENSORS_IN_CLIMATE_ZONE int(3)
 #define MAX_CLIMATE_ZONES int(3)

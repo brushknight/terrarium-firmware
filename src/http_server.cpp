@@ -12,12 +12,19 @@ namespace HttpServer
         server.send(200, "text/html", WIFI_FORM);
     }
 
+    void handleConfigForm()
+    {
+        server.send(200, "text/html", CONFIG_FORM);
+    }
+
     std::string setup(Data *givenData, bool isSetupMode)
     {
         data = givenData;
         server.on("/", handleRoot);
+        server.on("/config", handleConfigForm);
         server.on("/metrics", handlePromMetrics);
         server.on("/api/metrics", handleAPIMetrics);
+        server.on("/api/config", HTTPMethod::HTTP_POST, handleConfigSubmission);
         server.on("/set-wifi", handleWiFiFormSubmit);
         server.begin();
 
@@ -39,7 +46,10 @@ namespace HttpServer
         DynamicJsonDocument doc(1024);
 
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
-        doc["metadata"]["id"] = (*data).metadata.id;
+        doc["metadata"]["id"] = (*data).metadata.id.c_str();
+        doc["metadata"]["time"]["hour"] = RealTime::getHour();
+        doc["metadata"]["time"]["minute"] = RealTime::getMinute();
+        doc["metadata"]["time"]["uptime"] = RealTime::getUptimeSec();
 
         for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
         {
@@ -70,6 +80,19 @@ namespace HttpServer
         server.send(200, "text/plain", message);
     }
 
+    void handleConfigSubmission()
+    {
+        String id = server.arg("id");
+
+        Eeprom::writeIDToMemory(std::string(id.c_str()));
+
+        server.send(200, "text/plain", "Config saved, controller will reboot in 3 seconds and will connect to wifi");
+
+        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+
+        ESP.restart();
+    }
+
     void handleWiFiFormSubmit()
     {
         // String response_success = "<h1>Success</h1>";
@@ -80,7 +103,9 @@ namespace HttpServer
 
         String ssid = server.arg("ssid");
         String pass = server.arg("password");
+        String id = server.arg("id");
 
+        Eeprom::writeIDToMemory(std::string(id.c_str()));
         Eeprom::writeWiFiPassToMemory(std::string(pass.c_str()));
         Eeprom::writeWiFiSSIDToMemory(std::string(ssid.c_str()));
 

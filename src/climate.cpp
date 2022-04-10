@@ -167,6 +167,10 @@ namespace Climate
                         rebootSensorsWithWait();
                         retryAttempt++;
                     }
+
+                    if (!sensorsDHT22[i].success()){
+                        ESP.restart();
+                    }
                 }
             }
 

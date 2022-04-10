@@ -100,6 +100,8 @@ namespace RealTime
 
             timezone tz_utcPlus1 = {gmtOffset_sec, daylightOffset_sec};
 
+            //setenv("TZ",timezone.c_str(),1);
+
             settimeofday(&tv, &tz_utcPlus1);
 
             struct timeval tv_set;
@@ -256,7 +258,6 @@ namespace RealTime
 
     bool checkScheduleTimeWindow(std::string now, std::string since, std::string until)
     {
-
 
         if (since.compare(until) < 0)
         {

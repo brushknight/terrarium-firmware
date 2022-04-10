@@ -29,7 +29,7 @@ public:
 class Metadata
 {
 public:
-    int id;
+    std::string id;
     std::string wifiName;
 };
 
