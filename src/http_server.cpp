@@ -17,6 +17,55 @@ namespace HttpServer
         server.send(200, "text/html", CONFIG_FORM);
     }
 
+    void handleUpdateForm()
+    {
+        server.send(200, "text/html", UPDATE_FORM);
+    }
+
+    void updateConnectionClosed()
+    {
+        server.sendHeader("Connection", "close");
+        server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+        ESP.restart();
+    }
+
+    void updateHandler()
+    {
+        HTTPUpload &upload = server.upload();
+        if (upload.status == UPLOAD_FILE_START)
+        {
+            Serial.setDebugOutput(true);
+            Serial.printf("Update: %s\n", upload.filename.c_str());
+            if (!Update.begin())
+            { //start with max available size
+                Update.printError(Serial);
+            }
+        }
+        else if (upload.status == UPLOAD_FILE_WRITE)
+        {
+            if (Update.write(upload.buf, upload.currentSize) != upload.currentSize)
+            {
+                Update.printError(Serial);
+            }
+        }
+        else if (upload.status == UPLOAD_FILE_END)
+        {
+            if (Update.end(true))
+            { //true to set the size to the current progress
+                Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+            }
+            else
+            {
+                Update.printError(Serial);
+            }
+            Serial.setDebugOutput(false);
+        }
+        else
+        {
+            Serial.printf("Update Failed Unexpectedly (likely broken connection): status=%d\n", upload.status);
+        }
+    }
+
     std::string setup(Data *givenData, bool isSetupMode)
     {
         data = givenData;
@@ -26,6 +75,9 @@ namespace HttpServer
         server.on("/api/metrics", handleAPIMetrics);
         server.on("/api/config", HTTPMethod::HTTP_POST, handleConfigSubmission);
         server.on("/set-wifi", handleWiFiFormSubmit);
+        server.on("/update", handleUpdateForm);
+        server.on("/api/update", HTTP_POST, updateConnectionClosed, updateHandler);
+
         server.begin();
 
         IPAddress ip;
@@ -50,6 +102,7 @@ namespace HttpServer
         doc["metadata"]["time"]["hour"] = RealTime::getHour();
         doc["metadata"]["time"]["minute"] = RealTime::getMinute();
         doc["metadata"]["time"]["uptime"] = RealTime::getUptimeSec();
+        doc["metadata"]["build_time"] = BUILD_TIME;
 
         for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
         {
