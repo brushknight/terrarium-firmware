@@ -7,8 +7,10 @@
 #include "secrets.h"
 #include "http_server.h"
 #include "eeprom.h"
+#include "status.h"
 
 Data data;
+Config config;
 
 bool initialSetupMode = false;
 
@@ -47,12 +49,95 @@ void netWatcher(void *parameter)
   }
 }
 
+void demoSetup()
+{
+  Config config = loadConfig();
+  Climate::setup(config);
+  Climate::enableSensors();
+  Status::setup();
+  Utils::scanForI2C();
+
+  Eeprom::resetMemory();
+}
+
+void demoLoop(void *parameter)
+{
+  Config config = loadConfig();
+  config.climateZoneConfigs[0].name = "test demo zone";
+  Eeprom::saveConfig(config);
+  Eeprom::writeWiFiSSIDToMemory("DEMO Board");
+
+  for (;;)
+  {
+    Serial.println("loop starts");
+    // heap_caps_check_integrity_all(true);
+    config = Eeprom::loadConfig();
+
+    Serial.println();
+    Serial.println("config loaded");
+    // Serial.println(config.climateZoneConfigs[0].name.c_str());
+    // Serial.println(config.climateZoneConfigs[0].dht22SensorPins[0]);
+    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+
+    // Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
+    // Status::setError();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+    // Status::setWarning();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+    // Status::setPink();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+    // Climate::disableSensors();
+    // Status::setBlue();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+    // Status::setPurple();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+
+    // digitalWrite(RELAY_0_PIN, HIGH);
+    // digitalWrite(RELAY_1_PIN, HIGH);
+    // digitalWrite(RELAY_2_PIN, HIGH);
+
+    // Status::setPurple();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+    // Status::setBlue();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+    // Status::setPink();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+    // Climate::enableSensors();
+    // Status::setWarning();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+    // Status::setError();
+    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
+
+    // digitalWrite(RELAY_0_PIN, LOW);
+    // digitalWrite(RELAY_1_PIN, LOW);
+    // digitalWrite(RELAY_2_PIN, LOW);
+    Serial.println("loop ends");
+  }
+}
+
 void setup()
 {
+  Serial.begin(115200);
+  Wire.begin();
+
+  Eeprom::setup();
+  if (DEMO_BOARD)
+  {
+    demoSetup();
+    xTaskCreatePinnedToCore(
+        demoLoop,
+        "demoLoop",
+        50000,
+        NULL,
+        1,
+        NULL,
+        0);
+    return;
+  }
   data = Data();
   EEPROM.begin(512);
-  //Eeprom::resetMemory();
-  Serial.begin(115200);
+  // Eeprom::resetMemory();
+
   Display::setup();
   xTaskCreatePinnedToCore(
       displayRender,
@@ -115,5 +200,13 @@ void setup()
 
 void loop()
 {
-  HttpServer::handleClientLoop();
+  if (DEMO_BOARD)
+  {
+    Serial.println(F("Loop function"));
+    delay(10000000000000);
+  }
+  else
+  {
+    HttpServer::handleClientLoop();
+  }
 }

@@ -1,7 +1,4 @@
 #include <Arduino.h>
-#include <output_export.h>
-
-
 
 #ifdef __GNUC__
 void output_start(unsigned int baudrate __attribute__((unused)))
@@ -24,5 +21,5 @@ void output_flush(void)
 
 void output_complete(void)
 {
-   Serial.end();
+    Serial.end();
 }

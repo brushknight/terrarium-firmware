@@ -37,6 +37,8 @@ namespace Net
             return;
         }
 
+        WiFi.setAutoReconnect(true);
+
         Serial.println("Connection to wifi");
 
         // Status::setConnectingToWiFiStatus(Status::WORKING);

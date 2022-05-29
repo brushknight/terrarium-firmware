@@ -1,5 +1,8 @@
 #include "config.h"
 
+
+
+
 Config loadConfig()
 {
     // load config from eeprom

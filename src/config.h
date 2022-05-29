@@ -2,6 +2,7 @@
 #define CONFIG
 
 #include <string>
+#include "ArduinoJson.h"
 
 //#define SENSORS_COUNT 2
 // #define TERRARIUM_ID 1
@@ -20,9 +21,9 @@
 //#define SENSORS_ENABLED true
 
 //#define TEST_BOARD false
-//#define DEMO_BOARD true
+#define DEMO_BOARD true
 
-#define EXTERNAL_EEPROM false
+#define EXTERNAL_EEPROM true
 
 #define MAX_DHT22_SENSORS_IN_CLIMATE_ZONE int(3)
 #define MAX_CLIMATE_ZONES int(3)
@@ -56,6 +57,36 @@ public:
     int untilMinute;
     float temperature;
     bool isSet = false;
+    static int jsonSize()
+    {
+        return 100;
+    }
+    DynamicJsonDocument toJSON()
+    {
+        DynamicJsonDocument doc(jsonSize());
+
+        doc["sinceHour"] = sinceHour;
+        doc["sinceMinute"] = sinceMinute;
+        doc["untilHour"] = untilHour;
+        doc["untilMinute"] = untilMinute;
+        doc["temperature"] = temperature;
+        doc["isSet"] = isSet;
+
+        return doc;
+    }
+    static Schedule fromJSON(DynamicJsonDocument doc)
+    {
+        Schedule schedule;
+
+        schedule.sinceHour = doc["sinceHour"];
+        schedule.sinceMinute = doc["sinceMinute"];
+        schedule.untilHour = doc["untilHour"];
+        schedule.untilMinute = doc["untilMinute"];
+        schedule.temperature = doc["temperature"];
+        schedule.isSet = doc["isSet"];
+
+        return schedule;
+    }
 };
 
 class ClimateZoneConfig
@@ -64,15 +95,97 @@ public:
     std::string name;
     std::string slug;
     int relayPin = 0;
-    int dht22SensorPins[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE] = {0,0,0};
+    int dht22SensorPins[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE] = {0, 0, 0};
     bool isSet = false;
     Schedule schedule[MAX_SCHEDULE_COUNT];
+    static int jsonSize()
+    {
+        return (200 + Schedule::jsonSize() * MAX_SCHEDULE_COUNT) * MAX_CLIMATE_ZONES;
+    }
+    DynamicJsonDocument toJSON()
+    {
+        DynamicJsonDocument doc(jsonSize());
+
+        doc["name"] = name;
+        doc["slug"] = slug;
+        doc["relayPin"] = relayPin;
+        for (int j = 0; j < MAX_DHT22_SENSORS_IN_CLIMATE_ZONE; j++)
+        {
+            doc["dht22SensorPins"][j] = dht22SensorPins[j];
+        }
+
+        doc["isSet"] = isSet;
+        for (int k = 0; k < MAX_SCHEDULE_COUNT; k++)
+        {
+            doc["schedule"][k] = schedule[k].toJSON();
+        }
+
+        return doc;
+    }
+    static ClimateZoneConfig fromJSON(DynamicJsonDocument doc)
+    {
+        ClimateZoneConfig climateZoneConfig;
+        climateZoneConfig.name = doc["name"].as<std::string>();
+        climateZoneConfig.slug = doc["slug"].as<std::string>();
+        climateZoneConfig.relayPin = doc["relayPin"];
+        climateZoneConfig.isSet = doc["isSet"];
+
+        for (int i = 0; i < MAX_DHT22_SENSORS_IN_CLIMATE_ZONE; i++)
+        {
+            climateZoneConfig.dht22SensorPins[i] = doc["dht22SensorPins"][i];
+        }
+
+        for (int j = 0; j < MAX_SCHEDULE_COUNT; j++)
+        {
+            climateZoneConfig.schedule[j] = Schedule::fromJSON(doc["schedule"][j]);
+        }
+        return climateZoneConfig;
+    }
 };
 
 class Config
 {
 public:
     ClimateZoneConfig climateZoneConfigs[MAX_CLIMATE_ZONES];
+    std::string wifiSSID;
+    std::string wifiPassword;
+    std::string id;
+
+    static int jsonSize()
+    {
+        return ClimateZoneConfig::jsonSize() * MAX_CLIMATE_ZONES;
+    }
+    DynamicJsonDocument toJSON()
+    {
+        DynamicJsonDocument doc(jsonSize());
+        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+        {
+            doc["climateZoneConfigs"][i] = climateZoneConfigs[i].toJSON();
+        }
+        doc["wifiSSID"] = wifiSSID;
+        doc["wifiPassword"] = wifiPassword;
+        doc["id"] = id;
+        return doc;
+    }
+    static Config fromJSON(std::string json)
+    {
+        Config config;
+
+        // load from json
+        DynamicJsonDocument doc(jsonSize());
+        deserializeJson(doc, json);
+
+        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+        {
+            config.climateZoneConfigs[i] = ClimateZoneConfig::fromJSON(doc["climateZoneConfigs"][i]);
+        }
+
+        config.wifiSSID = doc["wifiSSID"].as<std::string>();
+        config.wifiPassword = doc["wifiPassword"].as<std::string>();
+        config.id = doc["id"].as<std::string>();
+
+        return config;
+    }
 };
 
 Config loadConfig();
