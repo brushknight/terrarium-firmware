@@ -21,7 +21,7 @@
 //#define SENSORS_ENABLED true
 
 //#define TEST_BOARD false
-#define DEMO_BOARD true
+#define DEMO_BOARD false
 
 #define EXTERNAL_EEPROM true
 
@@ -188,6 +188,6 @@ public:
     }
 };
 
-Config loadConfig();
+Config loadInitConfig();
 
 #endif

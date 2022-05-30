@@ -17,6 +17,11 @@ namespace HttpServer
         server.send(200, "text/html", CONFIG_FORM);
     }
 
+    void handleJSONConfigForm()
+    {
+        server.send(200, "text/html", JSON_CONFIG_FORM);
+    }
+
     void handleUpdateForm()
     {
         server.send(200, "text/html", UPDATE_FORM);
@@ -37,7 +42,7 @@ namespace HttpServer
             Serial.setDebugOutput(true);
             Serial.printf("Update: %s\n", upload.filename.c_str());
             if (!Update.begin())
-            { //start with max available size
+            { // start with max available size
                 Update.printError(Serial);
             }
         }
@@ -51,7 +56,7 @@ namespace HttpServer
         else if (upload.status == UPLOAD_FILE_END)
         {
             if (Update.end(true))
-            { //true to set the size to the current progress
+            { // true to set the size to the current progress
                 Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
             }
             else
@@ -71,9 +76,14 @@ namespace HttpServer
         data = givenData;
         server.on("/", handleRoot);
         server.on("/config", handleConfigForm);
+        server.on("/json-config", handleJSONConfigForm);
+        server.on("/api/json-config", HTTPMethod::HTTP_POST, handleJSONConfigSubmit);
+
         server.on("/metrics", handlePromMetrics);
         server.on("/api/metrics", handleAPIMetrics);
+        server.on("/api/config", handleJSONConfigFetch);
         server.on("/api/config", HTTPMethod::HTTP_POST, handleConfigSubmission);
+
         server.on("/set-wifi", handleWiFiFormSubmit);
         server.on("/update", handleUpdateForm);
         server.on("/api/update", HTTP_POST, updateConnectionClosed, updateHandler);
@@ -124,6 +134,17 @@ namespace HttpServer
         server.send(200, "application/json", requestBody.c_str());
     }
 
+    void handleJSONConfigFetch()
+    {
+        Config config = Eeprom::loadConfig();
+        DynamicJsonDocument json = config.toJSON();
+
+        std::string requestBody;
+        serializeJson(json, requestBody);
+
+        server.send(200, "application/json", requestBody.c_str());
+    }
+
     void handlePromMetrics()
     {
         String message = "wifi_network ";
@@ -165,6 +186,31 @@ namespace HttpServer
         Eeprom::setMemory();
 
         server.send(200, "text/plain", "Wifi credentials saved, controller will reboot in 3 seconds and will connect to wifi");
+
+        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+
+        ESP.restart();
+    }
+
+    void handleJSONConfigSubmit()
+    {
+        // String response_success = "<h1>Success</h1>";
+        // response_success += "<h2>Device will restart in 3 seconds</h2>";
+
+        // String response_error = "<h1>Error</h1>";
+        // response_error += "<h2><a href='/'>Go back</a>to try again";
+
+        String configRaw = server.arg("config");
+
+        Serial.println(configRaw.c_str());
+
+        Config config = Config::fromJSON(std::string(configRaw.c_str()));
+
+        Eeprom::saveConfig(config);
+
+        Eeprom::setMemory();
+
+        server.send(200, "text/plain", "Config saved, controller will reboot in 3 seconds and will connect to wifi");
 
         vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
 

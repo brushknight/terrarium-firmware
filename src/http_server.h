@@ -19,6 +19,9 @@ namespace HttpServer
     void handleAPIMetrics();
     void handleConfigSubmission();
     void updateConnectionClosed();
+    void handleJSONConfigForm();
+    void handleJSONConfigSubmit();
+    void handleJSONConfigFetch();
     void updateHandler();
     void sendForm(WiFiClient client);
     void handleClientLoop();

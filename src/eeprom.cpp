@@ -135,8 +135,16 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
+            Config config;
+            if (isMemorySet())
+            {
+                config = loadConfig();
+            }
+            else
+            {
+                config = loadConfig();
+            }
             Serial.println("Saving SSID...");
-            Config config = loadConfig();
             config.wifiSSID = ssid;
             saveConfig(config);
             Serial.println("Saving SSID [OK]");
@@ -165,7 +173,15 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            Config config = loadConfig();
+            Config config;
+            if (isMemorySet())
+            {
+                config = loadConfig();
+            }
+            else
+            {
+                config = loadConfig();
+            }
             config.wifiPassword = pass;
             saveConfig(config);
         }
@@ -193,7 +209,15 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            Config config = loadConfig();
+            Config config;
+            if (isMemorySet())
+            {
+                config = loadConfig();
+            }
+            else
+            {
+                config = loadConfig();
+            }
             config.id = id;
             saveConfig(config);
         }
@@ -213,6 +237,7 @@ namespace Eeprom
             EEPROM.commit();
         }
     }
+
     void saveConfig(Config config)
     {
         if (isExternalEEPROM)
@@ -239,6 +264,7 @@ namespace Eeprom
             Serial.println("No storage found");
         }
     }
+
     Config loadConfig()
     {
         Config config;
@@ -265,6 +291,8 @@ namespace Eeprom
         {
             // load empty config
             Serial.println("No storage found");
+
+            config = loadConfig();
         }
         return config;
     }

@@ -3,7 +3,7 @@
 
 
 
-Config loadConfig()
+Config loadInitConfig()
 {
     // load config from eeprom
 

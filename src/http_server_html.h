@@ -1,3 +1,27 @@
+const char JSON_CONFIG_FORM[] =
+    "<!DOCTYPE HTML>"
+    "<html>"
+    "<head>"
+    "<meta content=\"text/html; charset=ISO-8859-1\""
+    " http-equiv=\"content-type\">"
+    "<meta name = \"viewport\" content = \"width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0\">"
+    "<title>Terrarium controller - Config</title>"
+    "<style>"
+    "\"body { background-color: #808080; font-family: Arial, Helvetica, Sans-Serif; Color: #000000; text-align:center;}\""
+    "</style>"
+    "</head>"
+    "<body>"
+    "<h3>Enter your WiFi credentials</h3>"
+    "<form action=\"/api/json-config\" method=\"post\">"
+    "<p>"
+    "<label>Config: JSON</label>"
+    "<textarea name=\"ssid\"></textarea><br>"
+    "<input type=\"submit\" value=\"Save\">"
+    "</p>"
+    "</form>"
+    "</body>"
+    "</html>";
+
 const char WIFI_FORM[] =
     "<!DOCTYPE HTML>"
     "<html>"

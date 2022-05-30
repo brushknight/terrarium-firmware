@@ -51,7 +51,7 @@ void netWatcher(void *parameter)
 
 void demoSetup()
 {
-  Config config = loadConfig();
+  Config config = loadInitConfig();
   Climate::setup(config);
   Climate::enableSensors();
   Status::setup();
@@ -62,7 +62,7 @@ void demoSetup()
 
 void demoLoop(void *parameter)
 {
-  Config config = loadConfig();
+  Config config = loadInitConfig();
   config.climateZoneConfigs[0].name = "test demo zone";
   Eeprom::saveConfig(config);
   Eeprom::writeWiFiSSIDToMemory("DEMO Board");
@@ -115,12 +115,21 @@ void demoLoop(void *parameter)
   }
 }
 
+void httpServer(void *parameter)
+{
+  for (;;)
+  {
+    HttpServer::handleClientLoop();
+  }
+}
+
 void setup()
 {
   Serial.begin(115200);
   Wire.begin();
-
+  EEPROM.begin(512);
   Eeprom::setup();
+
   if (DEMO_BOARD)
   {
     demoSetup();
@@ -134,8 +143,9 @@ void setup()
         0);
     return;
   }
+
   data = Data();
-  EEPROM.begin(512);
+
   // Eeprom::resetMemory();
 
   Display::setup();
@@ -168,7 +178,7 @@ void setup()
   //   Utils::setMemory();
   // }
 
-  Climate::setup(loadConfig());
+  Climate::setup(loadInitConfig());
   Climate::enableSensors();
   if (RealTime::isWiFiRequired())
   {
@@ -196,6 +206,15 @@ void setup()
 
   Net::connect(&data, false);
   HttpServer::setup(&data, false);
+
+  xTaskCreatePinnedToCore(
+      httpServer,
+      "httpServer",
+      16384,
+      NULL,
+      2,
+      NULL,
+      1);
 }
 
 void loop()
@@ -207,6 +226,6 @@ void loop()
   }
   else
   {
-    HttpServer::handleClientLoop();
+    delay(10000000000000);
   }
 }
