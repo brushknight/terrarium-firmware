@@ -8,7 +8,7 @@
 void test_config_serialization(void)
 {
 
-    Config config = loadInitConfig();
+    Config config = loadInitClimateConfig();
     config.climateZoneConfigs[0].relayPin = 10;
     DynamicJsonDocument doc = config.toJSON();
     // Lastly, you can print the resulting JSON to a String

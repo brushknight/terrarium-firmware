@@ -1,7 +1,7 @@
 #ifndef TERRARIUM_HTTP_SERVER
 #define TERRARIUM_HTTP_SERVER
 
-#include <WebServer.h>
+#include <ESPAsyncWebServer.h>
 #include "http_server_html.h"
 #include "eeprom.h"
 #include "data.h"
@@ -11,22 +11,13 @@
 
 namespace HttpServer
 {
-    void handleRoot();
-    void handleConfigForm();
-    void handleUpdateForm();
-    void handleWiFiFormSubmit();
-    void handlePromMetrics();
-    void handleAPIMetrics();
-    void handleConfigSubmission();
-    void updateConnectionClosed();
-    void handleJSONConfigForm();
-    void handleJSONConfigSubmit();
-    void handleJSONConfigFetch();
-    void updateHandler();
-    void sendForm(WiFiClient client);
-    void handleClientLoop();
-    std::string setup(Data *givenData, bool isSetupMode);
-
+    void start(Data *givenData, bool isSetupMode);
+    void notFound(AsyncWebServerRequest *request);
+    void onRoot(AsyncWebServerRequest *request);
+    void onGetControllerConfig(AsyncWebServerRequest *request);
+    void onPostControllerConfig(AsyncWebServerRequest *request);
+    void onGetClimateConfig(AsyncWebServerRequest *request);
+    void onPostReset(AsyncWebServerRequest *request);
 }
 
 #endif

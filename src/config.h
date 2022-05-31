@@ -143,7 +143,7 @@ public:
     }
 };
 
-class Config
+class ClimateConfig
 {
 public:
     ClimateZoneConfig climateZoneConfigs[MAX_CLIMATE_ZONES];
@@ -167,9 +167,9 @@ public:
         doc["id"] = id;
         return doc;
     }
-    static Config fromJSON(std::string json)
+    static ClimateConfig fromJSON(std::string json)
     {
-        Config config;
+        ClimateConfig config;
 
         // load from json
         DynamicJsonDocument doc(jsonSize());
@@ -188,6 +188,42 @@ public:
     }
 };
 
-Config loadInitConfig();
+class ControllerConfig
+{
+public:
+    std::string wifiSSID;
+    std::string wifiPassword;
+    std::string id;
+
+    static int jsonSize()
+    {
+        return 100;
+    }
+    DynamicJsonDocument toJSON()
+    {
+        DynamicJsonDocument doc(jsonSize());
+
+        doc["wifiSSID"] = wifiSSID;
+        doc["wifiPassword"] = wifiPassword;
+        doc["id"] = id;
+        return doc;
+    }
+    static ControllerConfig fromJSON(std::string json)
+    {
+        ControllerConfig config;
+
+        // load from json
+        DynamicJsonDocument doc(jsonSize());
+        deserializeJson(doc, json);
+
+        config.wifiSSID = doc["wifiSSID"].as<std::string>();
+        config.wifiPassword = doc["wifiPassword"].as<std::string>();
+        config.id = doc["id"].as<std::string>();
+
+        return config;
+    }
+};
+
+ClimateConfig loadInitClimateConfig();
 
 #endif

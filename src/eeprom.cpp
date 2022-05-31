@@ -3,7 +3,6 @@
 namespace Eeprom
 {
 
-    const int SET_INDEX = 0;
     const int WIFI_SSID_INDEX = 1;
     const int WIFI_SSID_LEN = 32;
     const int WIFI_PASS_INDEX = WIFI_SSID_INDEX + WIFI_SSID_LEN;
@@ -11,6 +10,11 @@ namespace Eeprom
     const int ID_INDEX = WIFI_PASS_INDEX + WIFI_PASS_LEN;
     const int ID_INDEX_LEN = 10;
     const int CONFIG_INDEX = ID_INDEX + ID_INDEX_LEN;
+
+    // new indexes
+    const int SET_INDEX = 0;
+    const int CONTROLLER_CONFIG_INDEX = 1;
+    const int CONTROLLER_CONFIG_LENGTH = 2048;
 
     const int CONFIG_LENGTH = 4096;
 
@@ -34,13 +38,35 @@ namespace Eeprom
         }
     }
 
-    bool isMemorySet()
+    void clear()
     {
+        for (int i = 0; i < 2048; i++)
+        {
+            EEPROM.write(i, 0);
+        }
         if (isExternalEEPROM)
         {
-            return externalEEPROM.read(SET_INDEX) == 1;
+            for (int i = 0; i < externalEEPROM.length(); i++)
+            {
+                externalEEPROM.write(i, 0);
+            }
         }
+    }
+
+    bool isMemorySet()
+    {
+        return ((isExternalEEPROM && isControllerConfigSetExternalEEPROM()) || isControllerConfigSetESP32());
+    }
+
+    bool isControllerConfigSetESP32()
+    {
         return EEPROM.read(SET_INDEX) == 1;
+    }
+
+    bool isControllerConfigSetExternalEEPROM()
+    {
+
+        return externalEEPROM.read(SET_INDEX) == 1;
     }
 
     void setMemory()
@@ -73,7 +99,7 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            return loadConfig().wifiSSID;
+            return loadClimateConfig().wifiSSID;
         }
         else
         {
@@ -94,7 +120,7 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            return loadConfig().wifiPassword;
+            return loadClimateConfig().wifiPassword;
         }
         else
         {
@@ -115,7 +141,7 @@ namespace Eeprom
 
         if (isExternalEEPROM)
         {
-            return loadConfig().id;
+            return loadClimateConfig().id;
         }
         else
         {
@@ -135,18 +161,18 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            Config config;
+            ClimateConfig config;
             if (isMemorySet())
             {
-                config = loadConfig();
+                config = loadClimateConfig();
             }
             else
             {
-                config = loadConfig();
+                config = loadClimateConfig();
             }
             Serial.println("Saving SSID...");
             config.wifiSSID = ssid;
-            saveConfig(config);
+            saveClimateConfig(config);
             Serial.println("Saving SSID [OK]");
         }
         else
@@ -173,17 +199,17 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            Config config;
+            ClimateConfig config;
             if (isMemorySet())
             {
-                config = loadConfig();
+                config = loadClimateConfig();
             }
             else
             {
-                config = loadConfig();
+                config = loadClimateConfig();
             }
             config.wifiPassword = pass;
-            saveConfig(config);
+            saveClimateConfig(config);
         }
         else
         {
@@ -209,17 +235,17 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            Config config;
+            ClimateConfig config;
             if (isMemorySet())
             {
-                config = loadConfig();
+                config = loadClimateConfig();
             }
             else
             {
-                config = loadConfig();
+                config = loadClimateConfig();
             }
             config.id = id;
-            saveConfig(config);
+            saveClimateConfig(config);
         }
         else
         {
@@ -238,7 +264,90 @@ namespace Eeprom
         }
     }
 
-    void saveConfig(Config config)
+    void saveControllerConfig(ControllerConfig config)
+    {
+
+        DynamicJsonDocument doc = config.toJSON();
+        // Lastly, you can print the resulting JSON to a String
+        std::string json;
+        serializeJson(doc, json);
+        Serial.println("Saving controller config...");
+        Serial.println(json.c_str());
+
+        for (int i = 0; i < json.length(); ++i)
+        {
+            EEPROM.write(i + CONTROLLER_CONFIG_INDEX, json[i]);
+        }
+        Serial.println("Saved into ESP32 EEPROM [OK]");
+
+        if (isExternalEEPROM)
+        {
+
+            for (int i = 0; i < json.length(); ++i)
+            {
+                externalEEPROM.write(i + CONTROLLER_CONFIG_INDEX, json[i]);
+            }
+
+            Serial.println("Saved into external EEPROM [OK]");
+        }
+    }
+
+    ControllerConfig loadControllerConfig()
+    {
+        if (isExternalEEPROM && isControllerConfigSetExternalEEPROM())
+        {
+            return loadControllerConfigFromExternalEEPROM();
+        }
+        if (isControllerConfigSetESP32())
+        {
+            return loadControllerConfigFromESP32();
+        }
+        return ControllerConfig();
+    }
+
+    ControllerConfig loadControllerConfigFromESP32()
+    {
+        ControllerConfig config;
+
+        Serial.println("Loading controller config from ESP32 EEPROM...");
+
+        char raw[CONTROLLER_CONFIG_LENGTH];
+
+        for (int i = 0; i < CONTROLLER_CONFIG_LENGTH; ++i)
+        {
+            raw[i] = char(EEPROM.read(i + CONTROLLER_CONFIG_INDEX));
+        }
+        Serial.println(raw);
+
+        std::string json = std::string(raw);
+
+        Serial.println(json.c_str());
+        config = ControllerConfig::fromJSON(json);
+
+        return config;
+    }
+
+    ControllerConfig loadControllerConfigFromExternalEEPROM()
+    {
+        ControllerConfig config;
+
+        Serial.println("Loading controller config from external EEPROM...");
+        char raw[CONTROLLER_CONFIG_LENGTH];
+
+        for (int i = 0; i < CONTROLLER_CONFIG_LENGTH; ++i)
+        {
+            raw[i] = char(externalEEPROM.read(i + CONTROLLER_CONFIG_INDEX));
+        }
+        Serial.println(raw);
+
+        std::string json = std::string(raw);
+
+        Serial.println(json.c_str());
+        config = ControllerConfig::fromJSON(json);
+        return config;
+    }
+
+    void saveClimateConfig(ClimateConfig config)
     {
         if (isExternalEEPROM)
         {
@@ -265,9 +374,9 @@ namespace Eeprom
         }
     }
 
-    Config loadConfig()
+    ClimateConfig loadClimateConfig()
     {
-        Config config;
+        ClimateConfig config;
         if (isExternalEEPROM)
         {
             // todo: check if config written
@@ -285,14 +394,14 @@ namespace Eeprom
             std::string json = std::string(raw);
 
             Serial.println(json.c_str());
-            config = Config::fromJSON(json);
+            config = ClimateConfig::fromJSON(json);
         }
         else
         {
             // load empty config
             Serial.println("No storage found");
 
-            config = loadConfig();
+            config = loadClimateConfig();
         }
         return config;
     }

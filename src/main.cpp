@@ -10,7 +10,7 @@
 #include "status.h"
 
 Data data;
-Config config;
+ClimateConfig config;
 
 bool initialSetupMode = false;
 
@@ -51,7 +51,7 @@ void netWatcher(void *parameter)
 
 void demoSetup()
 {
-  Config config = loadInitConfig();
+  ClimateConfig config = loadInitClimateConfig();
   Climate::setup(config);
   Climate::enableSensors();
   Status::setup();
@@ -62,16 +62,16 @@ void demoSetup()
 
 void demoLoop(void *parameter)
 {
-  Config config = loadInitConfig();
+  ClimateConfig config = loadInitClimateConfig();
   config.climateZoneConfigs[0].name = "test demo zone";
-  Eeprom::saveConfig(config);
+  Eeprom::saveClimateConfig(config);
   Eeprom::writeWiFiSSIDToMemory("DEMO Board");
 
   for (;;)
   {
     Serial.println("loop starts");
     // heap_caps_check_integrity_all(true);
-    config = Eeprom::loadConfig();
+    config = Eeprom::loadClimateConfig();
 
     Serial.println();
     Serial.println("config loaded");
@@ -115,14 +115,6 @@ void demoLoop(void *parameter)
   }
 }
 
-void httpServer(void *parameter)
-{
-  for (;;)
-  {
-    HttpServer::handleClientLoop();
-  }
-}
-
 void setup()
 {
   Serial.begin(115200);
@@ -163,9 +155,12 @@ void setup()
     initialSetupMode = true;
     data.initialSetup.apName = Net::setupAP();
     data.initialSetup.isInSetupMode = true;
-    data.initialSetup.ipAddr = HttpServer::setup(&data, true);
     Serial.println(data.initialSetup.apName.c_str());
     Serial.println(data.initialSetup.ipAddr.c_str());
+
+    data.initialSetup.ipAddr = std::string(WiFi.softAPIP().toString().c_str());
+    HttpServer::start(&data, true);
+
     return;
   }
 
@@ -178,7 +173,7 @@ void setup()
   //   Utils::setMemory();
   // }
 
-  Climate::setup(loadInitConfig());
+  Climate::setup(loadInitClimateConfig());
   Climate::enableSensors();
   if (RealTime::isWiFiRequired())
   {
@@ -205,16 +200,7 @@ void setup()
       0);
 
   Net::connect(&data, false);
-  HttpServer::setup(&data, false);
-
-  xTaskCreatePinnedToCore(
-      httpServer,
-      "httpServer",
-      16384,
-      NULL,
-      2,
-      NULL,
-      1);
+  HttpServer::start(&data, false);
 }
 
 void loop()
@@ -222,10 +208,10 @@ void loop()
   if (DEMO_BOARD)
   {
     Serial.println(F("Loop function"));
-    delay(10000000000000);
+    delay(100000);
   }
   else
   {
-    delay(10000000000000);
+    delay(100000);
   }
 }

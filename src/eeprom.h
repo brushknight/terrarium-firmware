@@ -17,8 +17,16 @@ namespace Eeprom
     void writeWiFiSSIDToMemory(std::string ssid);
     void writeWiFiPassToMemory(std::string pass);
     void writeIDToMemory(std::string id);
-    void saveConfig(Config config);
-    Config loadConfig();
+
+    void clear();
+    void saveControllerConfig(ControllerConfig config);
+    void saveClimateConfig(ClimateConfig config);
+    ClimateConfig loadClimateConfig();
+    ControllerConfig loadControllerConfig();
+    ControllerConfig loadControllerConfigFromESP32();
+    ControllerConfig loadControllerConfigFromExternalEEPROM();
+    bool isControllerConfigSetESP32();
+    bool isControllerConfigSetExternalEEPROM();
 }
 
 #endif

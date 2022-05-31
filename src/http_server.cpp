@@ -2,109 +2,121 @@
 
 namespace HttpServer
 {
+    AsyncWebServer server(80);
 
-    WebServer server(80);
-    String header;
     Data *data;
 
-    void handleRoot()
+    void onPostReset(AsyncWebServerRequest *request)
     {
-        server.send(200, "text/html", WIFI_FORM);
+        Eeprom::clear();
     }
 
-    void handleConfigForm()
+    void notFound(AsyncWebServerRequest *request)
     {
-        server.send(200, "text/html", CONFIG_FORM);
+        request->send(404, "text/plain", "Not found");
     }
 
-    void handleJSONConfigForm()
+    void onRoot(AsyncWebServerRequest *request)
     {
-        server.send(200, "text/html", JSON_CONFIG_FORM);
+        request->send_P(200, "text/html", CONTROLLER_CONFIG_FORM);
     }
 
-    void handleUpdateForm()
+    void onGetControllerConfig(AsyncWebServerRequest *request)
     {
-        server.send(200, "text/html", UPDATE_FORM);
+        ClimateConfig config = Eeprom::loadClimateConfig();
+        DynamicJsonDocument json = config.toJSON();
+
+        std::string requestBody;
+        serializeJson(json, requestBody);
+
+        request->send(200, "application/json", requestBody.c_str());
     }
 
-    void updateConnectionClosed()
+    void onGetClimateConfig(AsyncWebServerRequest *request)
     {
-        server.sendHeader("Connection", "close");
-        server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-        ESP.restart();
+        ClimateConfig config = Eeprom::loadClimateConfig();
+        DynamicJsonDocument json = config.toJSON();
+
+        std::string requestBody;
+        serializeJson(json, requestBody);
+
+        request->send(200, "application/json", requestBody.c_str());
     }
 
-    void updateHandler()
+    void onPostControllerConfig(AsyncWebServerRequest *request)
     {
-        HTTPUpload &upload = server.upload();
-        if (upload.status == UPLOAD_FILE_START)
+        // ssid, pass, id
+        ControllerConfig config = Eeprom::loadControllerConfig();
+
+        int params = request->params();
+        for (int i = 0; i < params; i++)
         {
-            Serial.setDebugOutput(true);
-            Serial.printf("Update: %s\n", upload.filename.c_str());
-            if (!Update.begin())
-            { // start with max available size
-                Update.printError(Serial);
-            }
-        }
-        else if (upload.status == UPLOAD_FILE_WRITE)
-        {
-            if (Update.write(upload.buf, upload.currentSize) != upload.currentSize)
+            AsyncWebParameter *p = request->getParam(i);
+            
+            Serial.println(p->name().c_str() == String("wifi_ssid").c_str());
+            Serial.println(p->name().c_str() == String("wifi_pass").c_str());
+            Serial.println(p->name().c_str() == String("id").c_str());
+
+            if (p->name().c_str() == String("wifi_ssid").c_str())
             {
-                Update.printError(Serial);
+
+                config.wifiSSID = p->value().c_str();
             }
-        }
-        else if (upload.status == UPLOAD_FILE_END)
-        {
-            if (Update.end(true))
-            { // true to set the size to the current progress
-                Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
-            }
-            else
+
+            if (p->name().c_str() == String("wifi_pass").c_str())
             {
-                Update.printError(Serial);
+                Serial.println(p->name().c_str() == String("wifi_pass").c_str());
+                config.wifiPassword = p->value().c_str();
             }
-            Serial.setDebugOutput(false);
+
+            if (p->name().c_str() == String("id").c_str())
+            {
+                Serial.println(p->name().c_str() == String("id").c_str());
+                config.id = p->value().c_str();
+            }
+
+            Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
         }
-        else
-        {
-            Serial.printf("Update Failed Unexpectedly (likely broken connection): status=%d\n", upload.status);
-        }
+
+        Eeprom::saveControllerConfig(config);
+
+        // temporary
+
+        DynamicJsonDocument json = config.toJSON();
+
+        std::string requestBody;
+        serializeJson(json, requestBody);
+
+        request->send(200, "application/json", requestBody.c_str());
+
+        // print success form
+
+        // reboot
+
+        // vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+
+        // ESP.restart();
     }
 
-    std::string setup(Data *givenData, bool isSetupMode)
+    void onPostClimateConfig(AsyncWebServerRequest *request)
     {
-        data = givenData;
-        server.on("/", handleRoot);
-        server.on("/config", handleConfigForm);
-        server.on("/json-config", handleJSONConfigForm);
-        server.on("/api/json-config", HTTPMethod::HTTP_POST, handleJSONConfigSubmit);
+        // fetch request data
 
-        server.on("/metrics", handlePromMetrics);
-        server.on("/api/metrics", handleAPIMetrics);
-        server.on("/api/config", handleJSONConfigFetch);
-        server.on("/api/config", HTTPMethod::HTTP_POST, handleConfigSubmission);
+        // fullfill config
 
-        server.on("/set-wifi", handleWiFiFormSubmit);
-        server.on("/update", handleUpdateForm);
-        server.on("/api/update", HTTP_POST, updateConnectionClosed, updateHandler);
+        // save config
 
-        server.begin();
+        ClimateConfig config = Eeprom::loadClimateConfig();
+        DynamicJsonDocument json = config.toJSON();
 
-        IPAddress ip;
-        if (isSetupMode)
-        {
-            ip = WiFi.softAPIP();
-        }
-        else
-        {
-            ip = WiFi.localIP();
-        }
-        return std::string(ip.toString().c_str());
+        std::string requestBody;
+        serializeJson(json, requestBody);
+
+        request->send(200, "application/json", requestBody.c_str());
     }
 
-    void handleAPIMetrics()
+    void onGetMetrics(AsyncWebServerRequest *request)
     {
-
         DynamicJsonDocument doc(1024);
 
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
@@ -131,117 +143,22 @@ namespace HttpServer
         std::string requestBody;
         serializeJson(doc, requestBody);
 
-        server.send(200, "application/json", requestBody.c_str());
+        request->send(200, "application/json", requestBody.c_str());
     }
 
-    void handleJSONConfigFetch()
+    void start(Data *givenData, bool isSetupMode)
     {
-        Config config = Eeprom::loadConfig();
-        DynamicJsonDocument json = config.toJSON();
+        data = givenData;
 
-        std::string requestBody;
-        serializeJson(json, requestBody);
+        server.on("/", HTTP_GET, onRoot);
+        server.on("/api/metrics", HTTP_GET, onGetMetrics);
+        server.on("/api/config-controller", HTTP_GET, onGetControllerConfig);
+        server.on("/api/config-controller", HTTP_POST, onPostControllerConfig);
+        server.on("/api/reset", HTTP_POST, onPostReset);
+        server.on("/api/config-climate", HTTP_GET, onGetClimateConfig);
 
-        server.send(200, "application/json", requestBody.c_str());
-    }
+        server.onNotFound(notFound);
 
-    void handlePromMetrics()
-    {
-        String message = "wifi_network ";
-        Serial.println((*data).metadata.wifiName.c_str());
-        message += (*data).metadata.wifiName.c_str();
-        message += "\n";
-        server.send(200, "text/plain", message);
-    }
-
-    void handleConfigSubmission()
-    {
-        String id = server.arg("id");
-
-        Eeprom::writeIDToMemory(std::string(id.c_str()));
-
-        server.send(200, "text/plain", "Config saved, controller will reboot in 3 seconds and will connect to wifi");
-
-        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
-
-        ESP.restart();
-    }
-
-    void handleWiFiFormSubmit()
-    {
-        // String response_success = "<h1>Success</h1>";
-        // response_success += "<h2>Device will restart in 3 seconds</h2>";
-
-        // String response_error = "<h1>Error</h1>";
-        // response_error += "<h2><a href='/'>Go back</a>to try again";
-
-        String ssid = server.arg("ssid");
-        String pass = server.arg("password");
-        String id = server.arg("id");
-
-        Eeprom::writeIDToMemory(std::string(id.c_str()));
-        Eeprom::writeWiFiPassToMemory(std::string(pass.c_str()));
-        Eeprom::writeWiFiSSIDToMemory(std::string(ssid.c_str()));
-
-        Eeprom::setMemory();
-
-        server.send(200, "text/plain", "Wifi credentials saved, controller will reboot in 3 seconds and will connect to wifi");
-
-        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
-
-        ESP.restart();
-    }
-
-    void handleJSONConfigSubmit()
-    {
-        // String response_success = "<h1>Success</h1>";
-        // response_success += "<h2>Device will restart in 3 seconds</h2>";
-
-        // String response_error = "<h1>Error</h1>";
-        // response_error += "<h2><a href='/'>Go back</a>to try again";
-
-        String configRaw = server.arg("config");
-
-        Serial.println(configRaw.c_str());
-
-        Config config = Config::fromJSON(std::string(configRaw.c_str()));
-
-        Eeprom::saveConfig(config);
-
-        Eeprom::setMemory();
-
-        server.send(200, "text/plain", "Config saved, controller will reboot in 3 seconds and will connect to wifi");
-
-        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
-
-        ESP.restart();
-    }
-
-    void handleNotFound()
-    {
-        String message = "File Not Found\n\n";
-        message += "URI: ";
-        message += server.uri();
-        message += "\nMethod: ";
-        message += (server.method() == HTTP_GET) ? "GET" : "POST";
-        message += "\nArguments: ";
-        message += server.args();
-        message += "\n";
-        for (uint8_t i = 0; i < server.args(); i++)
-        {
-            message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-        }
-        server.send(404, "text/plain", message);
-    }
-
-    void handleClientLoop()
-    {
-        server.handleClient();
-    }
-
-    void sendForm(WiFiClient client)
-    {
-        client.println(WIFI_FORM);
-        client.println();
+        server.begin();
     }
 }

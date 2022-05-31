@@ -259,7 +259,7 @@ namespace Climate
 
     ClimateZone climateZones[MAX_CLIMATE_ZONES];
 
-    void setup(Config config)
+    void setup(ClimateConfig config)
     {
         pinMode(SENSORS_ENABLE_PIN, OUTPUT);
         pinMode(RELAY_0_PIN, OUTPUT);

@@ -3,11 +3,11 @@
 
 
 
-Config loadInitConfig()
+ClimateConfig loadInitClimateConfig()
 {
     // load config from eeprom
 
-    Config config = Config();
+    ClimateConfig config = ClimateConfig();
 
     config.climateZoneConfigs[0].isSet = true;
     config.climateZoneConfigs[0].name = "hot zone";
