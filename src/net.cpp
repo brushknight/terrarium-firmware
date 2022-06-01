@@ -14,7 +14,7 @@ namespace Net
     {
         WiFi.mode(WIFI_AP);
         IPAddress IP = {10, 0, 0, 1};
-        IPAddress NMask = IPAddress (255, 255, 255, 0);
+        IPAddress NMask = IPAddress(255, 255, 255, 0);
         WiFi.softAPConfig(IP, IP, NMask);
         // Connect to Wi - Fi network with SSID and password
         Serial.print("Setting AP (Access Point)…");
@@ -48,7 +48,7 @@ namespace Net
         delay(100);
 
         char buffer[100];
-        sprintf(buffer, "%s#%s", "Terrarium controller ID", Eeprom::readIDFromMemory());
+        sprintf(buffer, "%s#%s", "Terrarium controller ID", Eeprom::loadControllerConfig().id.c_str());
 
         WiFi.setHostname(buffer);
 
@@ -57,9 +57,12 @@ namespace Net
         // Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
         // Serial.println(Eeprom::readWiFiPassFromMemory().c_str());
 
-        (*givenData).metadata.wifiName = Eeprom::readWiFiSSIDFromMemory().c_str();
+        std::string wifiSSID = Eeprom::loadControllerConfig().wifiSSID;
+        std::string wifiPassword = Eeprom::loadControllerConfig().wifiPassword;
 
-        WiFi.begin(Eeprom::readWiFiSSIDFromMemory().c_str(), Eeprom::readWiFiPassFromMemory().c_str());
+        (*givenData).metadata.wifiName = wifiSSID.c_str();
+
+        WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 
         while (!WiFi.isConnected())
         {
@@ -77,7 +80,7 @@ namespace Net
             if (attempts >= 200)
             {
                 attempts = 0;
-                //WiFi.begin(WIFI_SSID, WIFI_PASS);
+                // WiFi.begin(WIFI_SSID, WIFI_PASS);
             }
         }
 

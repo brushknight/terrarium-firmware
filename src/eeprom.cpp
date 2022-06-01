@@ -25,6 +25,7 @@ namespace Eeprom
 
     void setup()
     {
+        EEPROM.begin(4000);
 
         if (externalEEPROM.begin(externallAddress))
         {
@@ -69,201 +70,6 @@ namespace Eeprom
         return externalEEPROM.read(SET_INDEX) == 1;
     }
 
-    void setMemory()
-    {
-        if (isExternalEEPROM)
-        {
-            externalEEPROM.put(SET_INDEX, 1);
-        }
-        else
-        {
-            EEPROM.write(SET_INDEX, 1);
-            EEPROM.commit();
-        }
-    }
-
-    void resetMemory()
-    {
-        if (isExternalEEPROM)
-        {
-            externalEEPROM.put(SET_INDEX, 0);
-        }
-        else
-        {
-            EEPROM.write(SET_INDEX, 0);
-            EEPROM.commit();
-        }
-    }
-
-    std::string readWiFiSSIDFromMemory()
-    {
-        if (isExternalEEPROM)
-        {
-            return loadClimateConfig().wifiSSID;
-        }
-        else
-        {
-            char ssid[WIFI_SSID_LEN];
-
-            for (int i = 0; i < WIFI_SSID_LEN; ++i)
-            {
-                ssid[i] = char(EEPROM.read(i + WIFI_SSID_INDEX));
-            }
-
-            Serial.print("SSID: ");
-            Serial.println(ssid);
-            return std::string(ssid);
-        }
-    }
-
-    std::string readWiFiPassFromMemory()
-    {
-        if (isExternalEEPROM)
-        {
-            return loadClimateConfig().wifiPassword;
-        }
-        else
-        {
-            char pass[WIFI_PASS_LEN];
-
-            for (int i = 0; i < WIFI_PASS_LEN; ++i)
-            {
-                pass[i] = char(EEPROM.read(i + WIFI_PASS_INDEX));
-            }
-            Serial.print("PASS: ");
-            Serial.println(pass);
-            return std::string(pass);
-        }
-    }
-
-    std::string readIDFromMemory()
-    {
-
-        if (isExternalEEPROM)
-        {
-            return loadClimateConfig().id;
-        }
-        else
-        {
-            char id[ID_INDEX_LEN];
-
-            for (int i = 0; i < ID_INDEX_LEN; ++i)
-            {
-                id[i] = char(EEPROM.read(i + ID_INDEX));
-            }
-            Serial.print("ID: ");
-            Serial.println(id);
-            return std::string(id);
-        }
-    }
-
-    void writeWiFiSSIDToMemory(std::string ssid)
-    {
-        if (isExternalEEPROM)
-        {
-            ClimateConfig config;
-            if (isMemorySet())
-            {
-                config = loadClimateConfig();
-            }
-            else
-            {
-                config = loadClimateConfig();
-            }
-            Serial.println("Saving SSID...");
-            config.wifiSSID = ssid;
-            saveClimateConfig(config);
-            Serial.println("Saving SSID [OK]");
-        }
-        else
-        {
-            Serial.println("clearing eeprom");
-            for (int i = 0; i < WIFI_SSID_LEN; ++i)
-            {
-                EEPROM.write(i + WIFI_SSID_INDEX, 0);
-            }
-            Serial.println("writing eeprom ssid:");
-            Serial.println(ssid.c_str());
-            // TODO add 32 max limit
-            for (int i = 0; i < ssid.length(); ++i)
-            {
-                EEPROM.write(i + WIFI_SSID_INDEX, ssid[i]);
-                // Serial.print("Wrote: ");
-                // Serial.println(ssid[i]);
-            }
-            EEPROM.commit();
-        }
-    }
-
-    void writeWiFiPassToMemory(std::string pass)
-    {
-        if (isExternalEEPROM)
-        {
-            ClimateConfig config;
-            if (isMemorySet())
-            {
-                config = loadClimateConfig();
-            }
-            else
-            {
-                config = loadClimateConfig();
-            }
-            config.wifiPassword = pass;
-            saveClimateConfig(config);
-        }
-        else
-        {
-            Serial.println("clearing eeprom");
-            for (int i = 0; i < 32; ++i)
-            {
-                EEPROM.write(i + WIFI_PASS_INDEX, 0);
-            }
-            Serial.print("writing eeprom ssid:");
-            Serial.println(pass.c_str());
-            // TODO add 32 max limit
-            for (int i = 0; i < pass.length(); ++i)
-            {
-                EEPROM.write(i + WIFI_PASS_INDEX, pass[i]);
-                // Serial.print("Wrote: ");
-                // Serial.println(pass[i]);
-            }
-            EEPROM.commit();
-        }
-    }
-
-    void writeIDToMemory(std::string id)
-    {
-        if (isExternalEEPROM)
-        {
-            ClimateConfig config;
-            if (isMemorySet())
-            {
-                config = loadClimateConfig();
-            }
-            else
-            {
-                config = loadClimateConfig();
-            }
-            config.id = id;
-            saveClimateConfig(config);
-        }
-        else
-        {
-            Serial.println("clearing eeprom");
-            for (int i = 0; i < ID_INDEX_LEN; ++i)
-            {
-                EEPROM.write(i + ID_INDEX, 0);
-            }
-            Serial.print("writing eeprom id:");
-            Serial.println(id.c_str());
-            for (int i = 0; i < id.length(); ++i)
-            {
-                EEPROM.write(i + ID_INDEX, id[i]);
-            }
-            EEPROM.commit();
-        }
-    }
-
     void saveControllerConfig(ControllerConfig config)
     {
 
@@ -278,6 +84,8 @@ namespace Eeprom
         {
             EEPROM.write(i + CONTROLLER_CONFIG_INDEX, json[i]);
         }
+        EEPROM.write(SET_INDEX, 1);
+
         Serial.println("Saved into ESP32 EEPROM [OK]");
 
         if (isExternalEEPROM)
@@ -287,7 +95,7 @@ namespace Eeprom
             {
                 externalEEPROM.write(i + CONTROLLER_CONFIG_INDEX, json[i]);
             }
-
+            externalEEPROM.write(SET_INDEX, 1);
             Serial.println("Saved into external EEPROM [OK]");
         }
     }

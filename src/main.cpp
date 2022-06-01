@@ -57,7 +57,7 @@ void demoSetup()
   Status::setup();
   Utils::scanForI2C();
 
-  Eeprom::resetMemory();
+  // Eeprom::clear();
 }
 
 void demoLoop(void *parameter)
@@ -65,7 +65,6 @@ void demoLoop(void *parameter)
   ClimateConfig config = loadInitClimateConfig();
   config.climateZoneConfigs[0].name = "test demo zone";
   Eeprom::saveClimateConfig(config);
-  Eeprom::writeWiFiSSIDToMemory("DEMO Board");
 
   for (;;)
   {
@@ -119,7 +118,7 @@ void setup()
 {
   Serial.begin(115200);
   Wire.begin();
-  EEPROM.begin(512);
+
   Eeprom::setup();
 
   if (DEMO_BOARD)
@@ -152,6 +151,7 @@ void setup()
 
   if (!Eeprom::isMemorySet())
   {
+    // Setup mode
     initialSetupMode = true;
     data.initialSetup.apName = Net::setupAP();
     data.initialSetup.isInSetupMode = true;
@@ -164,7 +164,7 @@ void setup()
     return;
   }
 
-  data.metadata.id = Eeprom::readIDFromMemory();
+  data.metadata.id = Eeprom::loadControllerConfig().id;
 
   // if (!Utils::isMemorySet())
   // {

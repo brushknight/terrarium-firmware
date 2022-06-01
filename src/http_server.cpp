@@ -52,50 +52,33 @@ namespace HttpServer
         for (int i = 0; i < params; i++)
         {
             AsyncWebParameter *p = request->getParam(i);
-            
-            Serial.println(p->name().c_str() == String("wifi_ssid").c_str());
-            Serial.println(p->name().c_str() == String("wifi_pass").c_str());
-            Serial.println(p->name().c_str() == String("id").c_str());
 
-            if (p->name().c_str() == String("wifi_ssid").c_str())
+            if (p->name().compareTo(String("wifi_ssid")) == 0)
             {
 
                 config.wifiSSID = p->value().c_str();
             }
 
-            if (p->name().c_str() == String("wifi_pass").c_str())
+            if (p->name().compareTo(String("wifi_pass")) == 0)
             {
-                Serial.println(p->name().c_str() == String("wifi_pass").c_str());
                 config.wifiPassword = p->value().c_str();
             }
 
-            if (p->name().c_str() == String("id").c_str())
+            if (p->name().compareTo(String("id")) == 0)
             {
-                Serial.println(p->name().c_str() == String("id").c_str());
                 config.id = p->value().c_str();
             }
-
-            Serial.printf("POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
         }
+
+        // do some validation
 
         Eeprom::saveControllerConfig(config);
 
-        // temporary
+        request->send(200, "text/plain", "Controller configuration updated, rebooting in 3 seconds");
 
-        DynamicJsonDocument json = config.toJSON();
+        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
 
-        std::string requestBody;
-        serializeJson(json, requestBody);
-
-        request->send(200, "application/json", requestBody.c_str());
-
-        // print success form
-
-        // reboot
-
-        // vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
-
-        // ESP.restart();
+        ESP.restart();
     }
 
     void onPostClimateConfig(AsyncWebServerRequest *request)

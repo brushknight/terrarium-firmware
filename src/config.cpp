@@ -120,27 +120,27 @@ ClimateConfig loadInitClimateConfig()
     // config.climateZoneConfigs[0].schedule[4].temperature = 25;
     // config.climateZoneConfigs[0].schedule[4].isSet = true;
 
-    config.climateZoneConfigs[1].isSet = true;
-    config.climateZoneConfigs[1].name = "cold zone";
-    config.climateZoneConfigs[1].slug = "cold_zone";
+    // config.climateZoneConfigs[1].isSet = true;
+    // config.climateZoneConfigs[1].name = "cold zone";
+    // config.climateZoneConfigs[1].slug = "cold_zone";
 
-    config.climateZoneConfigs[1].dht22SensorPins[0] = DHT_1;
-    // config.climateZoneConfigs[1].dht22SensorPins[0] = DHT_2; // 4 sensors terr
-    // config.climateZoneConfigs[1].dht22SensorPins[1] = DHT_3; // 4 sensors terr
-    config.climateZoneConfigs[1].dht22SensorPins[1] = 0;
-    config.climateZoneConfigs[1].dht22SensorPins[2] = 0;
+    // config.climateZoneConfigs[1].dht22SensorPins[0] = DHT_1;
+    // // config.climateZoneConfigs[1].dht22SensorPins[0] = DHT_2; // 4 sensors terr
+    // // config.climateZoneConfigs[1].dht22SensorPins[1] = DHT_3; // 4 sensors terr
+    // config.climateZoneConfigs[1].dht22SensorPins[1] = 0;
+    // config.climateZoneConfigs[1].dht22SensorPins[2] = 0;
 
-    config.climateZoneConfigs[1].relayPin = RELAY_1_PIN;
+    // config.climateZoneConfigs[1].relayPin = RELAY_1_PIN;
 
-    // constant 23
-    config.climateZoneConfigs[1].schedule[0].sinceHour = 9 + hourOffset;
-    config.climateZoneConfigs[1].schedule[0].sinceMinute = 0;
-    config.climateZoneConfigs[1].schedule[0].untilHour = 9 + hourOffset;
-    config.climateZoneConfigs[1].schedule[0].untilMinute = 0;
-    config.climateZoneConfigs[1].schedule[0].temperature = 23;
-    config.climateZoneConfigs[1].schedule[0].isSet = true;
+    // // constant 23
+    // config.climateZoneConfigs[1].schedule[0].sinceHour = 9 + hourOffset;
+    // config.climateZoneConfigs[1].schedule[0].sinceMinute = 0;
+    // config.climateZoneConfigs[1].schedule[0].untilHour = 9 + hourOffset;
+    // config.climateZoneConfigs[1].schedule[0].untilMinute = 0;
+    // config.climateZoneConfigs[1].schedule[0].temperature = 23;
+    // config.climateZoneConfigs[1].schedule[0].isSet = true;
 
-    config.climateZoneConfigs[2].isSet = false;
+    // config.climateZoneConfigs[2].isSet = false;
 
     return config;
 }
