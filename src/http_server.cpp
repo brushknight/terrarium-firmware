@@ -21,6 +21,11 @@ namespace HttpServer
         request->send_P(200, "text/html", CONTROLLER_CONFIG_FORM);
     }
 
+    void onFormClimateConfig(AsyncWebServerRequest *request)
+    {
+        request->send_P(200, "text/html", CLIMATE_CONFIG_FORM);
+    }
+
     void onGetControllerConfig(AsyncWebServerRequest *request)
     {
         ClimateConfig config = Eeprom::loadClimateConfig();
@@ -83,19 +88,24 @@ namespace HttpServer
 
     void onPostClimateConfig(AsyncWebServerRequest *request)
     {
-        // fetch request data
 
-        // fullfill config
+        ClimateConfig config;
+        int params = request->params();
+        for (int i = 0; i < params; i++)
+        {
+            AsyncWebParameter *p = request->getParam(i);
 
-        // save config
+            if (p->name().compareTo(String("json_config")) == 0)
+            {
 
-        ClimateConfig config = Eeprom::loadClimateConfig();
-        DynamicJsonDocument json = config.toJSON();
+                config = ClimateConfig::fromJSON(p->value().c_str());
+                Eeprom::saveClimateConfig(config);
 
-        std::string requestBody;
-        serializeJson(json, requestBody);
+                request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
+            }
+        }
 
-        request->send(200, "application/json", requestBody.c_str());
+        request->send(502, "text/plain", "Internal server error");
     }
 
     void onGetMetrics(AsyncWebServerRequest *request)
@@ -139,7 +149,9 @@ namespace HttpServer
         server.on("/api/config-controller", HTTP_POST, onPostControllerConfig);
         server.on("/api/reset", HTTP_POST, onPostReset);
         server.on("/api/config-climate", HTTP_GET, onGetClimateConfig);
+        server.on("/api/config-climate", HTTP_POST, onPostClimateConfig);
 
+        server.on("/climate", HTTP_GET, onFormClimateConfig);
         server.onNotFound(notFound);
 
         server.begin();

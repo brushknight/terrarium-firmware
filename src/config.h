@@ -147,9 +147,6 @@ class ClimateConfig
 {
 public:
     ClimateZoneConfig climateZoneConfigs[MAX_CLIMATE_ZONES];
-    std::string wifiSSID;
-    std::string wifiPassword;
-    std::string id;
 
     static int jsonSize()
     {
@@ -162,9 +159,6 @@ public:
         {
             doc["climateZoneConfigs"][i] = climateZoneConfigs[i].toJSON();
         }
-        doc["wifiSSID"] = wifiSSID;
-        doc["wifiPassword"] = wifiPassword;
-        doc["id"] = id;
         return doc;
     }
     static ClimateConfig fromJSON(std::string json)
@@ -179,11 +173,6 @@ public:
         {
             config.climateZoneConfigs[i] = ClimateZoneConfig::fromJSON(doc["climateZoneConfigs"][i]);
         }
-
-        config.wifiSSID = doc["wifiSSID"].as<std::string>();
-        config.wifiPassword = doc["wifiPassword"].as<std::string>();
-        config.id = doc["id"].as<std::string>();
-
         return config;
     }
 };

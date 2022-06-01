@@ -19,6 +19,8 @@ namespace Eeprom
     ControllerConfig loadControllerConfigFromExternalEEPROM();
     bool isControllerConfigSetESP32();
     bool isControllerConfigSetExternalEEPROM();
+    bool isClimateConfigSetExternalEEPROM();
+    void saveClimateConfigTask(void *parameter);
 }
 
 #endif

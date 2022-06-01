@@ -1,4 +1,4 @@
-const char JSON_CONFIG_FORM[] =
+const char CLIMATE_CONFIG_FORM[] =
     "<!DOCTYPE HTML>"
     "<html>"
     "<head>"
@@ -11,11 +11,11 @@ const char JSON_CONFIG_FORM[] =
     "</style>"
     "</head>"
     "<body>"
-    "<h3>Enter your WiFi credentials</h3>"
-    "<form action=\"/api/json-config\" method=\"post\">"
+    "<h3>Climate configuration</h3>"
+    "<form action=\"/api/config-climate\" method=\"post\">"
     "<p>"
     "<label>Config: JSON</label>"
-    "<textarea name=\"ssid\"></textarea><br>"
+    "<textarea name=\"json_config\"></textarea><br>"
     "<input type=\"submit\" value=\"Save\">"
     "</p>"
     "</form>"

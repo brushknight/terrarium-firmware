@@ -27,6 +27,8 @@ void displayRender(void *parameter)
 
 void climateControl(void *parameter)
 {
+  Climate::setup(Eeprom::loadClimateConfig());
+  Climate::enableSensors();
   for (;;)
   {
     DataClimateZone *result = Climate::control(RealTime::getHour(), RealTime::getMinute());
@@ -120,6 +122,8 @@ void setup()
   Wire.begin();
 
   Eeprom::setup();
+  // warmup
+  Eeprom::loadClimateConfig();
 
   if (DEMO_BOARD)
   {
@@ -145,7 +149,7 @@ void setup()
       "displayRender",
       4192,
       NULL,
-      1,
+      2,
       NULL,
       1);
 
@@ -173,22 +177,24 @@ void setup()
   //   Utils::setMemory();
   // }
 
-  Climate::setup(loadInitClimateConfig());
-  Climate::enableSensors();
   if (RealTime::isWiFiRequired())
   {
     Net::connect(&data, false);
   }
   RealTime::setup(true);
 
-  xTaskCreatePinnedToCore(
-      climateControl,
-      "climateControl",
-      4192,
-      NULL,
-      1,
-      NULL,
-      0);
+  if (Eeprom::isClimateConfigSetExternalEEPROM())
+  {
+
+    xTaskCreatePinnedToCore(
+        climateControl,
+        "climateControl",
+        1024 * 8,
+        NULL,
+        1,
+        NULL,
+        0);
+  }
 
   xTaskCreatePinnedToCore(
       netWatcher,
