@@ -11,7 +11,7 @@ namespace Utils
 
     void log(const char str[])
     {
-        Serial.print(str);
+        Serial.println(str);
     }
 
     void TCA9548A(uint8_t bus)

@@ -9,6 +9,34 @@ namespace HttpServer
     void onPostReset(AsyncWebServerRequest *request)
     {
         Eeprom::clear();
+
+        request->send(200, "text/plain", "Controller & climate configuration cleared, rebooting in 3 seconds");
+
+        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+
+        ESP.restart();
+    }
+
+    void onPostResetController(AsyncWebServerRequest *request)
+    {
+        Eeprom::clearController();
+
+        request->send(200, "text/plain", "Controller configuration cleared, rebooting in 3 seconds");
+
+        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+
+        ESP.restart();
+    }
+
+    void onPostResetClimate(AsyncWebServerRequest *request)
+    {
+        Eeprom::clearClimate();
+
+        request->send(200, "text/plain", "Climate configuration cleared, rebooting in 3 seconds");
+
+        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+
+        ESP.restart();
     }
 
     void notFound(AsyncWebServerRequest *request)
@@ -110,7 +138,7 @@ namespace HttpServer
 
     void onGetMetrics(AsyncWebServerRequest *request)
     {
-        DynamicJsonDocument doc(1024);
+        DynamicJsonDocument doc(1024 + MAX_LIGHT_EVENTS * LightEvent::jsonSize());
 
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
         doc["metadata"]["id"] = (*data).metadata.id.c_str();
@@ -133,6 +161,19 @@ namespace HttpServer
             }
         }
 
+       
+
+        int lightEventIndex = 0;
+        for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
+        {
+            LightEvent event = (*data).lightEvents[i];
+            if (event.isSet())
+            {
+                doc["light"][lightEventIndex] = event.toJSON();
+                lightEventIndex++;
+            }
+        }
+
         std::string requestBody;
         serializeJson(doc, requestBody);
 
@@ -148,11 +189,15 @@ namespace HttpServer
         server.on("/api/config-controller", HTTP_GET, onGetControllerConfig);
         server.on("/api/config-controller", HTTP_POST, onPostControllerConfig);
         server.on("/api/reset", HTTP_POST, onPostReset);
+        server.on("/api/reset-controller", HTTP_POST, onPostResetController);
+        server.on("/api/reset-climate", HTTP_POST, onPostResetClimate);
         server.on("/api/config-climate", HTTP_GET, onGetClimateConfig);
         server.on("/api/config-climate", HTTP_POST, onPostClimateConfig);
 
         server.on("/climate", HTTP_GET, onFormClimateConfig);
         server.onNotFound(notFound);
+
+        Serial.println("Starting server");
 
         server.begin();
     }

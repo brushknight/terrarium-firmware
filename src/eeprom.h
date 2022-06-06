@@ -11,6 +11,8 @@ namespace Eeprom
     bool isMemorySet();
 
     void clear();
+    void clearClimate();
+    void clearController();
     void saveControllerConfig(ControllerConfig config);
     void saveClimateConfig(ClimateConfig config);
     ClimateConfig loadClimateConfig();

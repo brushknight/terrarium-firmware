@@ -1,8 +1,5 @@
 #include "config.h"
 
-
-
-
 ClimateConfig loadInitClimateConfig()
 {
     // load config from eeprom
@@ -141,6 +138,12 @@ ClimateConfig loadInitClimateConfig()
     // config.climateZoneConfigs[1].schedule[0].isSet = true;
 
     // config.climateZoneConfigs[2].isSet = false;
+
+    config.lightEvents[0].name = "UVB";
+    config.lightEvents[0].intencity = 90;
+    config.lightEvents[0].relay = 25;
+    config.lightEvents[0].since = "08:00";
+    config.lightEvents[0].until = "20:00";
 
     return config;
 }

@@ -50,16 +50,31 @@ namespace Eeprom
 
     void clear()
     {
-        for (int i = 0; i < CONTROLLER_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH; i++)
-        {
-            EEPROM.write(i, 0);
-        }
+        clearController();
+        clearClimate();
+    }
+
+    void clearClimate()
+    {
         if (isExternalEEPROM)
         {
+            Serial.println("Clearing external EEPROM");
             for (int i = 0; i < externalEEPROM.length(); i++)
             {
                 externalEEPROM.write(i, 0);
+                if (i % 1000 == 0)
+                {
+                    Serial.println(i);
+                }
             }
+        }
+    }
+
+    void clearController()
+    {
+        for (int i = 0; i < CONTROLLER_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH; i++)
+        {
+            EEPROM.write(i, 0);
         }
     }
 
@@ -170,12 +185,13 @@ namespace Eeprom
         {
             raw[i] = char(externalEEPROM.read(i + CONTROLLER_CONFIG_INDEX));
         }
-        Serial.println(raw);
+        //Serial.println(raw);
 
         std::string json = std::string(raw);
 
-        Serial.println(json.c_str());
+        //Serial.println(json.c_str());
         config = ControllerConfig::fromJSON(json);
+        Serial.println("Loaded controller config from external EEPROM [OK]");
         return config;
     }
 
@@ -192,7 +208,7 @@ namespace Eeprom
         for (int i = 0; i < json.length(); ++i)
         {
             externalEEPROM.write(i + CLIMATE_CONFIG_INDEX, json[i]);
-            //Serial.println(json[i]);
+            // Serial.println(json[i]);
         }
         Serial.println("Saving [OK]");
 
@@ -219,14 +235,12 @@ namespace Eeprom
         }
         else
         {
-            Serial.println("No storage found");
+            Serial.println("External eeprom: No storage found");
         }
     }
 
     ClimateConfig loadClimateConfig()
     {
-
-        Serial.println("Loading climate config");
 
         if (isClimateConfigLoading)
         {
@@ -241,6 +255,8 @@ namespace Eeprom
             }
         }
 
+        Serial.println("Loading climate config");
+
         if (wasClimateConfigLoaded)
         {
             return climateConfig;
@@ -248,25 +264,26 @@ namespace Eeprom
 
         if (isExternalEEPROM && isClimateConfigSetExternalEEPROM())
         {
+            isClimateConfigLoading = true;
+            Serial.println("Loading climate config from external eeprom");
+
             char raw[CLIMATE_CONFIG_LENGTH];
 
-            isClimateConfigLoading = true;
-
-            Serial.println("Loading climate config from external eeprom");
             for (int i = 0; i < CLIMATE_CONFIG_LENGTH; ++i)
             {
                 raw[i] = char(externalEEPROM.read(i + CLIMATE_CONFIG_INDEX));
-                //Serial.println(raw[i]);
+                // Serial.println(raw[i]);
             }
 
-            Serial.println(raw);
+            //Serial.println(raw);
 
             std::string json = std::string(raw);
 
-            Serial.println(json.c_str());
+            //Serial.println(json.c_str());
             climateConfig = ClimateConfig::fromJSON(json);
             wasClimateConfigLoaded = true;
             isClimateConfigLoading = false;
+            Serial.println("Loaded climate config from external eeprom [OK]");
         }
         else
         {

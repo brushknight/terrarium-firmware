@@ -8,7 +8,7 @@ namespace RealTime
     const char *ntpServer3 = "1.europe.pool.ntp.org";
     const long gmtOffset_sec = 3600;  // todo fix this to be +1
     const int daylightOffset_sec = 0; // fix this to accept DST
-    //const char* timezoneNTP = "CET";
+    // const char* timezoneNTP = "CET";
 
     // setup(rtc_enabled)
     // syncFromNTP()
@@ -46,7 +46,7 @@ namespace RealTime
                 Serial.println("Couldn't find RTC, check wiring!");
                 Serial.flush();
                 syncFromNTP();
-                //abort(); -> only if NTP time failed
+                // abort(); -> only if NTP time failed
 
                 printLocalTime();
 
@@ -73,7 +73,6 @@ namespace RealTime
             syncFromNTP();
         }
         printLocalTime();
-        Serial.println("RealTime: setup finished");
         Utils::log("RealTime: setup finished");
         // Status::setFetchingTimeStatus(Status::IDLE);
     }
@@ -100,7 +99,7 @@ namespace RealTime
 
             timezone tz_utcPlus1 = {gmtOffset_sec, daylightOffset_sec};
 
-            //setenv("TZ",timezone.c_str(),1);
+            // setenv("TZ",timezone.c_str(),1);
 
             settimeofday(&tv, &tz_utcPlus1);
 
@@ -115,12 +114,13 @@ namespace RealTime
     void syncFromNTP()
     {
         Serial.println("RealTime: sync from NTP");
+        Net::connect();
         struct tm timeinfo;
         int attempts = 0;
         while (!getLocalTime(&timeinfo))
         {
             Serial.println("Failed to obtain time, retry");
-            //configTzTime(timezoneNTP, ntpServer1, ntpServer2, ntpServer3);
+            // configTzTime(timezoneNTP, ntpServer1, ntpServer2, ntpServer3);
             configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
@@ -141,7 +141,7 @@ namespace RealTime
         }
         else
         {
-            Serial.print("Failed to flash RTC");
+            Serial.println("Failed to flash RTC");
             return false;
         }
     }
@@ -179,7 +179,7 @@ namespace RealTime
         if (!getLocalTime(&timeinfo))
         {
             Serial.println("getMinute() Failed to obtain time");
-            //abort();
+            // abort();
             return 0;
         }
 
@@ -196,7 +196,7 @@ namespace RealTime
         if (!getLocalTime(&timeinfo))
         {
             Serial.println("getSecond() Failed to obtain time");
-            //abort();
+            // abort();
             return 0;
         }
 

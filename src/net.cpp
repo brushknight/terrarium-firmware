@@ -29,7 +29,14 @@ namespace Net
         return std::string(ssid);
     }
 
-    void connect(Data *givenData, bool interactive)
+    void setWiFiName(Data *givenData)
+    {
+        std::string wifiSSID = Eeprom::loadControllerConfig().wifiSSID;
+
+        (*givenData).metadata.wifiName = wifiSSID.c_str();
+    }
+
+    void connect()
     {
 
         if (WiFi.isConnected())
@@ -60,20 +67,11 @@ namespace Net
         std::string wifiSSID = Eeprom::loadControllerConfig().wifiSSID;
         std::string wifiPassword = Eeprom::loadControllerConfig().wifiPassword;
 
-        (*givenData).metadata.wifiName = wifiSSID.c_str();
-
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 
         while (!WiFi.isConnected())
         {
             attempts++;
-            if (interactive)
-            {
-                if (attempts % 10 == 0)
-                {
-                    // Display::renderConnectingToWifi(WIFI_SSID, attempts / 10);
-                }
-            }
             delay(1 * 100);
 
             Serial.println(statusToString(WiFi.status()));
@@ -88,10 +86,7 @@ namespace Net
         Serial.println("You're connected to the network");
         Serial.printf("Your IP is: %s\n", WiFi.localIP().toString());
         Serial.println(WiFi.localIP().toString());
-        if (interactive)
-        {
-            // Display::renderConnectedToWifi(WIFI_SSID);
-        }
+
         // Status::setConnectingToWiFiStatus(Status::IDLE);
     }
 

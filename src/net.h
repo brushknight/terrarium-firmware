@@ -10,8 +10,9 @@ namespace Net
 {
     bool isConnected();
     std::string setupAP();
-    void connect(Data *givenData, bool interactive);
+    void connect();
     char *statusToString(int code);
+    void setWiFiName(Data *givenData);
 
 }
 

@@ -27,10 +27,12 @@
 
 #define MAX_DHT22_SENSORS_IN_CLIMATE_ZONE int(3)
 #define MAX_CLIMATE_ZONES int(3)
+#define MAX_LIGHT_EVENTS int(10)
 #define MAX_SENSOR_RETRY int(3)
 #define MAX_SCHEDULE_COUNT int(10)
 
 #define CLIMATE_LOOP_INTERVAL_SEC 5
+#define LIGHT_LOOP_INTERVAL_SEC 5
 #define DISPLAY_RENDER_INTERVAL_SEC 1
 
 // Hardware
@@ -143,14 +145,60 @@ public:
     }
 };
 
+class LightEvent
+{
+public:
+    std::string name;
+    std::string since;
+    std::string until;
+    int relay;
+    int intencity;   // 0 - 100
+    int durationSec; // duration in seconds
+    bool isSet()
+    {
+        return relay > 0;
+    }
+    static int jsonSize()
+    {
+        return 192;
+    }
+    DynamicJsonDocument toJSON()
+    {
+        DynamicJsonDocument doc(jsonSize());
+
+        doc["name"] = name;
+        doc["since"] = since;
+        doc["until"] = until;
+        doc["relay"] = relay;
+        doc["intencity"] = intencity;
+        doc["durationSec"] = durationSec;
+
+        return doc;
+    }
+    static LightEvent fromJSON(DynamicJsonDocument doc)
+    {
+        LightEvent event;
+
+        event.name = doc["name"].as<std::string>();
+        event.since = doc["since"].as<std::string>();
+        event.until = doc["until"].as<std::string>();
+        event.relay = doc["relay"];
+        event.intencity = doc["intencity"];
+        event.durationSec = doc["durationSec"];
+
+        return event;
+    }
+};
+
 class ClimateConfig
 {
 public:
     ClimateZoneConfig climateZoneConfigs[MAX_CLIMATE_ZONES];
+    LightEvent lightEvents[MAX_LIGHT_EVENTS];
 
     static int jsonSize()
     {
-        return ClimateZoneConfig::jsonSize() * MAX_CLIMATE_ZONES;
+        return ClimateZoneConfig::jsonSize() * MAX_CLIMATE_ZONES + LightEvent::jsonSize() * MAX_LIGHT_EVENTS;
     }
     DynamicJsonDocument toJSON()
     {
@@ -159,19 +207,26 @@ public:
         {
             doc["climateZoneConfigs"][i] = climateZoneConfigs[i].toJSON();
         }
+        for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
+        {
+            doc["lightEvents"][i] = lightEvents[i].toJSON();
+        }
         return doc;
     }
     static ClimateConfig fromJSON(std::string json)
     {
         ClimateConfig config;
 
-        // load from json
         DynamicJsonDocument doc(jsonSize());
         deserializeJson(doc, json);
 
         for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
         {
             config.climateZoneConfigs[i] = ClimateZoneConfig::fromJSON(doc["climateZoneConfigs"][i]);
+        }
+        for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
+        {
+            config.lightEvents[i] = LightEvent::fromJSON(doc["lightEvents"][i]);
         }
         return config;
     }
@@ -201,7 +256,6 @@ public:
     {
         ControllerConfig config;
 
-        // load from json
         DynamicJsonDocument doc(jsonSize());
         deserializeJson(doc, json);
 

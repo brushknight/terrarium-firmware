@@ -8,6 +8,7 @@
 #include "http_server.h"
 #include "eeprom.h"
 #include "status.h"
+#include "light.h"
 
 Data data;
 ClimateConfig config;
@@ -39,6 +40,25 @@ void climateControl(void *parameter)
     }
 
     vTaskDelay(CLIMATE_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+  }
+}
+
+void lightControl(void *parameter)
+{
+  ClimateConfig config = Eeprom::loadClimateConfig();
+  Light::setup(config);
+
+  // hack
+  for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
+  {
+    data.lightEvents[i] = config.lightEvents[i];
+  }
+
+  for (;;)
+  {
+    Light::control(RealTime::getHour(), RealTime::getMinute());
+
+    vTaskDelay(LIGHT_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -116,14 +136,14 @@ void demoLoop(void *parameter)
   }
 }
 
-void setup()
+void setupTask(void *parameter)
 {
   Serial.begin(115200);
   Wire.begin();
-
   Eeprom::setup();
-  // warmup
-  Eeprom::loadClimateConfig();
+  Eeprom::loadControllerConfig();
+
+  data = Data();
 
   if (DEMO_BOARD)
   {
@@ -136,24 +156,8 @@ void setup()
         1,
         NULL,
         0);
-    return;
   }
-
-  data = Data();
-
-  // Eeprom::resetMemory();
-
-  Display::setup();
-  xTaskCreatePinnedToCore(
-      displayRender,
-      "displayRender",
-      4192,
-      NULL,
-      2,
-      NULL,
-      1);
-
-  if (!Eeprom::isMemorySet())
+  else if (!Eeprom::isMemorySet())
   {
     // Setup mode
     initialSetupMode = true;
@@ -164,49 +168,87 @@ void setup()
 
     data.initialSetup.ipAddr = std::string(WiFi.softAPIP().toString().c_str());
     HttpServer::start(&data, true);
-
     return;
   }
-
-  data.metadata.id = Eeprom::loadControllerConfig().id;
-
-  // if (!Utils::isMemorySet())
-  // {
-  //   Utils::writeWiFiSSIDToMemory(WIFI_SSID);
-  //   Utils::writeWiFiPassToMemory(WIFI_PASS);
-  //   Utils::setMemory();
-  // }
-
-  if (RealTime::isWiFiRequired())
+  else
   {
-    Net::connect(&data, false);
-  }
-  RealTime::setup(true);
 
-  if (Eeprom::isClimateConfigSetExternalEEPROM())
-  {
+    // Eeprom::clearClimate();
+    //  warmup
+    Eeprom::loadClimateConfig();
+
+    // Eeprom::resetMemory();
+
+    Display::setup();
+    xTaskCreatePinnedToCore(
+        displayRender,
+        "displayRender",
+        4192,
+        NULL,
+        2,
+        NULL,
+        1);
+
+    data.metadata.id = Eeprom::loadControllerConfig().id;
+
+    if (RealTime::isWiFiRequired())
+    {
+      Net::connect();
+      Net::setWiFiName(&data);
+    }
+    RealTime::setup(true);
+
+    if (Eeprom::isClimateConfigSetExternalEEPROM())
+    {
+
+      xTaskCreatePinnedToCore(
+          climateControl,
+          "climateControl",
+          1024 * 16,
+          NULL,
+          1,
+          NULL,
+          0);
+
+      xTaskCreatePinnedToCore(
+          lightControl,
+          "lightControl",
+          1024 * 16,
+          NULL,
+          1,
+          NULL,
+          0);
+    }
 
     xTaskCreatePinnedToCore(
-        climateControl,
-        "climateControl",
-        1024 * 8,
+        netWatcher,
+        "netWatcher",
+        1024,
         NULL,
-        1,
+        2,
         NULL,
         0);
+    Net::connect();
+    Net::setWiFiName(&data);
+    HttpServer::start(&data, false);
   }
 
+  for (;;)
+  {
+    vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
+  }
+}
+
+void setup()
+{
   xTaskCreatePinnedToCore(
-      netWatcher,
-      "netWatcher",
-      1024,
+      setupTask,
+      "setupTask",
+      1024 * 16,
       NULL,
-      2,
+      100,
       NULL,
       0);
-
-  Net::connect(&data, false);
-  HttpServer::start(&data, false);
 }
 
 void loop()

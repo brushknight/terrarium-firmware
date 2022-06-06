@@ -38,6 +38,7 @@ class Data
 public:
     // [] climate zone - temp, humid, heating phase, heater status
     DataClimateZone climateZones[MAX_CLIMATE_ZONES];
+    LightEvent lightEvents[MAX_LIGHT_EVENTS];
     // change to granular statuses
     // connection status wifi/bt
     bool WiFiStatus;

@@ -18,6 +18,8 @@ namespace HttpServer
     void onPostControllerConfig(AsyncWebServerRequest *request);
     void onGetClimateConfig(AsyncWebServerRequest *request);
     void onPostReset(AsyncWebServerRequest *request);
+    void onPostResetController(AsyncWebServerRequest *request);
+    void onPostResetClimate(AsyncWebServerRequest *request);
     void onFormClimateConfig(AsyncWebServerRequest *request);
 }
 

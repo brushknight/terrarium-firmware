@@ -181,7 +181,7 @@ namespace Display
             lcd.print(Utils::hourMinuteToString(RealTime::getHour(), RealTime::getMinute()).c_str());
         }
 
-        Serial.println("display render");
+        //Serial.println("display render");
     }
 
     void renderInitialSetup(InitialSetup data)
