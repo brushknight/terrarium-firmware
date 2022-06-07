@@ -1,5 +1,7 @@
 #include "http_server.h"
 
+#include <AsyncElegantOTA.h>
+
 namespace HttpServer
 {
     AsyncWebServer server(80);
@@ -161,8 +163,6 @@ namespace HttpServer
             }
         }
 
-       
-
         int lightEventIndex = 0;
         for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
         {
@@ -199,6 +199,9 @@ namespace HttpServer
 
         Serial.println("Starting server");
 
+        AsyncElegantOTA.begin(&server);
+
         server.begin();
+        Serial.println("Server started [OK]");
     }
 }

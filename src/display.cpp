@@ -104,6 +104,12 @@ namespace Display
         lcd.init();
         // turn on LCD backlight
         lcd.backlight();
+        registerIcons();
+        Serial.println("display setup: ok");
+    }
+
+    void registerIcons()
+    {
         lcd.createChar(0, Cold);
         lcd.createChar(1, Hot);
         lcd.createChar(2, ArrowUp);
@@ -113,8 +119,7 @@ namespace Display
         lcd.createChar(6, WiFi);
         lcd.createChar(7, Cross);
         // out of range
-        //lcd.createChar(7, Bluetooth);
-        Serial.println("display setup: ok");
+        // lcd.createChar(7, Bluetooth);
     }
 
     void render(Data data)
@@ -181,14 +186,14 @@ namespace Display
             lcd.print(Utils::hourMinuteToString(RealTime::getHour(), RealTime::getMinute()).c_str());
         }
 
-        //Serial.println("display render");
+        // Serial.println("display render");
     }
 
     void renderInitialSetup(InitialSetup data)
     {
         lcd.setCursor(0, 0);
         lcd.print("Hi - connect to wifi");
-        //lcd.write(6);
+        // lcd.write(6);
         lcd.setCursor(0, 1);
         lcd.print(data.apName.c_str());
         lcd.setCursor(0, 2);
@@ -228,7 +233,7 @@ namespace Display
     {
         static char buffer[5];
         sprintf(buffer, "%.1f", value);
-        //Serial.println(buffer);
+        // Serial.println(buffer);
         return buffer;
     }
 

@@ -19,10 +19,18 @@ void displayRender(void *parameter)
 {
   // add display reset if needed each N minutes
   vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+  int frameCounter = 0;
   for (;;)
   {
     Display::render(data);
     vTaskDelay(DISPLAY_RENDER_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+    frameCounter++;
+
+    if (frameCounter == 60 * 10)
+    {
+      Display::registerIcons();
+      frameCounter = 0;
+    }
   }
 }
 
@@ -45,18 +53,19 @@ void climateControl(void *parameter)
 
 void lightControl(void *parameter)
 {
+  Serial.println("Starting Light control");
   ClimateConfig config = Eeprom::loadClimateConfig();
   Light::setup(config);
-
-  // hack
-  for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
-  {
-    data.lightEvents[i] = config.lightEvents[i];
-  }
+  Light::EventData eventData;
 
   for (;;)
   {
-    Light::control(RealTime::getHour(), RealTime::getMinute());
+    eventData = Light::control(RealTime::getHour(), RealTime::getMinute());
+
+    for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
+    {
+      data.lightEvents[i] = eventData.active[i];
+    }
 
     vTaskDelay(LIGHT_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
   }
@@ -139,6 +148,7 @@ void demoLoop(void *parameter)
 void setupTask(void *parameter)
 {
   Serial.begin(115200);
+  Serial.println("Booting...");
   Wire.begin();
   Eeprom::setup();
   Eeprom::loadControllerConfig();

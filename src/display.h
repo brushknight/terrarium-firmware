@@ -11,6 +11,7 @@ namespace Display
 {
 
      void setup();
+     void registerIcons();
      void render(Data data);
      void renderClimateZone(DataClimateZone data, int offset);
      void renderInitialSetup(InitialSetup data);

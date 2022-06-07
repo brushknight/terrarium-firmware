@@ -7,8 +7,15 @@
 
 namespace Light
 {
+
+    class EventData
+    {
+    public:
+        LightEvent active[MAX_LIGHT_EVENTS];
+    };
+
     void setup(ClimateConfig config);
-    void control(int hour, int minute);
+    EventData control(int hour, int minute);
 
 }
 

@@ -20,8 +20,9 @@ namespace Light
         }
         eventsSetCount = eventIndex;
     }
-    void control(int hour, int minute)
+    EventData control(int hour, int minute)
     {
+        EventData data = EventData();
         std::string now = Utils::hourMinuteToString(hour, minute);
         // iterate over events
         for (int i = 0; i < eventsSetCount; i++)
@@ -39,8 +40,11 @@ namespace Light
                 {
                     digitalWrite(event.relay, LOW);
                 }
+                data.active[eventsSetCount] = event;
             }
         }
+
+        return data;
     }
 
 }
