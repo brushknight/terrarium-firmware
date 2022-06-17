@@ -10,12 +10,24 @@
 #include "status.h"
 #include "light.h"
 
+#include <Adafruit_BME280.h>
+
 Data data;
-ClimateConfig config;
 
 bool initialSetupMode = false;
 
-void displayRender(void *parameter)
+void taskCheckRtcBattery(void *parameter)
+{
+  // add display reset if needed each N minutes
+
+  for (;;)
+  {
+    data.RtcBatteryPercent = RealTime::getBatteryPercent();
+    vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+  }
+}
+
+void taskDisplayRender(void *parameter)
 {
   // add display reset if needed each N minutes
   vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
@@ -34,12 +46,15 @@ void displayRender(void *parameter)
   }
 }
 
-void climateControl(void *parameter)
+void taskClimateControl(void *parameter)
 {
+  Serial.println("Starting climate control");
   Climate::setup(Eeprom::loadClimateConfig());
   Climate::enableSensors();
+
   for (;;)
   {
+
     DataClimateZone *result = Climate::control(RealTime::getHour(), RealTime::getMinute());
 
     for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
@@ -51,7 +66,7 @@ void climateControl(void *parameter)
   }
 }
 
-void lightControl(void *parameter)
+void taskLightControl(void *parameter)
 {
   Serial.println("Starting Light control");
   ClimateConfig config = Eeprom::loadClimateConfig();
@@ -71,7 +86,7 @@ void lightControl(void *parameter)
   }
 }
 
-void netWatcher(void *parameter)
+void taskWatchNetworkStatus(void *parameter)
 {
   for (;;)
   {
@@ -148,12 +163,14 @@ void demoLoop(void *parameter)
 void setupTask(void *parameter)
 {
   Serial.begin(115200);
-  Serial.println("Booting...");
+  Serial.println("Controller starting [  ]");
   Wire.begin();
   Eeprom::setup();
-  Eeprom::loadControllerConfig();
-
+  Display::setup();
+  ControllerConfig controllerConfig = Eeprom::loadControllerConfig();
   data = Data();
+
+  initialSetupMode = !Eeprom::isMemorySet();
 
   if (DEMO_BOARD)
   {
@@ -167,10 +184,9 @@ void setupTask(void *parameter)
         NULL,
         0);
   }
-  else if (!Eeprom::isMemorySet())
+  else if (initialSetupMode)
   {
     // Setup mode
-    initialSetupMode = true;
     data.initialSetup.apName = Net::setupAP();
     data.initialSetup.isInSetupMode = true;
     Serial.println(data.initialSetup.apName.c_str());
@@ -178,28 +194,39 @@ void setupTask(void *parameter)
 
     data.initialSetup.ipAddr = std::string(WiFi.softAPIP().toString().c_str());
     HttpServer::start(&data, true);
-    return;
   }
   else
   {
-
-    // Eeprom::clearClimate();
-    //  warmup
     Eeprom::loadClimateConfig();
 
-    // Eeprom::resetMemory();
+    data.metadata.id = Eeprom::loadControllerConfig().id;
 
-    Display::setup();
     xTaskCreatePinnedToCore(
-        displayRender,
-        "displayRender",
+        taskDisplayRender,
+        "taskDisplayRender",
         4192,
         NULL,
         2,
         NULL,
         1);
 
-    data.metadata.id = Eeprom::loadControllerConfig().id;
+    xTaskCreatePinnedToCore(
+        taskCheckRtcBattery,
+        "taskCheckRtcBattery",
+        1024,
+        NULL,
+        1,
+        NULL,
+        1);
+
+    xTaskCreatePinnedToCore(
+        taskWatchNetworkStatus,
+        "taskWatchNetworkStatus",
+        1024,
+        NULL,
+        2,
+        NULL,
+        0);
 
     if (RealTime::isWiFiRequired())
     {
@@ -210,10 +237,9 @@ void setupTask(void *parameter)
 
     if (Eeprom::isClimateConfigSetExternalEEPROM())
     {
-
       xTaskCreatePinnedToCore(
-          climateControl,
-          "climateControl",
+          taskClimateControl,
+          "taskClimateControl",
           1024 * 16,
           NULL,
           1,
@@ -221,8 +247,8 @@ void setupTask(void *parameter)
           0);
 
       xTaskCreatePinnedToCore(
-          lightControl,
-          "lightControl",
+          taskLightControl,
+          "taskLightControl",
           1024 * 16,
           NULL,
           1,
@@ -230,17 +256,10 @@ void setupTask(void *parameter)
           0);
     }
 
-    xTaskCreatePinnedToCore(
-        netWatcher,
-        "netWatcher",
-        1024,
-        NULL,
-        2,
-        NULL,
-        0);
     Net::connect();
     Net::setWiFiName(&data);
     HttpServer::start(&data, false);
+    Serial.println("Controller started [OK]");
   }
 
   for (;;)

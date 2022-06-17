@@ -9,14 +9,11 @@
 #include "real_time.h"
 #include <Update.h>
 
-
 namespace HttpServer
 {
-
-
     void start(Data *givenData, bool isSetupMode);
     void notFound(AsyncWebServerRequest *request);
-    void onRoot(AsyncWebServerRequest *request);
+    void onFormControllerConfig(AsyncWebServerRequest *request);
     void onGetControllerConfig(AsyncWebServerRequest *request);
     void onPostControllerConfig(AsyncWebServerRequest *request);
     void onGetClimateConfig(AsyncWebServerRequest *request);

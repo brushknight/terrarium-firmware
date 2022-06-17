@@ -12,10 +12,12 @@ namespace Net
 
     std::string setupAP()
     {
-        WiFi.mode(WIFI_AP);
-        IPAddress IP = {10, 0, 0, 1};
-        IPAddress NMask = IPAddress(255, 255, 255, 0);
-        WiFi.softAPConfig(IP, IP, NMask);
+        // WiFi.mode(WIFI_AP);
+
+        // IPAddress local_ip = {10, 0, 0, 1};
+        // IPAddress gateway = {10, 0, 0, 2};
+        // IPAddress subnet = IPAddress(255, 255, 255, 0);
+        // WiFi.softAPConfig(local_ip, gateway, subnet);
         // Connect to Wi - Fi network with SSID and password
         Serial.print("Setting AP (Access Point)…");
         // Remove the password parameter, if you want the AP (Access Point) to be open

@@ -43,6 +43,7 @@ public:
     // connection status wifi/bt
     bool WiFiStatus;
     bool BluetoothStatus;
+    int RtcBatteryPercent;
     Metadata metadata;
     InitialSetup initialSetup;
     // terrarium metadata

@@ -34,6 +34,7 @@
 #define CLIMATE_LOOP_INTERVAL_SEC 5
 #define LIGHT_LOOP_INTERVAL_SEC 5
 #define DISPLAY_RENDER_INTERVAL_SEC 1
+#define BATTERY_CHECK_INTERVAL_SEC 60 * 5
 
 // Hardware
 #define SENSORS_ENABLE_PIN 32
@@ -241,7 +242,7 @@ public:
 
     static int jsonSize()
     {
-        return 100;
+        return 128;
     }
     DynamicJsonDocument toJSON()
     {

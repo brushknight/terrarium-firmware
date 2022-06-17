@@ -19,6 +19,7 @@ namespace Light
             }
         }
         eventsSetCount = eventIndex;
+        Serial.printf("Light events count: %d", eventsSetCount);
     }
     EventData control(int hour, int minute)
     {
@@ -40,7 +41,7 @@ namespace Light
                 {
                     digitalWrite(event.relay, LOW);
                 }
-                data.active[eventsSetCount] = event;
+                data.active[i] = event;
             }
         }
 

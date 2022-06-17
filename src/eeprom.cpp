@@ -189,7 +189,7 @@ namespace Eeprom
 
         std::string json = std::string(raw);
 
-        //Serial.println(json.c_str());
+        Serial.println(json.c_str());
         config = ControllerConfig::fromJSON(json);
         Serial.println("Loaded controller config from external EEPROM [OK]");
         return config;

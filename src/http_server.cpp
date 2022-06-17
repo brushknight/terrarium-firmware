@@ -1,6 +1,6 @@
 #include "http_server.h"
 
-#include <AsyncElegantOTA.h>
+// #include <AsyncElegantOTA.h>
 
 namespace HttpServer
 {
@@ -46,7 +46,7 @@ namespace HttpServer
         request->send(404, "text/plain", "Not found");
     }
 
-    void onRoot(AsyncWebServerRequest *request)
+    void onFormControllerConfig(AsyncWebServerRequest *request)
     {
         request->send_P(200, "text/html", CONTROLLER_CONFIG_FORM);
     }
@@ -142,12 +142,15 @@ namespace HttpServer
     {
         DynamicJsonDocument doc(1024 + MAX_LIGHT_EVENTS * LightEvent::jsonSize());
 
+        ControllerConfig controllerConfig = Eeprom::loadControllerConfig();
+
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
-        doc["metadata"]["id"] = (*data).metadata.id.c_str();
+        doc["metadata"]["id"] = controllerConfig.id.c_str();
         doc["metadata"]["time"]["hour"] = RealTime::getHour();
         doc["metadata"]["time"]["minute"] = RealTime::getMinute();
         doc["metadata"]["time"]["uptime"] = RealTime::getUptimeSec();
         doc["metadata"]["build_time"] = BUILD_TIME;
+        doc["system"]["rtc_battery"] = (*data).RtcBatteryPercent;
 
         for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
         {
@@ -184,7 +187,9 @@ namespace HttpServer
     {
         data = givenData;
 
-        server.on("/", HTTP_GET, onRoot);
+        server.on("/", HTTP_GET, onFormControllerConfig);
+        server.on("/climate", HTTP_GET, onFormClimateConfig);
+
         server.on("/api/metrics", HTTP_GET, onGetMetrics);
         server.on("/api/config-controller", HTTP_GET, onGetControllerConfig);
         server.on("/api/config-controller", HTTP_POST, onPostControllerConfig);
@@ -194,12 +199,16 @@ namespace HttpServer
         server.on("/api/config-climate", HTTP_GET, onGetClimateConfig);
         server.on("/api/config-climate", HTTP_POST, onPostClimateConfig);
 
-        server.on("/climate", HTTP_GET, onFormClimateConfig);
         server.onNotFound(notFound);
 
         Serial.println("Starting server");
 
-        AsyncElegantOTA.begin(&server);
+        if (isSetupMode)
+        {
+            Serial.println("Setup mode");
+        }
+
+        // AsyncElegantOTA.begin(&server);
 
         server.begin();
         Serial.println("Server started [OK]");
