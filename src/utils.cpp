@@ -14,22 +14,21 @@ namespace Utils
         Serial.println(str);
     }
 
-    void TCA9548A(uint8_t bus)
+    void TCA9548A(uint8_t bus, bool verbose)
     {
-        Wire.beginTransmission(0x70); // TCA9548A address is 0x70
+        Wire.beginTransmission(0x70); // TCA9548A address
         Wire.write(1 << bus);         // send byte to select bus
-        Wire.endTransmission();
-        Serial.print(bus);
+        int status = Wire.endTransmission();
+        if (verbose)
+        {
+            Serial.printf("TCA9548A %d %d\n", bus, status);
+        }
     }
 
-    void scanForI2C()
+    void scanForI2CLoop()
     {
-        Serial.println();
-        Serial.println("I2C scanner. Scanning ...");
         byte count = 0;
-
-        Wire.begin();
-        for (byte i = 1; i < 120; i++)
+        for (byte i = 0; i < 120; i++)
         {
             Wire.beginTransmission(i);
             if (Wire.endTransmission() == 0)
@@ -40,20 +39,33 @@ namespace Utils
                 Serial.print(i, HEX);
                 Serial.println(")");
                 count++;
-                delay(1); // maybe unneeded?
-            }             // end of good response
-        }                 // end of for loop
-        Serial.println("Done.");
-        Serial.print("Found ");
-        Serial.print(count, DEC);
-        Serial.println(" device(s).");
+                delay(1);
+            }
+        }
+        Serial.printf("Found %d devices\n", count);
+    }
+
+    void scanForI2C()
+    {
+        Serial.println();
+        Serial.println("I2C scanner. Scanning ...");
+
+        scanForI2CLoop();
+
+        for (int i = 0; i < 8; i++)
+        {
+            TCA9548A(i, true);
+            delay(1);
+            scanForI2CLoop();
+        }
+        Serial.println("------------");
     }
 
     std::string hourMinuteToString(int hour, int minute)
     {
         static char buffer[10];
         sprintf(buffer, "%02d:%02d", hour, minute);
-        //Serial.println(buffer);
+        // Serial.println(buffer);
         return std::string(buffer);
     }
 

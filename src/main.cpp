@@ -9,6 +9,7 @@
 #include "eeprom.h"
 #include "status.h"
 #include "light.h"
+#include "sensor.h"
 
 #include <Adafruit_BME280.h>
 
@@ -97,11 +98,13 @@ void taskWatchNetworkStatus(void *parameter)
 
 void demoSetup()
 {
+  Utils::scanForI2C();
   ClimateConfig config = loadInitClimateConfig();
   Climate::setup(config);
   Climate::enableSensors();
   Status::setup();
-  Utils::scanForI2C();
+  RealTime::setup(true);
+  Sensor::scan();
 
   // Eeprom::clear();
 }
@@ -165,8 +168,13 @@ void setupTask(void *parameter)
   Serial.begin(115200);
   Serial.println("Controller starting [  ]");
   Wire.begin();
+  Utils::scanForI2C();
+  Sensor::scan();
+  Climate::resetRelays();
+
   Eeprom::setup();
   Display::setup();
+  Status::setup();
   ControllerConfig controllerConfig = Eeprom::loadControllerConfig();
   data = Data();
 
@@ -186,6 +194,9 @@ void setupTask(void *parameter)
   }
   else if (initialSetupMode)
   {
+
+    
+
     // Setup mode
     data.initialSetup.apName = Net::setupAP();
     data.initialSetup.isInSetupMode = true;
@@ -194,6 +205,7 @@ void setupTask(void *parameter)
 
     data.initialSetup.ipAddr = std::string(WiFi.softAPIP().toString().c_str());
     HttpServer::start(&data, true);
+    Status::setPink();
   }
   else
   {

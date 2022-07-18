@@ -51,7 +51,7 @@ namespace Climate
         {
             Serial.printf("[pin:%d] reading sensor\n", pin);
 
-            //Status::setClimateStatus(Status::WORKING);
+            // Status::setClimateStatus(Status::WORKING);
 
             if (pin == 0)
             {
@@ -74,31 +74,31 @@ namespace Climate
                 Serial.printf("[pin:%d] Temperature: %.2f°C\n", pin, current.t);
                 Serial.printf("[pin:%d] Humidity: %.2f%%\n", pin, current.h);
                 current.status = status;
-                //Status::setClimateStatus(Status::SUCCESS);
+                // Status::setClimateStatus(Status::SUCCESS);
                 return true;
             case DHTLIB_ERROR_CHECKSUM:
-                //counter.crc_error++;
+                // counter.crc_error++;
                 Serial.printf("[pin:%d] Checksum error,\n", pin);
                 current.h = 0;
                 current.t = 0;
                 current.status = status;
-                //Status::setClimateStatus(Status::WARNING);
+                // Status::setClimateStatus(Status::WARNING);
                 return false;
             case DHTLIB_ERROR_TIMEOUT:
-                //counter.time_out++;
+                // counter.time_out++;
                 Serial.printf("[pin:%d] Time out error,\n", pin);
                 current.h = 0;
                 current.t = 0;
                 current.status = status;
-                //Status::setClimateStatus(Status::WARNING);
+                // Status::setClimateStatus(Status::WARNING);
                 return false;
             default:
-                //counter.unknown++;
+                // counter.unknown++;
                 Serial.printf("[pin:%d] Unknown error,\n", pin);
                 current.h = 0;
                 current.t = 0;
                 current.status = status;
-                //Status::setClimateStatus(Status::WARNING);
+                // Status::setClimateStatus(Status::WARNING);
                 return false;
             }
 
@@ -168,7 +168,8 @@ namespace Climate
                         retryAttempt++;
                     }
 
-                    if (!sensorsDHT22[i].success()){
+                    if (!sensorsDHT22[i].success())
+                    {
                         ESP.restart();
                     }
                 }
@@ -312,12 +313,21 @@ namespace Climate
 
     void rebootSensorsWithWait()
     {
-        //Status::setClimateStatus(Status::WARNING);
+        // Status::setClimateStatus(Status::WARNING);
         disableSensors();
         delay(1000);
         enableSensors();
         delay(3000); // wait for sensros to boot
-        //Status::setClimateStatus(Status::IDLE);
+        // Status::setClimateStatus(Status::IDLE);
+    }
+    void resetRelays()
+    {
+        pinMode(RELAY_0_PIN, OUTPUT);
+        pinMode(RELAY_1_PIN, OUTPUT);
+        pinMode(RELAY_2_PIN, OUTPUT);
+        digitalWrite(RELAY_0_PIN, LOW);
+        digitalWrite(RELAY_1_PIN, LOW);
+        digitalWrite(RELAY_2_PIN, LOW);
     }
 
 }

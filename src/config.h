@@ -51,6 +51,9 @@
 #define RELAY_1_PIN 25
 #define RELAY_2_PIN 5
 
+const int SENSOR_PINS[6] = {DHT_0, DHT_1, DHT_2, DHT_3, DHT_4, DHT_5};
+const int I2C_BUSES[6] = {3, 0, 1, 2, 4, 5};
+
 class Schedule
 {
 public:

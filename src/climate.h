@@ -18,6 +18,7 @@ namespace Climate
     void enableSensors();
     void disableSensors();
     void rebootSensorsWithWait();
+    void resetRelays();
 }
 
 #endif
