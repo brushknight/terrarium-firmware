@@ -1,9 +1,9 @@
-#include "sensor.h"
+#include "measure.h"
 
-namespace Sensor
+namespace Measure
 {
 
-    void scanBME280(int port)
+    bool scanBME280(int port)
     {
         Adafruit_BME280 bme;
 
@@ -21,10 +21,13 @@ namespace Sensor
             float h = bme.readHumidity();
 
             Serial.printf("t: %.2f C, h: %.2f%%, p: %.0f hPa\n", t, h, p);
+            return true;
         }
+
+        return false;
     }
 
-    void scanDHT22(int port)
+    bool scanDHT22(int port)
     {
         DHTStable DHT;
 
@@ -40,33 +43,34 @@ namespace Sensor
             float t = DHT.getTemperature();
 
             Serial.printf("t: %.2f C, h: %.2f%%\n", t, h);
+            return true;
         }
+
+        return false;
     }
 
-    void scan()
+    Sensors scan()
     {
-
-        DHTStable DHT;
+        Sensors sensors;
 
         pinMode(SENSORS_ENABLE_PIN, OUTPUT);
         digitalWrite(SENSORS_ENABLE_PIN, HIGH);
 
         sleep(3);
 
-        scanDHT22(0);
-        scanDHT22(1);
-        scanDHT22(2);
-        scanDHT22(3);
-        scanDHT22(4);
-        scanDHT22(5);
+        for (int i = 0; i < 6; i++)
+        {
+            if (scanDHT22(i))
+            {
+                sensors.list[i] = Sensor(i, SENSOR_TYPE_DHT22);
+            }
+            if (scanBME280(i))
+            {
+                sensors.list[i + 6] = Sensor(i, SENSOR_TYPE_BME280);
+            }
+        }
 
-        // Enable i2c multiplexer and test each address as BME280
-        scanBME280(0);
-        scanBME280(1);
-        scanBME280(2);
-        scanBME280(3);
-        scanBME280(4);
-        scanBME280(5);
+        return sensors;
     }
 
 }

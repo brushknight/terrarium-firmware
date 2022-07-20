@@ -9,7 +9,7 @@
 #include "eeprom.h"
 #include "status.h"
 #include "light.h"
-#include "sensor.h"
+#include "measure.h"
 
 #include <Adafruit_BME280.h>
 
@@ -104,7 +104,7 @@ void demoSetup()
   Climate::enableSensors();
   Status::setup();
   RealTime::setup(true);
-  Sensor::scan();
+  Measure::scan();
 
   // Eeprom::clear();
 }
@@ -169,7 +169,7 @@ void setupTask(void *parameter)
   Serial.println("Controller starting [  ]");
   Wire.begin();
   Utils::scanForI2C();
-  Sensor::scan();
+  Measure::scan();
   Climate::resetRelays();
 
   Eeprom::setup();
