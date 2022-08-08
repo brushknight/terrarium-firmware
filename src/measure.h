@@ -9,44 +9,90 @@
 
 namespace Measure
 {
-    const int SENSOR_TYPE_DHT22 = 0;
-    const int SENSOR_TYPE_BME280 = 1;
+    const int SENSOR_TYPE_DHT22 = 22;
+    const int SENSOR_TYPE_BME280 = 280;
 
-    class Sensor
+    bool readBME280(int port, float *t, float *h);
+    bool readDHT22(int port, float *t, float *h);
+
+    class EnvironmentSensor
     {
     private:
-        bool enabled = false;
-        int port;
-        int type;
+        int port = -1;
+        int type = -1;
+        float t = 0;
+        float h = 0;
 
     public:
-        Sensor() {}
-        Sensor(int p, int type)
+        EnvironmentSensor() {}
+        EnvironmentSensor(int p, int type)
         {
             port = p;
-            enabled = true;
         }
-        bool isSet()
+        bool enabled()
         {
-            return enabled;
+            return port > -1;
         }
-        bool isDHT22()
+        int getType()
         {
-            return type == SENSOR_TYPE_DHT22;
-        };
-        bool isBME280()
+            return type;
+        }
+        bool read()
         {
-            return type == SENSOR_TYPE_BME280;
-        };
+            if (type == SENSOR_TYPE_BME280)
+            {
+                return readBME280(port, &t, &h);
+            }
+            else if (type == SENSOR_TYPE_DHT22)
+            {
+                return readDHT22(port, &t, &h);
+            }
+            return false;
+        }
+        bool temperature()
+        {
+            return t;
+        }
+        bool humidity()
+        {
+            return h;
+        }
     };
 
-    class Sensors
+    class BME280 : public EnvironmentSensor
+    {
+
+    public:
+        BME280() {}
+        BME280(int p) : EnvironmentSensor(p, 280)
+        {
+        }
+    };
+
+    class DHT22 : public EnvironmentSensor
     {
     public:
-        Sensor list[12];
+        DHT22() {}
+        DHT22(int p) : EnvironmentSensor(p, 22)
+        {
+        }
     };
 
-    Sensors scan();
+    class EnvironmentSensors
+    {
+    public:
+        EnvironmentSensor list[12];
+        EnvironmentSensor getDHT22(int port)
+        {
+            return list[port];
+        };
+        EnvironmentSensor getBME280(int port)
+        {
+            return list[port + 6];
+        };
+    };
+
+    EnvironmentSensors scan();
 }
 
 #endif

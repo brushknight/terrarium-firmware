@@ -17,6 +17,18 @@ Data data;
 
 bool initialSetupMode = false;
 
+Measure::EnvironmentSensors sensors;
+
+void taskFetchSensors(void *parameter)
+{
+  sensors = Measure::scan();
+
+  // for (int i = 0; i < 6; i++)
+  // {
+  //   sensors.getDHT22(i)
+  // }
+}
+
 void taskCheckRtcBattery(void *parameter)
 {
   // add display reset if needed each N minutes
@@ -194,8 +206,6 @@ void setupTask(void *parameter)
   }
   else if (initialSetupMode)
   {
-
-    
 
     // Setup mode
     data.initialSetup.apName = Net::setupAP();

@@ -3,7 +3,27 @@
 namespace Measure
 {
 
-    bool scanBME280(int port)
+    bool readDHT22(int port, float *t, float *h){
+        DHTStable DHT;
+
+        int pin = SENSOR_PINS[port];
+
+        int status = DHT.read22(pin);
+
+        if (status == DHTLIB_OK)
+        {
+            Serial.printf("DHT22 at port %d, GPIO %d\n", port, pin);
+
+            *h = DHT.getHumidity();
+            *t = DHT.getTemperature();
+
+            return true;
+        }
+
+        return false;
+    }
+
+    bool readBME280(int port, float *t, float *h)
     {
         Adafruit_BME280 bme;
 
@@ -16,11 +36,26 @@ namespace Measure
         {
             Serial.printf("BME280 at port %d, multiplexer bus %d\n", port, bus);
 
-            float t = bme.readTemperature();
-            float p = bme.readPressure() / 100.0F;
-            float h = bme.readHumidity();
+            *t = bme.readTemperature();
+            // float p = bme.readPressure() / 100.0F;
+            *h = bme.readHumidity();
 
-            Serial.printf("t: %.2f C, h: %.2f%%, p: %.0f hPa\n", t, h, p);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool scanBME280(int port)
+    {
+        float t;
+        float h;
+
+        bool success = readBME280(port, &t, &h);
+
+        if (success)
+        {
+            Serial.printf("t: %.2f C, h: %.2f%%\n", t, h);
             return true;
         }
 
@@ -29,19 +64,13 @@ namespace Measure
 
     bool scanDHT22(int port)
     {
-        DHTStable DHT;
+        float t;
+        float h;
 
-        int pin = SENSOR_PINS[port];
+        bool success = readDHT22(port, &t, &h);
 
-        int status = DHT.read22(pin);
-
-        if (status == DHTLIB_OK)
+        if (success)
         {
-            Serial.printf("DHT22 at port %d, GPIO %d\n", port, pin);
-
-            float h = DHT.getHumidity();
-            float t = DHT.getTemperature();
-
             Serial.printf("t: %.2f C, h: %.2f%%\n", t, h);
             return true;
         }
@@ -49,9 +78,9 @@ namespace Measure
         return false;
     }
 
-    Sensors scan()
+    EnvironmentSensors scan()
     {
-        Sensors sensors;
+        EnvironmentSensors sensors;
 
         pinMode(SENSORS_ENABLE_PIN, OUTPUT);
         digitalWrite(SENSORS_ENABLE_PIN, HIGH);
@@ -62,11 +91,11 @@ namespace Measure
         {
             if (scanDHT22(i))
             {
-                sensors.list[i] = Sensor(i, SENSOR_TYPE_DHT22);
+                sensors.list[i] = DHT22(i);
             }
             if (scanBME280(i))
             {
-                sensors.list[i + 6] = Sensor(i, SENSOR_TYPE_BME280);
+                sensors.list[i + 6] = BME280(i);
             }
         }
 
