@@ -47,12 +47,16 @@
 #define DHT_4 int(27) // #4
 #define DHT_5 int(26) // #5
 // relay pins
-#define RELAY_0_PIN 4
-#define RELAY_1_PIN 25
-#define RELAY_2_PIN 5
+#define RELAY_0_PIN 5
+#define RELAY_1_PIN 4
+#define RELAY_2_PIN 25
+
+// lights
+#define LEDPIN 23
 
 const int SENSOR_PINS[6] = {DHT_0, DHT_1, DHT_2, DHT_3, DHT_4, DHT_5};
 const int I2C_BUSES[6] = {3, 0, 1, 2, 4, 5};
+const int RELAY_PINS[3] = {RELAY_0_PIN, RELAY_1_PIN, RELAY_2_PIN};
 
 class Schedule
 {

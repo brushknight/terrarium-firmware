@@ -10,6 +10,7 @@
 #include "status.h"
 #include "light.h"
 #include "measure.h"
+#include "control.h"
 
 #include <Adafruit_BME280.h>
 
@@ -117,7 +118,6 @@ void demoSetup()
   Status::setup();
   RealTime::setup(true);
   Measure::scan();
-
   // Eeprom::clear();
 }
 
@@ -183,6 +183,14 @@ void setupTask(void *parameter)
   Utils::scanForI2C();
   Measure::scan();
   Climate::resetRelays();
+
+  Control::Switch s0 = Control::Switch(0);
+  s0.off();
+  sleep(1);
+  s0.on();
+  sleep(1);
+  s0.off();
+  sleep(1);
 
   Eeprom::setup();
   Display::setup();
