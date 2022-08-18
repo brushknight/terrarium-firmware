@@ -1,4 +1,4 @@
-#include "eeprom.h"
+#include "eeprom_wrapper.h"
 
 namespace Eeprom
 {

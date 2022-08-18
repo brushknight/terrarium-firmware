@@ -1,6 +1,5 @@
 #include "net.h"
-#include "secrets.h"
-#include "eeprom.h"
+
 
 namespace Net
 {

@@ -19,62 +19,6 @@ namespace Control
         int brightness;
     };
 
-    class Controller
-    {
-    private:
-        Switches switches;
-        Dimmers dimmers;
-        ColorLights colorLights;
-
-    public:
-        Controller()
-        {
-            switches.list[0] = Switch(0);
-            switches.list[1] = Switch(1);
-            switches.list[2] = Switch(2);
-
-            dimmers.list[0] = Dimmer(0);
-            dimmers.list[1] = Dimmer(1);
-            dimmers.list[2] = Dimmer(2);
-
-            colorLights.list[0] = ColorLight();
-        };
-        bool turnSwitchOn(int port)
-        {
-            switches.list[port].on();
-        };
-        bool turnSwitchOff(int port)
-        {
-            switches.list[port].off();
-        };
-        bool setDimmer(int port, int percent)
-        {
-            dimmers.list[port].setBrigntness(percent);
-        };
-        bool setColor(int port, Color color)
-        {
-            colorLights.list[port].setColor(color);
-        };
-    };
-
-    class Switches
-    {
-    public:
-        Switch list[3];
-    };
-
-    class Dimmers
-    {
-    public:
-        Dimmer list[3];
-    };
-
-    class ColorLights
-    {
-    public:
-        ColorLight list[3];
-    };
-
     class Switch
     {
     private:
@@ -157,7 +101,7 @@ namespace Control
         {
 
             int pixelFormat = NEO_GRB + NEO_KHZ800;
-            pixels = new Adafruit_NeoPixel(pixelsCount, WS2812_PIN, pixelFormat);
+            pixels = new Adafruit_NeoPixel(pixelsCount, LEDPIN, pixelFormat);
             pixels->begin();
         };
         // bool enabled()
@@ -180,6 +124,67 @@ namespace Control
         {
             state = c;
         }
+    };
+
+        class Switches
+    {
+    public:
+        Switch list[3];
+    };
+
+    class Dimmers
+    {
+    public:
+        Dimmer list[3];
+    };
+
+    class ColorLights
+    {
+    public:
+        ColorLight list[3];
+    };
+
+
+        class Controller
+    {
+    private:
+        Switches switches = Switches();
+        Dimmers dimmers = Dimmers();
+        ColorLights colorLights = ColorLights();
+
+    public:
+        Controller()
+        {
+            switches.list[0] = Switch(0);
+            switches.list[1] = Switch(1);
+            switches.list[2] = Switch(2);
+
+            dimmers.list[0] = Dimmer(0);
+            dimmers.list[1] = Dimmer(1);
+            dimmers.list[2] = Dimmer(2);
+
+            colorLights.list[0] = ColorLight();
+        };
+        bool turnSwitchOn(int port)
+        {
+            switches.list[port].on();
+            return true;
+        };
+        bool turnSwitchOff(int port)
+        {
+            switches.list[port].off();
+            return true;
+        };
+        bool setDimmer(int port, int percent)
+        {
+            dimmers.list[port].setBrigntness(percent);
+            return true;
+        };
+        bool setColor(int port, Color color)
+        {
+            colorLights.list[port].setColor(color);
+            return true;
+        };
     };
 }
 
