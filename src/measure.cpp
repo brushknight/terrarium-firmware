@@ -3,10 +3,46 @@
 namespace Measure
 {
 
-    bool readDHT22(int port, float *t, float *h){
+    EnvironmentSensors sharedSensors = EnvironmentSensors();
+
+    EnvironmentSensors getSharedSensors(){
+        return sharedSensors;
+    }
+
+    // run in the loop and check each 5s
+    bool readSensors()
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            // Serial.printf("DHT %d check\n", i);
+            if (sharedSensors.getDHT22(i).enabled())
+            {
+                if (!sharedSensors.readDHT22(i))
+                {
+                    Serial.printf("DHT %d failed\n", i);
+                }
+            }
+
+            // Serial.printf("BME280 %d check\n", i);
+            if (sharedSensors.getBME280(i).enabled())
+            {
+
+                if (!sharedSensors.readBME280(i))
+                {
+                    Serial.printf("BME280 %d failed\n", i);
+                }
+            }
+        }
+        return true;
+    }
+
+    bool readDHT22(int port, float *t, float *h)
+    {
         DHTStable DHT;
 
         int pin = SENSOR_PINS[port];
+
+        Serial.printf("reading DHT22 at port %d, GPIO %d\n", port, pin);
 
         int status = DHT.read22(pin);
 
@@ -28,6 +64,8 @@ namespace Measure
         Adafruit_BME280 bme;
 
         int bus = I2C_BUSES[port];
+
+        Serial.printf("reading BME280 at port %d, multiplexer bus %d\n", port, bus);
 
         Utils::TCA9548A(bus, false);
         bool statusBme = bme.begin(0x76);
@@ -78,10 +116,8 @@ namespace Measure
         return false;
     }
 
-    EnvironmentSensors scan()
+    bool scan()
     {
-        EnvironmentSensors sensors;
-
         pinMode(SENSORS_ENABLE_PIN, OUTPUT);
         digitalWrite(SENSORS_ENABLE_PIN, HIGH);
 
@@ -91,15 +127,15 @@ namespace Measure
         {
             if (scanDHT22(i))
             {
-                sensors.list[i] = DHT22(i);
+                sharedSensors.list[i] = DHT22(i);
             }
             if (scanBME280(i))
             {
-                sensors.list[i + 6] = BME280(i);
+                sharedSensors.list[i + 6] = BME280(i);
             }
         }
 
-        return sensors;
+        return true;
     }
 
 }

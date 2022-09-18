@@ -126,7 +126,7 @@ namespace Control
         }
     };
 
-        class Switches
+    class Switches
     {
     public:
         Switch list[3];
@@ -144,8 +144,7 @@ namespace Control
         ColorLight list[3];
     };
 
-
-        class Controller
+    class Controller
     {
     private:
         Switches switches = Switches();

@@ -12,18 +12,21 @@ namespace Event
     class Event
     {
     public:
+        bool set = false;
         std::string since;
         std::string until;
         int durationSec;
+        Event(){}
         Event(std::string s, std::string u, int dSec)
         {
             since = s;
             until = u;
             durationSec = dSec;
+            set = true;
         }
         bool isActive(std::string now)
         {
-            return RealTime::checkScheduleTimeWindow(now, since, until);
+            return set && RealTime::checkScheduleTimeWindow(now, since, until);
         }
     };
 
@@ -43,6 +46,7 @@ namespace Event
     {
     public:
         float temperature;
+        TemperatureEvent(){} // just for empty array of events
         TemperatureEvent(std::string s, std::string u, int dSec, float t) : Event(s, u, dSec)
         {
             temperature = t;

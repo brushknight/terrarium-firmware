@@ -10,6 +10,7 @@
 #include "light.h"
 #include "measure.h"
 #include "control.h"
+#include "zone.h"
 
 #include <Adafruit_BME280.h>
 
@@ -17,16 +18,27 @@ Data data;
 
 bool initialSetupMode = false;
 
-Measure::EnvironmentSensors sensors;
-
 void taskFetchSensors(void *parameter)
 {
-  sensors = Measure::scan();
+  Measure::scan();
 
-  // for (int i = 0; i < 6; i++)
-  // {
-  //   sensors.getDHT22(i)
-  // }
+  Control::Controller controller = Control::Controller();
+
+  Zone::TemperatureZone tZone1 = Zone::TemperatureZone("test zone");
+  tZone1.heaterPort = 2;
+  tZone1.events[0].since = "20220918_223000";
+  tZone1.events[0].until = "20220918_233000";
+  tZone1.events[0].temperature = 30;
+  tZone1.events[0].set = true;
+
+  for (;;)
+  {
+    Measure::readSensors();
+
+    tZone1.loopTick("20220918_224330", Measure::getSharedSensors(), &controller);
+
+    vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
+  }
 }
 
 void taskCheckRtcBattery(void *parameter)
@@ -180,7 +192,6 @@ void setupTask(void *parameter)
   Serial.println("Controller starting [  ]");
   Wire.begin();
   Utils::scanForI2C();
-  Measure::scan();
   Climate::resetRelays();
 
   Control::Switch s0 = Control::Switch(0);
@@ -222,7 +233,15 @@ void setupTask(void *parameter)
 
     data.initialSetup.ipAddr = std::string(WiFi.softAPIP().toString().c_str());
     HttpServer::start(&data, true);
-    Status::setPink();
+    Status::setPurple();
+    xTaskCreatePinnedToCore(
+        taskFetchSensors,
+        "taskFetchSensors",
+        4096,
+        NULL,
+        2,
+        NULL,
+        1);
   }
   else
   {

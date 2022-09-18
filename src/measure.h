@@ -15,6 +15,7 @@ namespace Measure
     bool readBME280(int port, float *t, float *h);
     bool readDHT22(int port, float *t, float *h);
 
+
     class EnvironmentSensor
     {
     private:
@@ -25,9 +26,10 @@ namespace Measure
 
     public:
         EnvironmentSensor() {}
-        EnvironmentSensor(int p, int type)
+        EnvironmentSensor(int p, int t)
         {
             port = p;
+            type = t;
         }
         bool enabled()
         {
@@ -90,9 +92,19 @@ namespace Measure
         {
             return list[port + 6];
         };
+        bool readDHT22(int port)
+        {
+            return list[port].read();
+        };
+        bool readBME280(int port)
+        {
+            return list[port + 6].read();
+        };
     };
 
-    EnvironmentSensors scan();
+    bool scan();
+    bool readSensors();
+    EnvironmentSensors getSharedSensors();
 }
 
 #endif
