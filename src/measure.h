@@ -15,6 +15,22 @@ namespace Measure
     bool readBME280(int port, float *t, float *h);
     bool readDHT22(int port, float *t, float *h);
 
+    class SensorID
+    {
+    public:
+        int port;
+        int type;
+        SensorID() {} // for empty arrays
+        SensorID(int p, int t)
+        {
+            type = t;
+            port = p;
+        }
+        bool isSet()
+        {
+            return type > 0;
+        }
+    };
 
     class EnvironmentSensor
     {
@@ -49,13 +65,14 @@ namespace Measure
             {
                 return readDHT22(port, &t, &h);
             }
+
             return false;
         }
-        bool temperature()
+        float temperature()
         {
             return t;
         }
-        bool humidity()
+        float humidity()
         {
             return h;
         }
@@ -84,6 +101,19 @@ namespace Measure
     {
     public:
         EnvironmentSensor list[12];
+        EnvironmentSensor get(SensorID sID)
+        {
+            if (sID.type == SENSOR_TYPE_DHT22)
+            {
+                return getDHT22(sID.port);
+            }
+            else if (sID.type == SENSOR_TYPE_BME280)
+            {
+                return getBME280(sID.port);
+            }
+            Serial.println("ERROR: undefined sensor type");
+            return EnvironmentSensor();
+        };
         EnvironmentSensor getDHT22(int port)
         {
             return list[port];
@@ -104,7 +134,7 @@ namespace Measure
 
     bool scan();
     bool readSensors();
-    EnvironmentSensors getSharedSensors();
+    EnvironmentSensors * getSharedSensors();
 }
 
 #endif

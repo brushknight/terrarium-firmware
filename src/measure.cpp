@@ -5,8 +5,9 @@ namespace Measure
 
     EnvironmentSensors sharedSensors = EnvironmentSensors();
 
-    EnvironmentSensors getSharedSensors(){
-        return sharedSensors;
+    EnvironmentSensors * getSharedSensors()
+    {
+        return &sharedSensors;
     }
 
     // run in the loop and check each 5s
@@ -53,6 +54,8 @@ namespace Measure
             *h = DHT.getHumidity();
             *t = DHT.getTemperature();
 
+            Serial.printf("DEBUG: t:%.2f, h:%.2f\n", *t, *h);
+
             return true;
         }
 
@@ -77,6 +80,8 @@ namespace Measure
             *t = bme.readTemperature();
             // float p = bme.readPressure() / 100.0F;
             *h = bme.readHumidity();
+
+            Serial.printf("DEBUG: t:%.2f, h:%.2f\n", *t, *h);
 
             return true;
         }

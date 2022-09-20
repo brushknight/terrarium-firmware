@@ -30,6 +30,8 @@ void taskFetchSensors(void *parameter)
   tZone1.events[0].until = "20220918_233000";
   tZone1.events[0].temperature = 30;
   tZone1.events[0].set = true;
+  tZone1.sensorIDs[0] = Measure::SensorID(2, Measure::SENSOR_TYPE_DHT22);
+  tZone1.sensorIDs[1] = Measure::SensorID(0, Measure::SENSOR_TYPE_BME280);
 
   for (;;)
   {
