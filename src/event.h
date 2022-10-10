@@ -51,6 +51,20 @@ namespace Event
         {
             temperature = t;
         }
+        static int jsonSize()
+        {
+            return 80;
+        }
+
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["since"] = since;
+            doc["until"] = until;
+            doc["durationSec"] = durationSec;
+            doc["temperature"] = temperature;
+            return doc;
+        }
     };
 
     class WateringEvent : public Event

@@ -30,6 +30,18 @@ namespace Measure
         {
             return type > 0;
         }
+         static int jsonSize()
+        {
+            return 32;
+        }
+
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["port"] = port;
+            doc["type"] = type;
+            return doc;
+        }
     };
 
     class EnvironmentSensor
