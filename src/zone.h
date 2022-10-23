@@ -7,100 +7,14 @@
 #include "control.h"
 #include "measure.h"
 #include "real_time.h"
+#include <string>
+#include "ArduinoJson.h"
 
 namespace Zone
 {
     const int maxTemperatureZonesCount = 3;
     const int maxTemperatureZonesSensorsCount = 3;
     const int maxTemperatureZonesEventsCount = 10;
-
-    class Controller
-    {
-    private:
-        TemperatureZone temperatureZones[maxTemperatureZonesCount];
-        bool paused = false;
-
-        void pause()
-        {
-            paused = true;
-        }
-        void resume()
-        {
-            paused = false;
-        }
-
-    public:
-        void loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
-        {
-            if (!paused)
-            {
-                // loop over all zones
-                for (int i = 0; i < maxTemperatureZonesCount; i++)
-                {
-                    if (temperatureZones[i].isEnabled())
-                    {
-                        temperatureZones[i].loopTick(now, sharedSensors, controller);
-                    }
-                }
-            }
-        }
-        void addTemperatureZone(TemperatureZone tempZone)
-        {
-            pause();
-            for (int i = 0; i < maxTemperatureZonesCount; i++)
-            {
-                if (!temperatureZones[i].isEnabled())
-                {
-                    temperatureZones[i] = tempZone;
-                }
-                // TODO return error if have already 3 zones
-            }
-            // changes
-            resume();
-        }
-        void removeTemperatureZone(int id)
-        {
-            if (id >= 0 && id < maxTemperatureZonesCount)
-            {
-                pause();
-                temperatureZones[id].reset();
-                // changes
-                resume();
-            }
-        }
-        void updateTemperatureZone(int id, TemperatureZone tempZone)
-        {
-            if (id >= 0 && id < maxTemperatureZonesCount)
-            {
-                pause();
-                temperatureZones[id] = tempZone;
-                // changes
-                resume();
-            }
-        }
-
-        static int jsonSize()
-        {
-            return TemperatureZone::jsonSize() * maxTemperatureZonesCount;
-        }
-
-        // return as json
-        DynamicJsonDocument toJSON()
-        {
-            DynamicJsonDocument doc(jsonSize());
-            for (int i = 0; i < maxTemperatureZonesCount; i++)
-            {
-                doc["temperatureZones"][i] = temperatureZones[i].toJSON();
-            }
-            return doc;
-        }
-
-        // save to eeprom
-        // load from eeprom
-
-        // parse from json
-        // report of all zones, how to do? (to display and for api)
-    };
 
     class TemperatureZoneStatus
     {
@@ -120,6 +34,19 @@ namespace Zone
             doc["targetTemperature"] = targetTemperature;
             doc["heaterStatus"] = heaterStatus;
             return doc;
+        }
+        static TemperatureZoneStatus fromJSON(std::string json)
+        {
+            TemperatureZoneStatus temperatureZoneStatus;
+
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            temperatureZoneStatus.averageTemperature = doc["averageTemperature"];
+            temperatureZoneStatus.targetTemperature = doc["targetTemperature"];
+            temperatureZoneStatus.heaterStatus = doc["heaterStatus"];
+
+            return temperatureZoneStatus;
         }
     };
 
@@ -157,7 +84,7 @@ namespace Zone
             doc["slug"] = slug;
             for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
             {
-                doc["sensorIDs"][i] = sensorIDs[i];
+                doc["sensorIDs"][i] = sensorIDs[i].toJSON();
             }
             for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
             {
@@ -166,6 +93,28 @@ namespace Zone
             doc["status"] = status.toJSON();
             doc["heaterPort"] = heaterPort;
             return doc;
+        }
+
+        static TemperatureZone fromJSON(std::string json)
+        {
+            TemperatureZone temperatureZone;
+
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            temperatureZone.slug = doc["slug"].as<std::string>();
+            temperatureZone.status = TemperatureZoneStatus::fromJSON(doc["status"]);
+            temperatureZone.heaterPort = doc["heaterPort"];
+            for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
+            {
+                temperatureZone.sensorIDs[i] = Measure::SensorID::fromJSON(doc["sensorIDs"][i]);
+            }
+            for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
+            {
+                temperatureZone.events[i] = Event::TemperatureEvent::fromJSON(doc["events"][i]);
+            }
+
+            return temperatureZone;
         }
 
         void reset()
@@ -235,6 +184,107 @@ namespace Zone
                 status.heaterStatus = false;
             }
         }
+    };
+
+    class Controller
+    {
+    private:
+        TemperatureZone temperatureZones[maxTemperatureZonesCount];
+        bool paused = false;
+
+        void pause()
+        {
+            paused = true;
+        }
+        void resume()
+        {
+            paused = false;
+        }
+
+    public:
+        void loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        {
+            if (!paused)
+            {
+                // loop over all zones
+                for (int i = 0; i < maxTemperatureZonesCount; i++)
+                {
+                    if (temperatureZones[i].isEnabled())
+                    {
+                        temperatureZones[i].loopTick(now, sharedSensors, controller);
+                    }
+                }
+            }
+        }
+        void addTemperatureZone(TemperatureZone tempZone)
+        {
+            pause();
+            for (int i = 0; i < maxTemperatureZonesCount; i++)
+            {
+                if (!temperatureZones[i].isEnabled())
+                {
+                    temperatureZones[i] = tempZone;
+                }
+                // TODO return error if have already 3 zones
+            }
+            // changes
+            resume();
+        }
+        void removeTemperatureZone(int id)
+        {
+            if (id >= 0 && id < maxTemperatureZonesCount)
+            {
+                pause();
+                temperatureZones[id].reset();
+                // changes
+                resume();
+            }
+        }
+        void updateTemperatureZone(int id, TemperatureZone tempZone)
+        {
+            if (id >= 0 && id < maxTemperatureZonesCount)
+            {
+                pause();
+                temperatureZones[id] = tempZone;
+                // changes
+                resume();
+            }
+        }
+        static int jsonSize()
+        {
+            return TemperatureZone::jsonSize() * maxTemperatureZonesCount;
+        }
+
+        // return as json
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            for (int i = 0; i < maxTemperatureZonesCount; i++)
+            {
+                doc["temperatureZones"][i] = temperatureZones[i].toJSON();
+            }
+            return doc;
+        }
+
+        static Controller fromJSON(std::string json)
+        {
+            Controller controller;
+
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            for (int i = 0; i < maxTemperatureZonesCount; i++)
+            {
+                controller.temperatureZones[i] = TemperatureZone::fromJSON(doc["temperatureZones"][i]);
+            }
+
+            return controller;
+        }
+
+        // save to eeprom
+        // load from eeprom
+
+        // report of all zones, how to do? (to display and for api)
     };
 
 }

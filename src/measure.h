@@ -30,7 +30,7 @@ namespace Measure
         {
             return type > 0;
         }
-         static int jsonSize()
+        static int jsonSize()
         {
             return 32;
         }
@@ -41,6 +41,19 @@ namespace Measure
             doc["port"] = port;
             doc["type"] = type;
             return doc;
+        }
+
+        static SensorID fromJSON(std::string json)
+        {
+            SensorID sensorID;
+
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            sensorID.port = doc["port"];
+            sensorID.type = doc["type"];
+
+            return sensorID;
         }
     };
 
@@ -146,7 +159,7 @@ namespace Measure
 
     bool scan();
     bool readSensors();
-    EnvironmentSensors * getSharedSensors();
+    EnvironmentSensors *getSharedSensors();
 }
 
 #endif
