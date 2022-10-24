@@ -21,7 +21,7 @@ namespace HttpServer
 
     void onPostResetController(AsyncWebServerRequest *request)
     {
-        Eeprom::clearController();
+        Eeprom::clearSystemSettings();
 
         request->send(200, "text/plain", "Controller configuration cleared, rebooting in 3 seconds");
 
@@ -32,7 +32,7 @@ namespace HttpServer
 
     void onPostResetClimate(AsyncWebServerRequest *request)
     {
-        Eeprom::clearClimate();
+        Eeprom::clearZoneController();
 
         request->send(200, "text/plain", "Climate configuration cleared, rebooting in 3 seconds");
 
@@ -58,7 +58,7 @@ namespace HttpServer
 
     void onGetControllerConfig(AsyncWebServerRequest *request)
     {
-        ClimateConfig config = Eeprom::loadClimateConfig();
+        Zone::Controller config = Eeprom::loadZoneController();
         DynamicJsonDocument json = config.toJSON();
 
         std::string requestBody;
@@ -69,7 +69,7 @@ namespace HttpServer
 
     void onGetClimateConfig(AsyncWebServerRequest *request)
     {
-        ClimateConfig config = Eeprom::loadClimateConfig();
+        Zone::Controller config = Eeprom::loadZoneController();
         DynamicJsonDocument json = config.toJSON();
 
         std::string requestBody;
@@ -81,7 +81,7 @@ namespace HttpServer
     void onPostControllerConfig(AsyncWebServerRequest *request)
     {
         // ssid, pass, id
-        ControllerConfig config = Eeprom::loadControllerConfig();
+        SystemConfig config = Eeprom::loadSystemConfig();
 
         int params = request->params();
         for (int i = 0; i < params; i++)
@@ -107,7 +107,7 @@ namespace HttpServer
 
         // do some validation
 
-        Eeprom::saveControllerConfig(config);
+        Eeprom::saveSystemConfig(config);
 
         request->send(200, "text/plain", "Controller configuration updated, rebooting in 3 seconds");
 
@@ -119,7 +119,7 @@ namespace HttpServer
     void onPostClimateConfig(AsyncWebServerRequest *request)
     {
 
-        ClimateConfig config;
+        Zone::Controller config;
         int params = request->params();
         for (int i = 0; i < params; i++)
         {
@@ -128,8 +128,8 @@ namespace HttpServer
             if (p->name().compareTo(String("json_config")) == 0)
             {
 
-                config = ClimateConfig::fromJSON(p->value().c_str());
-                Eeprom::saveClimateConfig(config);
+                config = Zone::Controller::fromJSON(p->value().c_str());
+                Eeprom::saveZoneController(config);
 
                 request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
             }
@@ -142,7 +142,7 @@ namespace HttpServer
     {
         DynamicJsonDocument doc(1024 + MAX_LIGHT_EVENTS * LightEvent::jsonSize());
 
-        ControllerConfig controllerConfig = Eeprom::loadControllerConfig();
+        SystemConfig controllerConfig = Eeprom::loadSystemConfig();
 
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
         doc["metadata"]["id"] = controllerConfig.id.c_str();

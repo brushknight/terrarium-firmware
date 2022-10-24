@@ -4,7 +4,6 @@
 #include "Arduino.h"
 #include "utils.h"
 #include "control.h"
-#include "real_time.h"
 
 namespace Event
 {
@@ -26,7 +25,7 @@ namespace Event
         }
         bool isActive(std::string now)
         {
-            return set && RealTime::checkScheduleTimeWindow(now, since, until);
+            return set && Utils::checkScheduleTimeWindow(now, since, until);
         }
     };
 

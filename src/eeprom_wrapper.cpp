@@ -13,24 +13,24 @@ namespace Eeprom
 
     // new indexes
     const int SET_INDEX = 0;
-    const int CONTROLLER_CONFIG_INDEX = 1;
+    const int SYSTEM_CONFIG_INDEX = 1;
     const int CONTROLLER_CONFIG_LENGTH = 2048;
 
-    const int CLIMATE_CONFIG_SET_INDEX = CONTROLLER_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH;
+    const int ZONE_CONTROLLER_SET_INDEX = SYSTEM_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH;
 
-    const int CLIMATE_CONFIG_INDEX = CLIMATE_CONFIG_SET_INDEX + 1;
-    const int CLIMATE_CONFIG_LENGTH = 4096;
+    const int ZONE_CONTROLLER_INDEX = ZONE_CONTROLLER_SET_INDEX + 1;
+    const int ZONE_CONTROLLER_LENGTH = 4096;
 
     const uint8_t externallAddress = 0x50;
     ExternalEEPROM externalEEPROM;
 
     bool isExternalEEPROM = false;
 
-    ClimateConfig climateConfig;
-    bool wasClimateConfigLoaded = false;
-    bool isClimateConfigLoading = false;
-    ControllerConfig controllerConfig;
-    bool wasControllerConfigLoaded = false;
+    Zone::Controller zoneController;
+    bool wasZoneControllerLoaded = false;
+    bool isZoneControllerLoading = false;
+    SystemConfig systemConfig;
+    bool wasSystemConfigLoaded = false;
 
     void setup()
     {
@@ -50,11 +50,11 @@ namespace Eeprom
 
     void clear()
     {
-        clearController();
-        clearClimate();
+        clearSystemSettings();
+        clearZoneController();
     }
 
-    void clearClimate()
+    void clearZoneController()
     {
         if (isExternalEEPROM)
         {
@@ -70,9 +70,9 @@ namespace Eeprom
         }
     }
 
-    void clearController()
+    void clearSystemSettings()
     {
-        for (int i = 0; i < CONTROLLER_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH; i++)
+        for (int i = 0; i < SYSTEM_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH; i++)
         {
             EEPROM.write(i, 0);
         }
@@ -80,38 +80,37 @@ namespace Eeprom
 
     bool isMemorySet()
     {
-        return ((isExternalEEPROM && isControllerConfigSetExternalEEPROM()) || isControllerConfigSetESP32());
+        return ((isExternalEEPROM && isSystemConfigSetExternalEEPROM()) || isSystemConfigSetESP32());
     }
 
-    bool isControllerConfigSetESP32()
+    bool isSystemConfigSetESP32()
     {
         return EEPROM.read(SET_INDEX) == 1;
     }
 
-    bool isControllerConfigSetExternalEEPROM()
+    bool isSystemConfigSetExternalEEPROM()
     {
 
         return externalEEPROM.read(SET_INDEX) == 1;
     }
 
-    bool isClimateConfigSetExternalEEPROM()
+    bool isZoneControllerSetExternalEEPROM()
     {
-        return externalEEPROM.read(CLIMATE_CONFIG_SET_INDEX) == 1;
+        return externalEEPROM.read(ZONE_CONTROLLER_SET_INDEX) == 1;
     }
 
-    void saveControllerConfig(ControllerConfig config)
+    void saveSystemConfig(SystemConfig systemConfig)
     {
-
-        DynamicJsonDocument doc = config.toJSON();
+        DynamicJsonDocument doc = systemConfig.toJSON();
         // Lastly, you can print the resulting JSON to a String
         std::string json;
         serializeJson(doc, json);
-        Serial.println("Saving controller config...");
+        Serial.println("Saving system config...");
         Serial.println(json.c_str());
 
         for (int i = 0; i < json.length(); ++i)
         {
-            EEPROM.write(i + CONTROLLER_CONFIG_INDEX, json[i]);
+            EEPROM.write(i + SYSTEM_CONFIG_INDEX, json[i]);
         }
         EEPROM.write(SET_INDEX, 1);
 
@@ -119,86 +118,85 @@ namespace Eeprom
 
         if (isExternalEEPROM)
         {
-
             for (int i = 0; i < json.length(); ++i)
             {
-                externalEEPROM.write(i + CONTROLLER_CONFIG_INDEX, json[i]);
+                externalEEPROM.write(i + SYSTEM_CONFIG_INDEX, json[i]);
             }
             externalEEPROM.write(SET_INDEX, 1);
             Serial.println("Saved into external EEPROM [OK]");
         }
     }
 
-    ControllerConfig loadControllerConfig()
+    SystemConfig loadSystemConfig()
     {
 
-        if (wasControllerConfigLoaded)
+        if (wasSystemConfigLoaded)
         {
-            return controllerConfig;
+            return systemConfig;
         }
 
-        if (isExternalEEPROM && isControllerConfigSetExternalEEPROM())
+        if (isExternalEEPROM && isSystemConfigSetExternalEEPROM())
         {
-            controllerConfig = loadControllerConfigFromExternalEEPROM();
-            wasControllerConfigLoaded = true;
-            return controllerConfig;
+            systemConfig = loadSystemConfigFromExternalEEPROM();
+            wasSystemConfigLoaded = true;
+            return systemConfig;
         }
-        if (isControllerConfigSetESP32())
+        if (isSystemConfigSetESP32())
         {
-            controllerConfig = loadControllerConfigFromESP32();
-            wasControllerConfigLoaded = true;
-            return controllerConfig;
+            systemConfig = loadSystemConfigFromESP32();
+            wasSystemConfigLoaded = true;
+            return systemConfig;
         }
-        return ControllerConfig();
+        return SystemConfig();
     }
 
-    ControllerConfig loadControllerConfigFromESP32()
+    SystemConfig loadSystemConfigFromESP32()
     {
-        ControllerConfig config;
+        SystemConfig config;
 
-        Serial.println("Loading controller config from ESP32 EEPROM...");
+        Serial.println("Loading system config from ESP32 EEPROM...");
 
         char raw[CONTROLLER_CONFIG_LENGTH];
 
         for (int i = 0; i < CONTROLLER_CONFIG_LENGTH; ++i)
         {
-            raw[i] = char(EEPROM.read(i + CONTROLLER_CONFIG_INDEX));
+            raw[i] = char(EEPROM.read(i + SYSTEM_CONFIG_INDEX));
         }
         Serial.println(raw);
 
         std::string json = std::string(raw);
 
         Serial.println(json.c_str());
-        config = ControllerConfig::fromJSON(json);
+        config = SystemConfig::fromJSON(json);
 
         return config;
     }
 
-    ControllerConfig loadControllerConfigFromExternalEEPROM()
+    SystemConfig loadSystemConfigFromExternalEEPROM()
     {
-        ControllerConfig config;
+        SystemConfig config;
 
-        Serial.println("Loading controller config from external EEPROM...");
+        Serial.println("Loading system config from external EEPROM...");
         char raw[CONTROLLER_CONFIG_LENGTH];
 
         for (int i = 0; i < CONTROLLER_CONFIG_LENGTH; ++i)
         {
-            raw[i] = char(externalEEPROM.read(i + CONTROLLER_CONFIG_INDEX));
+            raw[i] = char(externalEEPROM.read(i + SYSTEM_CONFIG_INDEX));
         }
-        //Serial.println(raw);
+        // Serial.println(raw);
 
         std::string json = std::string(raw);
 
         Serial.println(json.c_str());
-        config = ControllerConfig::fromJSON(json);
-        Serial.println("Loaded controller config from external EEPROM [OK]");
+        config = SystemConfig::fromJSON(json);
+        Serial.println("Loaded system config from external EEPROM [OK]");
         return config;
     }
 
-    void saveClimateConfigTask(void *parameter)
+    void saveZoneControllerTask(void *parameter)
     {
-        Serial.println("saving to eeprom");
-        DynamicJsonDocument doc = climateConfig.toJSON();
+        Serial.println("saving zone controller to eeprom");
+        DynamicJsonDocument doc = zoneController.toJSON();
         // Lastly, you can print the resulting JSON to a String
         std::string json;
         serializeJson(doc, json);
@@ -207,26 +205,26 @@ namespace Eeprom
 
         for (int i = 0; i < json.length(); ++i)
         {
-            externalEEPROM.write(i + CLIMATE_CONFIG_INDEX, json[i]);
+            externalEEPROM.write(i + ZONE_CONTROLLER_INDEX, json[i]);
             // Serial.println(json[i]);
         }
         Serial.println("Saving [OK]");
 
-        externalEEPROM.write(CLIMATE_CONFIG_SET_INDEX, 1);
+        externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
 
         ESP.restart();
     }
 
-    void saveClimateConfig(ClimateConfig config)
+    void saveZoneController(Zone::Controller config)
     {
         if (isExternalEEPROM)
         {
             Serial.println("setting config to pointer");
-            climateConfig = config;
+            zoneController = config;
             Serial.println("creating task to save into eeprom");
             xTaskCreatePinnedToCore(
-                saveClimateConfigTask,
-                "saveClimateConfigTask",
+                saveZoneControllerTask,
+                "saveZoneControllerTask",
                 1024 * 8,
                 NULL,
                 3,
@@ -239,17 +237,17 @@ namespace Eeprom
         }
     }
 
-    ClimateConfig loadClimateConfig()
+    Zone::Controller loadZoneController()
     {
 
-        if (isClimateConfigLoading)
+        if (isZoneControllerLoading)
         {
             for (int i = 0; i < 60; i++)
             {
                 vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-                if (wasClimateConfigLoaded)
+                if (wasZoneControllerLoaded)
                 {
-                    return climateConfig;
+                    return zoneController;
                 }
                 // reboot?
             }
@@ -257,41 +255,41 @@ namespace Eeprom
 
         Serial.println("Loading climate config");
 
-        if (wasClimateConfigLoaded)
+        if (wasZoneControllerLoaded)
         {
-            return climateConfig;
+            return zoneController;
         }
 
-        if (isExternalEEPROM && isClimateConfigSetExternalEEPROM())
+        if (isExternalEEPROM && isZoneControllerSetExternalEEPROM())
         {
-            isClimateConfigLoading = true;
-            Serial.println("Loading climate config from external eeprom");
+            isZoneControllerLoading = true;
+            Serial.println("Loading zone controller from external eeprom");
 
-            char raw[CLIMATE_CONFIG_LENGTH];
+            char raw[ZONE_CONTROLLER_LENGTH];
 
-            for (int i = 0; i < CLIMATE_CONFIG_LENGTH; ++i)
+            for (int i = 0; i < ZONE_CONTROLLER_LENGTH; ++i)
             {
-                raw[i] = char(externalEEPROM.read(i + CLIMATE_CONFIG_INDEX));
+                raw[i] = char(externalEEPROM.read(i + ZONE_CONTROLLER_INDEX));
                 // Serial.println(raw[i]);
             }
 
-            //Serial.println(raw);
+            // Serial.println(raw);
 
             std::string json = std::string(raw);
 
-            //Serial.println(json.c_str());
-            climateConfig = ClimateConfig::fromJSON(json);
-            wasClimateConfigLoaded = true;
-            isClimateConfigLoading = false;
-            Serial.println("Loaded climate config from external eeprom [OK]");
+            // Serial.println(json.c_str());
+            zoneController = Zone::Controller::fromJSON(json);
+            wasZoneControllerLoaded = true;
+            isZoneControllerLoading = false;
+            Serial.println("Loaded zone controller from external eeprom [OK]");
         }
         else
         {
             // load empty config
-            Serial.println("No storage found");
+            Serial.println("No storage found, loading initial zone controller");
 
-            climateConfig = loadInitClimateConfig();
+            zoneController = Zone::Controller();
         }
-        return climateConfig;
+        return zoneController;
     }
 }

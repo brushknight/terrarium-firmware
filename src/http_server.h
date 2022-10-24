@@ -7,6 +7,7 @@
 #include "data.h"
 #include "ArduinoJson.h"
 #include "real_time.h"
+#include "zone.h"
 #include <Update.h>
 
 namespace HttpServer

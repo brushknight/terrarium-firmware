@@ -240,7 +240,7 @@ public:
     }
 };
 
-class ControllerConfig
+class SystemConfig
 {
 public:
     std::string wifiSSID;
@@ -260,9 +260,9 @@ public:
         doc["id"] = id;
         return doc;
     }
-    static ControllerConfig fromJSON(std::string json)
+    static SystemConfig fromJSON(std::string json)
     {
-        ControllerConfig config;
+        SystemConfig config;
 
         DynamicJsonDocument doc(jsonSize());
         deserializeJson(doc, json);

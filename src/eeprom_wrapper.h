@@ -4,6 +4,7 @@
 #include <EEPROM.h>
 #include "SparkFun_External_EEPROM.h"
 #include "config.h"
+#include "zone.h"
 
 namespace Eeprom
 {
@@ -11,18 +12,18 @@ namespace Eeprom
     bool isMemorySet();
 
     void clear();
-    void clearClimate();
-    void clearController();
-    void saveControllerConfig(ControllerConfig config);
-    void saveClimateConfig(ClimateConfig config);
-    ClimateConfig loadClimateConfig();
-    ControllerConfig loadControllerConfig();
-    ControllerConfig loadControllerConfigFromESP32();
-    ControllerConfig loadControllerConfigFromExternalEEPROM();
-    bool isControllerConfigSetESP32();
-    bool isControllerConfigSetExternalEEPROM();
-    bool isClimateConfigSetExternalEEPROM();
-    void saveClimateConfigTask(void *parameter);
+    void clearZoneController();
+    void clearSystemSettings();
+    void saveSystemConfig(SystemConfig config);
+    void saveZoneController(Zone::Controller config);
+    Zone::Controller loadZoneController();
+    SystemConfig loadSystemConfig();
+    SystemConfig loadSystemConfigFromESP32();
+    SystemConfig loadSystemConfigFromExternalEEPROM();
+    bool isSystemConfigSetESP32();
+    bool isSystemConfigSetExternalEEPROM();
+    bool isZoneControllerSetExternalEEPROM();
+    void saveZoneControllerTask(void *parameter);
 }
 
 #endif

@@ -4,11 +4,10 @@
 #include "time.h"
 #include "Arduino.h"
 #include <RTClib.h>
-#include "display.h"
 #include "net.h"
 #include "utils.h"
 #include <string>
-// #include "status.h"
+
 
 namespace RealTime
 {

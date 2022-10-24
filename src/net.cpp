@@ -32,7 +32,7 @@ namespace Net
 
     void setWiFiName(Data *givenData)
     {
-        std::string wifiSSID = Eeprom::loadControllerConfig().wifiSSID;
+        std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
 
         (*givenData).metadata.wifiName = wifiSSID.c_str();
     }
@@ -56,7 +56,7 @@ namespace Net
         delay(100);
 
         char buffer[100];
-        sprintf(buffer, "%s#%s", "Terrarium controller ID", Eeprom::loadControllerConfig().id.c_str());
+        sprintf(buffer, "%s#%s", "Terrarium controller ID", Eeprom::loadSystemConfig().id.c_str());
 
         WiFi.setHostname(buffer);
 
@@ -65,8 +65,8 @@ namespace Net
         // Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
         // Serial.println(Eeprom::readWiFiPassFromMemory().c_str());
 
-        std::string wifiSSID = Eeprom::loadControllerConfig().wifiSSID;
-        std::string wifiPassword = Eeprom::loadControllerConfig().wifiPassword;
+        std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
+        std::string wifiPassword = Eeprom::loadSystemConfig().wifiPassword;
 
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 

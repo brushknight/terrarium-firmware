@@ -2,7 +2,6 @@
 #include <EEPROM.h>
 #include "display.h"
 #include "data.h"
-#include "climate.h"
 #include "real_time.h"
 #include "http_server.h"
 #include "eeprom_wrapper.h"
@@ -22,112 +21,133 @@ void taskFetchSensors(void *parameter)
 {
   Measure::scan();
 
-  Control::Controller controller = Control::Controller();
-
-  Zone::TemperatureZone tZone1 = Zone::TemperatureZone("test zone");
-  tZone1.heaterPort = 2;
-  tZone1.events[0].since = "20220918_223000";
-  tZone1.events[0].until = "20220918_233000";
-  tZone1.events[0].temperature = 30;
-  tZone1.events[0].set = true;
-  tZone1.sensorIDs[0] = Measure::SensorID(2, Measure::SENSOR_TYPE_DHT22);
-  tZone1.sensorIDs[1] = Measure::SensorID(0, Measure::SENSOR_TYPE_BME280);
-
   for (;;)
   {
     Measure::readSensors();
 
-    tZone1.loopTick("20220918_224330", Measure::getSharedSensors(), &controller);
+    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+  }
+}
+
+void taskZoneControl(void *parameter)
+{
+  Control::Controller controller = Control::Controller();
+  controller.resetPorts();
+
+  Zone::Controller zoneController = Zone::Controller();
+
+  Zone::TemperatureZone tZone1 = Zone::TemperatureZone("test zone");
+  tZone1.heaterPort = 0;
+  tZone1.events[0].since = "223000";
+  tZone1.events[0].until = "233000";
+  tZone1.events[0].temperature = 30;
+  tZone1.events[0].set = true;
+  tZone1.events[1].since = "233000";
+  tZone1.events[1].until = "223000";
+  tZone1.events[1].temperature = 23;
+  tZone1.events[1].set = true;
+  tZone1.sensorIDs[0] = Measure::SensorID(1, Measure::SENSOR_TYPE_DHT22);
+  tZone1.sensorIDs[1] = Measure::SensorID(0, Measure::SENSOR_TYPE_BME280);
+
+  zoneController.addTemperatureZone(tZone1);
+
+  //Eeprom::saveZoneController(zoneController);
+
+  for (;;)
+  {
+
+    zoneController.loopTick("233500", Measure::getSharedSensors(), &controller);
+
+    vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
+
+    zoneController.loopTick("223500", Measure::getSharedSensors(), &controller);
 
     vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
   }
 }
 
-void taskCheckRtcBattery(void *parameter)
-{
-  // add display reset if needed each N minutes
+// void taskCheckRtcBattery(void *parameter)
+// {
+//   // add display reset if needed each N minutes
 
-  for (;;)
-  {
-    data.RtcBatteryPercent = RealTime::getBatteryPercent();
-    vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-  }
-}
+//   for (;;)
+//   {
+//     data.RtcBatteryPercent = RealTime::getBatteryPercent();
+//     vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+//   }
+// }
 
-void taskDisplayRender(void *parameter)
-{
-  // add display reset if needed each N minutes
-  vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-  int frameCounter = 0;
-  for (;;)
-  {
-    Display::render(data);
-    vTaskDelay(DISPLAY_RENDER_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-    frameCounter++;
+// void taskDisplayRender(void *parameter)
+// {
+//   // add display reset if needed each N minutes
+//   vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+//   int frameCounter = 0;
+//   for (;;)
+//   {
+//     Display::render(data);
+//     vTaskDelay(DISPLAY_RENDER_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+//     frameCounter++;
 
-    if (frameCounter == 60 * 10)
-    {
-      Display::registerIcons();
-      frameCounter = 0;
-    }
-  }
-}
+//     if (frameCounter == 60 * 10)
+//     {
+//       Display::registerIcons();
+//       frameCounter = 0;
+//     }
+//   }
+// }
 
-void taskClimateControl(void *parameter)
-{
-  Serial.println("Starting climate control");
-  Climate::setup(Eeprom::loadClimateConfig());
-  Climate::enableSensors();
+// void taskClimateControl(void *parameter)
+// {
+//   Serial.println("Starting climate control");
+//   Climate::setup(Eeprom::loadClimateConfig());
+//   Climate::enableSensors();
 
-  for (;;)
-  {
+//   for (;;)
+//   {
 
-    DataClimateZone *result = Climate::control(RealTime::getHour(), RealTime::getMinute());
+//     DataClimateZone *result = Climate::control(RealTime::getHour(), RealTime::getMinute());
 
-    for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-    {
-      data.climateZones[i] = result[i];
-    }
+//     for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+//     {
+//       data.climateZones[i] = result[i];
+//     }
 
-    vTaskDelay(CLIMATE_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-  }
-}
+//     vTaskDelay(CLIMATE_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+//   }
+// }
 
-void taskLightControl(void *parameter)
-{
-  Serial.println("Starting Light control");
-  ClimateConfig config = Eeprom::loadClimateConfig();
-  Light::setup(config);
-  Light::EventData eventData;
+// void taskLightControl(void *parameter)
+// {
+//   Serial.println("Starting Light control");
+//   Zone::Controller config = Eeprom::loadZoneController();
+//   // Light::setup(config);
+//   // Light::EventData eventData;
 
-  for (;;)
-  {
-    eventData = Light::control(RealTime::getHour(), RealTime::getMinute());
+//   // for (;;)
+//   // {
+//   //   eventData = Light::control(RealTime::getHour(), RealTime::getMinute());
 
-    for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
-    {
-      data.lightEvents[i] = eventData.active[i];
-    }
+//   //   for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
+//   //   {
+//   //     data.lightEvents[i] = eventData.active[i];
+//   //   }
 
-    vTaskDelay(LIGHT_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-  }
-}
+//   //   vTaskDelay(LIGHT_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+//   // }
+// }
 
-void taskWatchNetworkStatus(void *parameter)
-{
-  for (;;)
-  {
-    data.WiFiStatus = Net::isConnected();
-    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
-  }
-}
+// void taskWatchNetworkStatus(void *parameter)
+// {
+//   for (;;)
+//   {
+//     data.WiFiStatus = Net::isConnected();
+//     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+//   }
+// }
 
 void demoSetup()
 {
   Utils::scanForI2C();
-  ClimateConfig config = loadInitClimateConfig();
-  Climate::setup(config);
-  Climate::enableSensors();
   Status::setup();
   RealTime::setup(true);
   Measure::scan();
@@ -136,15 +156,14 @@ void demoSetup()
 
 void demoLoop(void *parameter)
 {
-  ClimateConfig config = loadInitClimateConfig();
-  config.climateZoneConfigs[0].name = "test demo zone";
-  Eeprom::saveClimateConfig(config);
+  Zone::Controller config = Zone::Controller();
+  Eeprom::saveZoneController(config);
 
   for (;;)
   {
     Serial.println("loop starts");
     // heap_caps_check_integrity_all(true);
-    config = Eeprom::loadClimateConfig();
+    config = Eeprom::loadZoneController();
 
     Serial.println();
     Serial.println("config loaded");
@@ -194,20 +213,11 @@ void setupTask(void *parameter)
   Serial.println("Controller starting [  ]");
   Wire.begin();
   Utils::scanForI2C();
-  Climate::resetRelays();
-
-  Control::Switch s0 = Control::Switch(0);
-  s0.off();
-  sleep(1);
-  s0.on();
-  sleep(1);
-  s0.off();
-  sleep(1);
 
   Eeprom::setup();
   Display::setup();
   Status::setup();
-  ControllerConfig controllerConfig = Eeprom::loadControllerConfig();
+  SystemConfig systemConfig = Eeprom::loadSystemConfig();
   data = Data();
 
   initialSetupMode = !Eeprom::isMemorySet();
@@ -244,39 +254,47 @@ void setupTask(void *parameter)
         2,
         NULL,
         1);
+    xTaskCreatePinnedToCore(
+        taskZoneControl,
+        "taskZoneControl",
+        4096 * 2,
+        NULL,
+        2,
+        NULL,
+        1);
   }
   else
   {
-    Eeprom::loadClimateConfig();
+    Eeprom::loadZoneController();
 
-    data.metadata.id = Eeprom::loadControllerConfig().id;
+    data.metadata.id = Eeprom::loadSystemConfig().id;
 
-    xTaskCreatePinnedToCore(
-        taskDisplayRender,
-        "taskDisplayRender",
-        4192,
-        NULL,
-        2,
-        NULL,
-        1);
+    // xTaskCreatePinnedToCore(
+    //     taskDisplayRender,
+    //     "taskDisplayRender",
+    //     4192,
+    //     NULL,
+    //     2,
+    //     NULL,
+    //     1);
 
-    xTaskCreatePinnedToCore(
-        taskCheckRtcBattery,
-        "taskCheckRtcBattery",
-        1024,
-        NULL,
-        1,
-        NULL,
-        1);
+    // xTaskCreatePinnedToCore(
+    //     taskCheckRtcBattery,
+    //     "taskCheckRtcBattery",
+    //     1024,
+    //     NULL,
+    //     1,
+    //     NULL,
+    //     1);
 
-    xTaskCreatePinnedToCore(
-        taskWatchNetworkStatus,
-        "taskWatchNetworkStatus",
-        1024,
-        NULL,
-        2,
-        NULL,
-        0);
+    // xTaskCreatePinnedToCore(
+    //     taskWatchNetworkStatus,
+    //     "taskWatchNetworkStatus",
+    //     1024,
+    //     NULL,
+    //     2,
+    //     NULL,
+    //     0);
 
     if (RealTime::isWiFiRequired())
     {
@@ -285,25 +303,25 @@ void setupTask(void *parameter)
     }
     RealTime::setup(true);
 
-    if (Eeprom::isClimateConfigSetExternalEEPROM())
+    if (Eeprom::isZoneControllerSetExternalEEPROM())
     {
-      xTaskCreatePinnedToCore(
-          taskClimateControl,
-          "taskClimateControl",
-          1024 * 16,
-          NULL,
-          1,
-          NULL,
-          0);
+      // xTaskCreatePinnedToCore(
+      //     taskClimateControl,
+      //     "taskClimateControl",
+      //     1024 * 16,
+      //     NULL,
+      //     1,
+      //     NULL,
+      //     0);
 
-      xTaskCreatePinnedToCore(
-          taskLightControl,
-          "taskLightControl",
-          1024 * 16,
-          NULL,
-          1,
-          NULL,
-          0);
+      // xTaskCreatePinnedToCore(
+      //     taskLightControl,
+      //     "taskLightControl",
+      //     1024 * 16,
+      //     NULL,
+      //     1,
+      //     NULL,
+      //     0);
     }
 
     Net::connect();

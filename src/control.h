@@ -42,6 +42,7 @@ namespace Control
         Switch(int p)
         {
             port = p;
+            pinMode(RELAY_PINS[port], OUTPUT);
         };
         bool enabled()
         {
@@ -164,6 +165,11 @@ namespace Control
 
             colorLights.list[0] = ColorLight();
         };
+        void resetPorts(){
+            switches.list[0].off();
+            switches.list[1].off();
+            switches.list[2].off();
+        }
         bool turnSwitchOn(int port)
         {
             switches.list[port].on();

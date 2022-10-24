@@ -6,7 +6,6 @@
 #include "event.h"
 #include "control.h"
 #include "measure.h"
-#include "real_time.h"
 #include <string>
 #include "ArduinoJson.h"
 
@@ -165,7 +164,7 @@ namespace Zone
             // compare temperature to required
             // adjust corresponding relay via controller
 
-            Serial.printf("Average temperature %.2f\n", status.averageTemperature);
+            Serial.printf("Average temperature %.2f, target  %.2f\n", status.averageTemperature, status.targetTemperature);
 
             if (status.averageTemperature < 0)
             {
@@ -202,6 +201,7 @@ namespace Zone
         }
 
     public:
+        Controller(){}
         void loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             if (!paused)
@@ -286,7 +286,6 @@ namespace Zone
 
         // report of all zones, how to do? (to display and for api)
     };
-
 }
 
 #endif

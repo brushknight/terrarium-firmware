@@ -256,19 +256,5 @@ namespace RealTime
         return esp_timer_get_time() / 1000000;
     }
 
-    bool checkScheduleTimeWindow(std::string now, std::string since, std::string until)
-    {
 
-        //Serial.printf("%s, %s, %s\n", since.c_str(), now.c_str(), until.c_str());
-        if (since.compare(until) < 0)
-        {
-            //Serial.printf("since.compare(now) <= 0 && until.compare(now) > 0\n");
-            return since.compare(now) <= 0 && until.compare(now) > 0;
-        }
-        else
-        {
-            //Serial.printf("since.compare(now) <= 0 || until.compare(now) > 0\n");
-            return since.compare(now) <= 0 || until.compare(now) > 0;
-        }
-    }
 }
