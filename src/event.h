@@ -12,9 +12,9 @@ namespace Event
     {
     public:
         bool set = false;
-        std::string since;
-        std::string until;
-        int durationSec;
+        std::string since = "";
+        std::string until = "";
+        int durationSec = -1;
         Event() {}
         Event(std::string s, std::string u, int dSec)
         {
@@ -44,7 +44,7 @@ namespace Event
     class TemperatureEvent : public Event
     {
     public:
-        float temperature;
+        float temperature = -1;
         TemperatureEvent() {} // just for empty array of events
         TemperatureEvent(std::string s, std::string u, int dSec, float t) : Event(s, u, dSec)
         {
@@ -58,6 +58,7 @@ namespace Event
         DynamicJsonDocument toJSON()
         {
             DynamicJsonDocument doc(jsonSize());
+            doc["set"] = set;
             doc["since"] = since;
             doc["until"] = until;
             doc["durationSec"] = durationSec;
@@ -67,13 +68,18 @@ namespace Event
 
         static TemperatureEvent fromJSON(std::string json)
         {
-            TemperatureEvent temperatureEvent;
-
             DynamicJsonDocument doc(jsonSize());
             deserializeJson(doc, json);
 
+            return TemperatureEvent::fromJSONObj(doc);
+        }
+
+        static TemperatureEvent fromJSONObj(DynamicJsonDocument doc)
+        {
+            TemperatureEvent temperatureEvent;
+            temperatureEvent.set = doc["set"];
             temperatureEvent.since = doc["since"].as<std::string>();
-            temperatureEvent.until = doc["siuntilce"].as<std::string>();
+            temperatureEvent.until = doc["until"].as<std::string>();
             temperatureEvent.durationSec = doc["durationSec"];
             temperatureEvent.temperature = doc["temperature"];
 

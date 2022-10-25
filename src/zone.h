@@ -36,10 +36,15 @@ namespace Zone
         }
         static TemperatureZoneStatus fromJSON(std::string json)
         {
-            TemperatureZoneStatus temperatureZoneStatus;
-
             DynamicJsonDocument doc(jsonSize());
             deserializeJson(doc, json);
+
+            return TemperatureZoneStatus::fromJSONObj(doc);
+        }
+
+        static TemperatureZoneStatus fromJSONObj(DynamicJsonDocument doc)
+        {
+            TemperatureZoneStatus temperatureZoneStatus;
 
             temperatureZoneStatus.averageTemperature = doc["averageTemperature"];
             temperatureZoneStatus.targetTemperature = doc["targetTemperature"];
@@ -81,6 +86,7 @@ namespace Zone
         {
             DynamicJsonDocument doc(jsonSize());
             doc["slug"] = slug;
+            doc["enabled"] = enabled;
             for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
             {
                 doc["sensorIDs"][i] = sensorIDs[i].toJSON();
@@ -96,21 +102,26 @@ namespace Zone
 
         static TemperatureZone fromJSON(std::string json)
         {
-            TemperatureZone temperatureZone;
-
             DynamicJsonDocument doc(jsonSize());
             deserializeJson(doc, json);
 
+            return TemperatureZone::fromJSONObj(doc);
+        }
+
+        static TemperatureZone fromJSONObj(DynamicJsonDocument doc)
+        {
+            TemperatureZone temperatureZone;
             temperatureZone.slug = doc["slug"].as<std::string>();
-            temperatureZone.status = TemperatureZoneStatus::fromJSON(doc["status"]);
+            temperatureZone.status = TemperatureZoneStatus::fromJSONObj(doc["status"]);
             temperatureZone.heaterPort = doc["heaterPort"];
+            temperatureZone.enabled = doc["enabled"];
             for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
             {
-                temperatureZone.sensorIDs[i] = Measure::SensorID::fromJSON(doc["sensorIDs"][i]);
+                temperatureZone.sensorIDs[i] = Measure::SensorID::fromJSONObj(doc["sensorIDs"][i]);
             }
             for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
             {
-                temperatureZone.events[i] = Event::TemperatureEvent::fromJSON(doc["events"][i]);
+                temperatureZone.events[i] = Event::TemperatureEvent::fromJSONObj(doc["events"][i]);
             }
 
             return temperatureZone;
@@ -201,7 +212,7 @@ namespace Zone
         }
 
     public:
-        Controller(){}
+        Controller() {}
         void loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             if (!paused)
@@ -268,14 +279,19 @@ namespace Zone
 
         static Controller fromJSON(std::string json)
         {
-            Controller controller;
-
             DynamicJsonDocument doc(jsonSize());
             deserializeJson(doc, json);
 
+            return Controller::fromJSONObj(doc);
+        }
+
+        static Controller fromJSONObj(DynamicJsonDocument doc)
+        {
+            Controller controller;
+
             for (int i = 0; i < maxTemperatureZonesCount; i++)
             {
-                controller.temperatureZones[i] = TemperatureZone::fromJSON(doc["temperatureZones"][i]);
+                controller.temperatureZones[i] = TemperatureZone::fromJSONObj(doc["temperatureZones"][i]);
             }
 
             return controller;

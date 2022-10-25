@@ -18,8 +18,8 @@ namespace Measure
     class SensorID
     {
     public:
-        int port;
-        int type;
+        int port = -1;
+        int type = -1;
         SensorID() {} // for empty arrays
         SensorID(int p, int t)
         {
@@ -45,10 +45,15 @@ namespace Measure
 
         static SensorID fromJSON(std::string json)
         {
-            SensorID sensorID;
-
             DynamicJsonDocument doc(jsonSize());
             deserializeJson(doc, json);
+
+            return SensorID::fromJSONObj(doc);
+        }
+
+        static SensorID fromJSONObj(DynamicJsonDocument doc)
+        {
+            SensorID sensorID;
 
             sensorID.port = doc["port"];
             sensorID.type = doc["type"];

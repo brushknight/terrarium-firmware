@@ -29,6 +29,7 @@ namespace Eeprom
     Zone::Controller zoneController;
     bool wasZoneControllerLoaded = false;
     bool isZoneControllerLoading = false;
+    bool isZoneControllerSaving = false;
     SystemConfig systemConfig;
     bool wasSystemConfigLoaded = false;
 
@@ -195,6 +196,9 @@ namespace Eeprom
 
     void saveZoneControllerTask(void *parameter)
     {
+        isZoneControllerSaving = true;
+        // Serial.println("Cleaning zone controller to eeprom before saving");
+        // clearZoneController();
         Serial.println("saving zone controller to eeprom");
         DynamicJsonDocument doc = zoneController.toJSON();
         // Lastly, you can print the resulting JSON to a String
@@ -208,11 +212,13 @@ namespace Eeprom
             externalEEPROM.write(i + ZONE_CONTROLLER_INDEX, json[i]);
             // Serial.println(json[i]);
         }
-        Serial.println("Saving [OK]");
+
+
 
         externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
-
-        ESP.restart();
+        isZoneControllerSaving = false;
+        Serial.println("Saving [OK]");
+        //ESP.restart();
     }
 
     void saveZoneController(Zone::Controller config)
@@ -225,7 +231,7 @@ namespace Eeprom
             xTaskCreatePinnedToCore(
                 saveZoneControllerTask,
                 "saveZoneControllerTask",
-                1024 * 8,
+                1024 * 10,
                 NULL,
                 3,
                 NULL,
@@ -239,7 +245,20 @@ namespace Eeprom
 
     Zone::Controller loadZoneController()
     {
+        if (isZoneControllerSaving) {
+            for (int i = 0; i < 60; i++)
+            {
+                Serial.println("Loading zone controller - waiting");
+                vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+                
+                if (!isZoneControllerSaving)
+                {
+                    continue; // jump to loading step
+                }
+            }
+        }
 
+        Serial.println(isZoneControllerLoading);
         if (isZoneControllerLoading)
         {
             for (int i = 0; i < 60; i++)
@@ -273,7 +292,8 @@ namespace Eeprom
                 // Serial.println(raw[i]);
             }
 
-            // Serial.println(raw);
+            Serial.println("Loaded raw");
+            Serial.println(raw);
 
             std::string json = std::string(raw);
 

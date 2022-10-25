@@ -34,7 +34,7 @@ void taskZoneControl(void *parameter)
   Control::Controller controller = Control::Controller();
   controller.resetPorts();
 
-  Zone::Controller zoneController = Zone::Controller();
+  Zone::Controller zoneControllerToSave = Zone::Controller();
 
   Zone::TemperatureZone tZone1 = Zone::TemperatureZone("test zone");
   tZone1.heaterPort = 0;
@@ -49,9 +49,18 @@ void taskZoneControl(void *parameter)
   tZone1.sensorIDs[0] = Measure::SensorID(1, Measure::SENSOR_TYPE_DHT22);
   tZone1.sensorIDs[1] = Measure::SensorID(0, Measure::SENSOR_TYPE_BME280);
 
-  zoneController.addTemperatureZone(tZone1);
+  zoneControllerToSave.addTemperatureZone(tZone1);
 
-  //Eeprom::saveZoneController(zoneController);
+  //Eeprom::saveZoneController(zoneControllerToSave);
+
+  Zone::Controller zoneController = Eeprom::loadZoneController();
+
+  DynamicJsonDocument doc = zoneController.toJSON();
+  // Lastly, you can print the resulting JSON to a String
+  std::string json;
+  serializeJson(doc, json);
+  Serial.println("Loaded: ");
+  Serial.println(json.c_str());
 
   for (;;)
   {
@@ -257,7 +266,7 @@ void setupTask(void *parameter)
     xTaskCreatePinnedToCore(
         taskZoneControl,
         "taskZoneControl",
-        4096 * 2,
+        1024 * 14,
         NULL,
         2,
         NULL,
