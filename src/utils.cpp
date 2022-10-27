@@ -3,7 +3,7 @@
 namespace Utils
 {
 
-    const int SET_INDEX = 0;
+    const int IS_SYSTEM_SET_INDEX = 0;
     const int WIFI_SSID_INDEX = 1;
     const int WIFI_SSID_LEN = 32;
     const int WIFI_PASS_INDEX = WIFI_SSID_INDEX + WIFI_SSID_LEN;

@@ -19,11 +19,11 @@ namespace HttpServer
         ESP.restart();
     }
 
-    void onPostResetController(AsyncWebServerRequest *request)
+    void onPostResetSystem(AsyncWebServerRequest *request)
     {
         Eeprom::clearSystemSettings();
 
-        request->send(200, "text/plain", "Controller configuration cleared, rebooting in 3 seconds");
+        request->send(200, "text/plain", "System configuration cleared, rebooting in 3 seconds");
 
         vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
 
@@ -56,7 +56,7 @@ namespace HttpServer
         request->send_P(200, "text/html", CLIMATE_CONFIG_FORM);
     }
 
-    void onGetControllerConfig(AsyncWebServerRequest *request)
+    void onGetSystemConfig(AsyncWebServerRequest *request)
     {
         Zone::Controller config = Eeprom::loadZoneController();
         DynamicJsonDocument json = config.toJSON();
@@ -78,7 +78,7 @@ namespace HttpServer
         request->send(200, "application/json", requestBody.c_str());
     }
 
-    void onPostControllerConfig(AsyncWebServerRequest *request)
+    void onPostSystemConfig(AsyncWebServerRequest *request)
     {
         // ssid, pass, id
         SystemConfig config = Eeprom::loadSystemConfig();
@@ -140,7 +140,7 @@ namespace HttpServer
 
     void onGetMetrics(AsyncWebServerRequest *request)
     {
-        DynamicJsonDocument doc(1024 + MAX_LIGHT_EVENTS * LightEvent::jsonSize());
+        DynamicJsonDocument doc(1024 * 2 + Zone::ZonesStatuses::jsonSize());
 
         SystemConfig controllerConfig = Eeprom::loadSystemConfig();
 
@@ -152,30 +152,8 @@ namespace HttpServer
         doc["metadata"]["build_time"] = BUILD_TIME;
         doc["system"]["rtc_battery"] = (*data).RtcBatteryPercent;
 
-        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-        {
-            if ((*data).climateZones[i].isSet)
-            {
-                std::string slug = (*data).climateZones[i].slug;
+        doc["climate"] = (*data).zones.toJSON();
 
-                doc["climate"][slug]["name"] = (*data).climateZones[i].name;
-                doc["climate"][slug]["heating"] = (*data).climateZones[i].heatingPhase;
-                doc["climate"][slug]["temperature"] = (*data).climateZones[i].temperature;
-                doc["climate"][slug]["targetTemperature"] = (*data).climateZones[i].targetTemperature;
-                doc["climate"][slug]["humidity"] = (*data).climateZones[i].humidity;
-            }
-        }
-
-        int lightEventIndex = 0;
-        for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
-        {
-            LightEvent event = (*data).lightEvents[i];
-            if (event.isSet())
-            {
-                doc["light"][lightEventIndex] = event.toJSON();
-                lightEventIndex++;
-            }
-        }
 
         std::string requestBody;
         serializeJson(doc, requestBody);
@@ -191,10 +169,10 @@ namespace HttpServer
         server.on("/climate", HTTP_GET, onFormClimateConfig);
 
         server.on("/api/metrics", HTTP_GET, onGetMetrics);
-        server.on("/api/config-controller", HTTP_GET, onGetControllerConfig);
-        server.on("/api/config-controller", HTTP_POST, onPostControllerConfig);
+        server.on("/api/config-system", HTTP_GET, onGetSystemConfig);
+        server.on("/api/config-system", HTTP_POST, onPostSystemConfig);
         server.on("/api/reset", HTTP_POST, onPostReset);
-        server.on("/api/reset-controller", HTTP_POST, onPostResetController);
+        server.on("/api/reset-system", HTTP_POST, onPostResetSystem);
         server.on("/api/reset-climate", HTTP_POST, onPostResetClimate);
         server.on("/api/config-climate", HTTP_GET, onGetClimateConfig);
         server.on("/api/config-climate", HTTP_POST, onPostClimateConfig);

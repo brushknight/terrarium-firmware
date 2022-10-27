@@ -18,20 +18,24 @@ namespace Zone
     class TemperatureZoneStatus
     {
     public:
-        float averageTemperature;
-        float targetTemperature;
-        boolean heaterStatus;
+        float averageTemperature = 0;
+        float targetTemperature = 0;
+        std::string slug = "";
+        boolean heaterStatus = false;
         static int jsonSize()
         {
-            return 64;
+            return 96;
         }
-
+        boolean isSet(){
+            return slug != "";
+        }
         DynamicJsonDocument toJSON()
         {
             DynamicJsonDocument doc(jsonSize());
-            doc["averageTemperature"] = averageTemperature;
-            doc["targetTemperature"] = targetTemperature;
-            doc["heaterStatus"] = heaterStatus;
+            doc["average_temperature"] = averageTemperature;
+            doc["target_temperature"] = targetTemperature;
+            doc["heater_status"] = heaterStatus;
+            // doc["slug"] = slug;
             return doc;
         }
         static TemperatureZoneStatus fromJSON(std::string json)
@@ -46,11 +50,34 @@ namespace Zone
         {
             TemperatureZoneStatus temperatureZoneStatus;
 
-            temperatureZoneStatus.averageTemperature = doc["averageTemperature"];
-            temperatureZoneStatus.targetTemperature = doc["targetTemperature"];
-            temperatureZoneStatus.heaterStatus = doc["heaterStatus"];
+            temperatureZoneStatus.averageTemperature = doc["average_temperature"];
+            temperatureZoneStatus.targetTemperature = doc["target_temperature"];
+            temperatureZoneStatus.heaterStatus = doc["heater_status"];
+            // temperatureZoneStatus.slug = doc["slug"].as<std::string>();
 
             return temperatureZoneStatus;
+        }
+    };
+
+    class ZonesStatuses
+    {
+    public:
+        TemperatureZoneStatus temperatureZones[maxTemperatureZonesCount];
+        static int jsonSize()
+        {
+            return TemperatureZoneStatus::jsonSize() * maxTemperatureZonesCount;
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            for (int i = 0; i < maxTemperatureZonesCount; i++)
+            {
+                if (temperatureZones[i].isSet())
+                {
+                    doc["temperature_zones"][temperatureZones[i].slug] = temperatureZones[i].toJSON();
+                }
+            }
+            return doc;
         }
     };
 
@@ -89,14 +116,14 @@ namespace Zone
             doc["enabled"] = enabled;
             for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
             {
-                doc["sensorIDs"][i] = sensorIDs[i].toJSON();
+                doc["sensor_ids"][i] = sensorIDs[i].toJSON();
             }
             for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
             {
                 doc["events"][i] = events[i].toJSON();
             }
-            doc["status"] = status.toJSON();
-            doc["heaterPort"] = heaterPort;
+            // doc["status"] = status.toJSON();
+            doc["heater_port"] = heaterPort;
             return doc;
         }
 
@@ -112,12 +139,13 @@ namespace Zone
         {
             TemperatureZone temperatureZone;
             temperatureZone.slug = doc["slug"].as<std::string>();
-            temperatureZone.status = TemperatureZoneStatus::fromJSONObj(doc["status"]);
-            temperatureZone.heaterPort = doc["heaterPort"];
+            // temperatureZone.status = TemperatureZoneStatus::fromJSONObj(doc["status"]); // should not be saved
+            //  temperatureZone.status = TemperatureZoneStatus();
+            temperatureZone.heaterPort = doc["heater_port"];
             temperatureZone.enabled = doc["enabled"];
             for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
             {
-                temperatureZone.sensorIDs[i] = Measure::SensorID::fromJSONObj(doc["sensorIDs"][i]);
+                temperatureZone.sensorIDs[i] = Measure::SensorID::fromJSONObj(doc["sensor_ids"][i]);
             }
             for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
             {
@@ -137,9 +165,10 @@ namespace Zone
             return enabled;
         }
 
-        void loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        TemperatureZoneStatus loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
-            // find active event (latest in the window)
+            // TODO return status
+            //  find active event (latest in the window)
 
             Event::TemperatureEvent activeEvent;
 
@@ -180,7 +209,7 @@ namespace Zone
             if (status.averageTemperature < 0)
             {
                 Serial.println("ERROR: temperature cant be subzero");
-                return;
+                return status;
             }
 
             if (status.averageTemperature < status.targetTemperature)
@@ -193,6 +222,10 @@ namespace Zone
                 (*controller).turnSwitchOff(heaterPort);
                 status.heaterStatus = false;
             }
+
+            status.slug = slug;
+
+            return status;
         }
     };
 
@@ -213,8 +246,11 @@ namespace Zone
 
     public:
         Controller() {}
-        void loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ZonesStatuses loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
+            ZonesStatuses statuses;
+            int temperatureZonesIndex = 0;
+            // TODO return list of statuses
             if (!paused)
             {
                 // loop over all zones
@@ -222,10 +258,12 @@ namespace Zone
                 {
                     if (temperatureZones[i].isEnabled())
                     {
-                        temperatureZones[i].loopTick(now, sharedSensors, controller);
+                        statuses.temperatureZones[temperatureZonesIndex] = temperatureZones[i].loopTick(now, sharedSensors, controller);
+                        temperatureZonesIndex++;
                     }
                 }
             }
+            return statuses;
         }
         void addTemperatureZone(TemperatureZone tempZone)
         {
@@ -235,6 +273,7 @@ namespace Zone
                 if (!temperatureZones[i].isEnabled())
                 {
                     temperatureZones[i] = tempZone;
+                    break;
                 }
                 // TODO return error if have already 3 zones
             }
@@ -272,7 +311,7 @@ namespace Zone
             DynamicJsonDocument doc(jsonSize());
             for (int i = 0; i < maxTemperatureZonesCount; i++)
             {
-                doc["temperatureZones"][i] = temperatureZones[i].toJSON();
+                doc["temperature_zones"][i] = temperatureZones[i].toJSON();
             }
             return doc;
         }
@@ -291,7 +330,7 @@ namespace Zone
 
             for (int i = 0; i < maxTemperatureZonesCount; i++)
             {
-                controller.temperatureZones[i] = TemperatureZone::fromJSONObj(doc["temperatureZones"][i]);
+                controller.temperatureZones[i] = TemperatureZone::fromJSONObj(doc["temperature_zones"][i]);
             }
 
             return controller;

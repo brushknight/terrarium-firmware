@@ -16,6 +16,7 @@ namespace RealTime
     void syncFromRTC();
     void syncFromNTP();
     bool saveTimeToRTC();
+    std::string getTime();
     int getHour();
     int getMinute();
     int getSecond();

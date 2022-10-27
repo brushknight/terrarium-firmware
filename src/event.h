@@ -52,7 +52,7 @@ namespace Event
         }
         static int jsonSize()
         {
-            return 80;
+            return 128;
         }
 
         DynamicJsonDocument toJSON()
@@ -61,8 +61,9 @@ namespace Event
             doc["set"] = set;
             doc["since"] = since;
             doc["until"] = until;
-            doc["durationSec"] = durationSec;
+            doc["duration_sec"] = durationSec;
             doc["temperature"] = temperature;
+            // Serial.printf("DEBUG - to JSON temp: %0.2f\n",doc["temperature"]);
             return doc;
         }
 
@@ -80,7 +81,8 @@ namespace Event
             temperatureEvent.set = doc["set"];
             temperatureEvent.since = doc["since"].as<std::string>();
             temperatureEvent.until = doc["until"].as<std::string>();
-            temperatureEvent.durationSec = doc["durationSec"];
+            temperatureEvent.durationSec = doc["duration_sec"];
+            // Serial.printf("DEBUG - from JSON temp: %0.2f\n",doc["temperature"]);
             temperatureEvent.temperature = doc["temperature"];
 
             return temperatureEvent;

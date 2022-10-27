@@ -146,6 +146,26 @@ namespace RealTime
         }
     }
 
+    std::string getTime(){
+        int hour = 0;
+        int minute = 0;
+        int second = 0;
+
+        struct tm timeinfo;
+        if (!getLocalTime(&timeinfo))
+        {
+            Serial.println("getHour() Failed to obtain time");
+
+            return 0;
+        }
+
+        hour = timeinfo.tm_hour;
+        minute = timeinfo.tm_min;
+        second = timeinfo.tm_sec;
+
+        return Utils::hourMinuteToString(hour, minute);
+    }
+
     int getHour()
     {
         int hour = 0;

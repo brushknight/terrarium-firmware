@@ -6,7 +6,6 @@
 #include "http_server.h"
 #include "eeprom_wrapper.h"
 #include "status.h"
-#include "light.h"
 #include "measure.h"
 #include "control.h"
 #include "zone.h"
@@ -36,27 +35,9 @@ void taskZoneControl(void *parameter)
 
   Zone::Controller zoneControllerToSave = Zone::Controller();
 
-  Zone::TemperatureZone tZone1 = Zone::TemperatureZone("test zone");
-  tZone1.heaterPort = 0;
-  tZone1.events[0].since = "223000";
-  tZone1.events[0].until = "233000";
-  tZone1.events[0].temperature = 30;
-  tZone1.events[0].set = true;
-  tZone1.events[1].since = "233000";
-  tZone1.events[1].until = "223000";
-  tZone1.events[1].temperature = 23;
-  tZone1.events[1].set = true;
-  tZone1.sensorIDs[0] = Measure::SensorID(1, Measure::SENSOR_TYPE_DHT22);
-  tZone1.sensorIDs[1] = Measure::SensorID(0, Measure::SENSOR_TYPE_BME280);
-
-  zoneControllerToSave.addTemperatureZone(tZone1);
-
-  //Eeprom::saveZoneController(zoneControllerToSave);
-
   Zone::Controller zoneController = Eeprom::loadZoneController();
 
   DynamicJsonDocument doc = zoneController.toJSON();
-  // Lastly, you can print the resulting JSON to a String
   std::string json;
   serializeJson(doc, json);
   Serial.println("Loaded: ");
@@ -64,12 +45,8 @@ void taskZoneControl(void *parameter)
 
   for (;;)
   {
-
-    zoneController.loopTick("233500", Measure::getSharedSensors(), &controller);
-
-    vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
-
-    zoneController.loopTick("223500", Measure::getSharedSensors(), &controller);
+    std::string time = RealTime::getTime();
+    data.zones = zoneController.loopTick(time, Measure::getSharedSensors(), &controller);
 
     vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
   }
@@ -247,30 +224,15 @@ void setupTask(void *parameter)
   {
 
     // Setup mode
-    data.initialSetup.apName = Net::setupAP();
-    data.initialSetup.isInSetupMode = true;
+    // data.initialSetup.apName =
+    Net::setupAP();
+    // data.initialSetup.isInSetupMode = true;
     Serial.println(data.initialSetup.apName.c_str());
     Serial.println(data.initialSetup.ipAddr.c_str());
 
-    data.initialSetup.ipAddr = std::string(WiFi.softAPIP().toString().c_str());
+    // data.initialSetup.ipAddr = std::string(WiFi.softAPIP().toString().c_str());
     HttpServer::start(&data, true);
     Status::setPurple();
-    xTaskCreatePinnedToCore(
-        taskFetchSensors,
-        "taskFetchSensors",
-        4096,
-        NULL,
-        2,
-        NULL,
-        1);
-    xTaskCreatePinnedToCore(
-        taskZoneControl,
-        "taskZoneControl",
-        1024 * 14,
-        NULL,
-        2,
-        NULL,
-        1);
   }
   else
   {
@@ -312,26 +274,23 @@ void setupTask(void *parameter)
     }
     RealTime::setup(true);
 
-    if (Eeprom::isZoneControllerSetExternalEEPROM())
-    {
-      // xTaskCreatePinnedToCore(
-      //     taskClimateControl,
-      //     "taskClimateControl",
-      //     1024 * 16,
-      //     NULL,
-      //     1,
-      //     NULL,
-      //     0);
+    xTaskCreatePinnedToCore(
+        taskFetchSensors,
+        "taskFetchSensors",
+        4096,
+        NULL,
+        2,
+        NULL,
+        1);
 
-      // xTaskCreatePinnedToCore(
-      //     taskLightControl,
-      //     "taskLightControl",
-      //     1024 * 16,
-      //     NULL,
-      //     1,
-      //     NULL,
-      //     0);
-    }
+    xTaskCreatePinnedToCore(
+        taskZoneControl,
+        "taskZoneControl",
+        1024 * 14,
+        NULL,
+        2,
+        NULL,
+        1);
 
     Net::connect();
     Net::setWiFiName(&data);

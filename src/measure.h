@@ -6,14 +6,17 @@
 #include "utils.h"
 #include <Adafruit_BME280.h>
 #include <Adafruit_Sensor.h>
+#include "DallasTemperature.h"
 
 namespace Measure
 {
     const int SENSOR_TYPE_DHT22 = 22;
     const int SENSOR_TYPE_BME280 = 280;
+    const int SENSOR_TYPE_DS18B20 = 1820;
 
     bool readBME280(int port, float *t, float *h);
     bool readDHT22(int port, float *t, float *h);
+    bool readDS18B20(int port, float *t);
 
     class SensorID
     {
@@ -95,6 +98,10 @@ namespace Measure
             {
                 return readDHT22(port, &t, &h);
             }
+            else if (type == SENSOR_TYPE_DS18B20)
+            {
+                return readDS18B20(port, &t);
+            }
 
             return false;
         }
@@ -113,7 +120,7 @@ namespace Measure
 
     public:
         BME280() {}
-        BME280(int p) : EnvironmentSensor(p, 280)
+        BME280(int p) : EnvironmentSensor(p, SENSOR_TYPE_BME280)
         {
         }
     };
@@ -122,7 +129,16 @@ namespace Measure
     {
     public:
         DHT22() {}
-        DHT22(int p) : EnvironmentSensor(p, 22)
+        DHT22(int p) : EnvironmentSensor(p, SENSOR_TYPE_DHT22)
+        {
+        }
+    };
+
+    class DS18B20 : public EnvironmentSensor
+    {
+    public:
+        DS18B20() {}
+        DS18B20(int p) : EnvironmentSensor(p, SENSOR_TYPE_DS18B20)
         {
         }
     };
@@ -130,7 +146,7 @@ namespace Measure
     class EnvironmentSensors
     {
     public:
-        EnvironmentSensor list[12];
+        EnvironmentSensor list[18];
         EnvironmentSensor get(SensorID sID)
         {
             if (sID.type == SENSOR_TYPE_DHT22)
@@ -140,6 +156,10 @@ namespace Measure
             else if (sID.type == SENSOR_TYPE_BME280)
             {
                 return getBME280(sID.port);
+            }
+            else if (sID.type == SENSOR_TYPE_DS18B20)
+            {
+                return getDS18B20(sID.port);
             }
             Serial.println("ERROR: undefined sensor type");
             return EnvironmentSensor();
@@ -152,6 +172,10 @@ namespace Measure
         {
             return list[port + 6];
         };
+        EnvironmentSensor getDS18B20(int port)
+        {
+            return list[port + 12];
+        };
         bool readDHT22(int port)
         {
             return list[port].read();
@@ -159,6 +183,10 @@ namespace Measure
         bool readBME280(int port)
         {
             return list[port + 6].read();
+        };
+        bool readDS18B20(int port)
+        {
+            return list[port + 12].read();
         };
     };
 

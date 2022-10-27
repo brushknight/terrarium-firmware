@@ -12,7 +12,7 @@ namespace Eeprom
     const int CONFIG_INDEX = ID_INDEX + ID_INDEX_LEN;
 
     // new indexes
-    const int SET_INDEX = 0;
+    const int IS_SYSTEM_SET_INDEX = 0;
     const int SYSTEM_CONFIG_INDEX = 1;
     const int CONTROLLER_CONFIG_LENGTH = 2048;
 
@@ -86,13 +86,13 @@ namespace Eeprom
 
     bool isSystemConfigSetESP32()
     {
-        return EEPROM.read(SET_INDEX) == 1;
+        return EEPROM.read(IS_SYSTEM_SET_INDEX) == 1;
     }
 
     bool isSystemConfigSetExternalEEPROM()
     {
 
-        return externalEEPROM.read(SET_INDEX) == 1;
+        return externalEEPROM.read(IS_SYSTEM_SET_INDEX) == 1;
     }
 
     bool isZoneControllerSetExternalEEPROM()
@@ -113,7 +113,7 @@ namespace Eeprom
         {
             EEPROM.write(i + SYSTEM_CONFIG_INDEX, json[i]);
         }
-        EEPROM.write(SET_INDEX, 1);
+        EEPROM.write(IS_SYSTEM_SET_INDEX, 1);
 
         Serial.println("Saved into ESP32 EEPROM [OK]");
 
@@ -123,7 +123,7 @@ namespace Eeprom
             {
                 externalEEPROM.write(i + SYSTEM_CONFIG_INDEX, json[i]);
             }
-            externalEEPROM.write(SET_INDEX, 1);
+            externalEEPROM.write(IS_SYSTEM_SET_INDEX, 1);
             Serial.println("Saved into external EEPROM [OK]");
         }
     }
@@ -213,12 +213,10 @@ namespace Eeprom
             // Serial.println(json[i]);
         }
 
-
-
         externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
         isZoneControllerSaving = false;
         Serial.println("Saving [OK]");
-        //ESP.restart();
+        ESP.restart();
     }
 
     void saveZoneController(Zone::Controller config)
@@ -231,7 +229,7 @@ namespace Eeprom
             xTaskCreatePinnedToCore(
                 saveZoneControllerTask,
                 "saveZoneControllerTask",
-                1024 * 10,
+                1024 * 12,
                 NULL,
                 3,
                 NULL,
