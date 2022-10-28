@@ -210,12 +210,14 @@ namespace Eeprom
         for (int i = 0; i < json.length(); ++i)
         {
             externalEEPROM.write(i + ZONE_CONTROLLER_INDEX, json[i]);
-            // Serial.println(json[i]);
+            //Serial.println(json[i]);
         }
 
         externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
         isZoneControllerSaving = false;
         Serial.println("Saving [OK]");
+        Serial.println("Restarting in 3s");
+        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
         ESP.restart();
     }
 
@@ -229,7 +231,7 @@ namespace Eeprom
             xTaskCreatePinnedToCore(
                 saveZoneControllerTask,
                 "saveZoneControllerTask",
-                1024 * 12,
+                1024 * 16,
                 NULL,
                 3,
                 NULL,

@@ -13,10 +13,41 @@ namespace Control
 
     struct Color
     {
-        int r;
-        int g;
-        int b;
-        int brightness;
+        int r = 0;
+        int g = 0;
+        int b = 0;
+        int brightness = 0;
+        static int jsonSize()
+        {
+            return 64; // to be defined
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["r"] = r;
+            doc["g"] = g;
+            doc["b"] = b;
+            doc["brightness"] = brightness;
+            return doc;
+        }
+
+        static Color fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return Color::fromJSONObj(doc);
+        }
+
+        static Color fromJSONObj(DynamicJsonDocument doc)
+        {
+            Color color;
+            color.r = doc["r"];
+            color.g = doc["g"];
+            color.b = doc["b"];
+            color.brightness = doc["brightness"];
+            return color;
+        }
     };
 
     class Switch
@@ -68,6 +99,18 @@ namespace Control
     private:
         int port = -1;
         int brightness = 0;
+        void applyHardware()
+        {
+            // work around to control "dimmers" with relays
+            if (brightness > 0)
+            {
+                analogPinHigh(RELAY_PINS[port]);
+            }
+            else
+            {
+                analogPinLow(RELAY_PINS[port]);
+            }
+        }
 
     public:
         Dimmer(){};
@@ -86,7 +129,7 @@ namespace Control
         void setBrigntness(int b)
         {
             brightness = b;
-            // apply hardware changes
+            applyHardware();
         }
     };
     class ColorLight
@@ -165,23 +208,36 @@ namespace Control
 
             colorLights.list[0] = ColorLight();
         };
-        void resetPorts(){
+        void resetPorts()
+        {
             switches.list[0].off();
             switches.list[1].off();
             switches.list[2].off();
         }
         bool turnSwitchOn(int port)
         {
+            if (port < 0 || port > 2)
+            {
+                return false;
+            }
             switches.list[port].on();
             return true;
         };
         bool turnSwitchOff(int port)
         {
+            if (port < 0 || port > 2)
+            {
+                return false;
+            }
             switches.list[port].off();
             return true;
         };
         bool setDimmer(int port, int percent)
         {
+            if (port < 0 || port > 2)
+            {
+                return false;
+            }
             dimmers.list[port].setBrigntness(percent);
             return true;
         };

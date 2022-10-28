@@ -14,6 +14,8 @@ namespace Zone
     const int maxTemperatureZonesCount = 3;
     const int maxTemperatureZonesSensorsCount = 3;
     const int maxTemperatureZonesEventsCount = 10;
+    const int maxDimmerZonesCount = 3;
+    const int maxDimmerZonesEventsCount = 10;
 
     class TemperatureZoneStatus
     {
@@ -26,7 +28,8 @@ namespace Zone
         {
             return 96;
         }
-        boolean isSet(){
+        boolean isSet()
+        {
             return slug != "";
         }
         DynamicJsonDocument toJSON()
@@ -59,13 +62,53 @@ namespace Zone
         }
     };
 
+    class DimmerZoneStatus
+    {
+    public:
+        std::string slug = "";
+        int brightness = 0;
+        static int jsonSize()
+        {
+            return 96;
+        }
+        boolean isSet()
+        {
+            return slug != "";
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["brightness"] = brightness;
+            // doc["slug"] = slug;
+            return doc;
+        }
+        static DimmerZoneStatus fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return DimmerZoneStatus::fromJSONObj(doc);
+        }
+
+        static DimmerZoneStatus fromJSONObj(DynamicJsonDocument doc)
+        {
+            DimmerZoneStatus zoneStatus;
+
+            zoneStatus.brightness = doc["brightness"];
+            // temperatureZoneStatus.slug = doc["slug"].as<std::string>();
+
+            return zoneStatus;
+        }
+    };
+
     class ZonesStatuses
     {
     public:
         TemperatureZoneStatus temperatureZones[maxTemperatureZonesCount];
+        DimmerZoneStatus dimmerZones[maxDimmerZonesCount];
         static int jsonSize()
         {
-            return TemperatureZoneStatus::jsonSize() * maxTemperatureZonesCount;
+            return 64 + TemperatureZoneStatus::jsonSize() * maxTemperatureZonesCount + DimmerZoneStatus::jsonSize() * maxDimmerZonesCount;
         }
         DynamicJsonDocument toJSON()
         {
@@ -75,6 +118,13 @@ namespace Zone
                 if (temperatureZones[i].isSet())
                 {
                     doc["temperature_zones"][temperatureZones[i].slug] = temperatureZones[i].toJSON();
+                }
+            }
+            for (int i = 0; i < maxDimmerZonesCount; i++)
+            {
+                if (dimmerZones[i].isSet())
+                {
+                    doc["dimmer_zones"][dimmerZones[i].slug] = dimmerZones[i].toJSON();
                 }
             }
             return doc;
@@ -87,10 +137,10 @@ namespace Zone
         bool enabled = false;
 
     public:
-        std::string slug;
+        std::string slug = "";
         Measure::SensorID sensorIDs[maxTemperatureZonesSensorsCount];
         Event::TemperatureEvent events[maxTemperatureZonesEventsCount];
-        int heaterPort;
+        int heaterPort = -1;
         TemperatureZoneStatus status;
 
         TemperatureZone()
@@ -229,10 +279,108 @@ namespace Zone
         }
     };
 
+    class DimmerZone
+    {
+    private:
+        bool enabled = false;
+
+    public:
+        std::string slug = "";
+        Event::LightEvent events[maxDimmerZonesEventsCount];
+        int dimmerPort = -1;
+        DimmerZoneStatus status;
+
+        DimmerZone()
+        {
+            // stub for empty array creation
+        }
+
+        DimmerZone(std::string s)
+        {
+            enabled = true;
+            slug = s;
+        }
+
+        static int jsonSize()
+        {
+            return 96 + TemperatureZoneStatus::jsonSize() + Event::LightEvent::jsonSize() * maxDimmerZonesEventsCount;
+        }
+
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["slug"] = slug;
+            doc["enabled"] = enabled;
+            for (int i = 0; i < maxDimmerZonesEventsCount; i++)
+            {
+                doc["events"][i] = events[i].toJSON();
+            }
+            doc["dimmer_port"] = dimmerPort;
+            return doc;
+        }
+
+        static DimmerZone fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return DimmerZone::fromJSONObj(doc);
+        }
+
+        static DimmerZone fromJSONObj(DynamicJsonDocument doc)
+        {
+            DimmerZone zone;
+            zone.slug = doc["slug"].as<std::string>();
+            zone.dimmerPort = doc["dimmer_port"];
+            zone.enabled = doc["enabled"];
+            for (int i = 0; i < maxDimmerZonesEventsCount; i++)
+            {
+                zone.events[i] = Event::LightEvent::fromJSONObj(doc["events"][i]);
+            }
+
+            return zone;
+        }
+
+        void reset()
+        {
+            enabled = false;
+        }
+
+        bool isEnabled()
+        {
+            return enabled;
+        }
+
+        DimmerZoneStatus loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        {
+            // TODO return status
+            //  find active event (latest in the window)
+
+            Event::LightEvent activeEvent;
+
+            for (int i = 0; i < 10; i++)
+            {
+                if (events[i].isActive(now))
+                {
+                    activeEvent = events[i];
+                    Serial.printf("active event id: %d\n", i);
+                }
+            }
+
+            (*controller).setDimmer(dimmerPort, activeEvent.brightness);
+            status.brightness = activeEvent.brightness;
+
+            status.slug = slug;
+
+            return status;
+        }
+    };
+
     class Controller
     {
     private:
         TemperatureZone temperatureZones[maxTemperatureZonesCount];
+        DimmerZone dimmerZones[maxDimmerZonesCount];
         bool paused = false;
 
         void pause()
@@ -249,7 +397,6 @@ namespace Zone
         ZonesStatuses loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             ZonesStatuses statuses;
-            int temperatureZonesIndex = 0;
             // TODO return list of statuses
             if (!paused)
             {
@@ -258,8 +405,14 @@ namespace Zone
                 {
                     if (temperatureZones[i].isEnabled())
                     {
-                        statuses.temperatureZones[temperatureZonesIndex] = temperatureZones[i].loopTick(now, sharedSensors, controller);
-                        temperatureZonesIndex++;
+                        statuses.temperatureZones[i] = temperatureZones[i].loopTick(now, sharedSensors, controller);
+                    }
+                }
+                for (int i = 0; i < maxDimmerZonesCount; i++)
+                {
+                    if (dimmerZones[i].isEnabled())
+                    {
+                        statuses.dimmerZones[i] = dimmerZones[i].loopTick(now, sharedSensors, controller);
                     }
                 }
             }
@@ -302,7 +455,8 @@ namespace Zone
         }
         static int jsonSize()
         {
-            return TemperatureZone::jsonSize() * maxTemperatureZonesCount;
+            // TODO test without this extra 4k
+            return 4096 + 128 + TemperatureZone::jsonSize() * maxTemperatureZonesCount + DimmerZone::jsonSize() * maxDimmerZonesCount;
         }
 
         // return as json
@@ -312,6 +466,10 @@ namespace Zone
             for (int i = 0; i < maxTemperatureZonesCount; i++)
             {
                 doc["temperature_zones"][i] = temperatureZones[i].toJSON();
+            }
+            for (int i = 0; i < maxDimmerZonesCount; i++)
+            {
+                doc["dimmer_zones"][i] = dimmerZones[i].toJSON();
             }
             return doc;
         }
@@ -331,6 +489,11 @@ namespace Zone
             for (int i = 0; i < maxTemperatureZonesCount; i++)
             {
                 controller.temperatureZones[i] = TemperatureZone::fromJSONObj(doc["temperature_zones"][i]);
+            }
+
+            for (int i = 0; i < maxDimmerZonesCount; i++)
+            {
+                controller.dimmerZones[i] = DimmerZone::fromJSONObj(doc["dimmer_zones"][i]);
             }
 
             return controller;

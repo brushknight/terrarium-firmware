@@ -37,11 +37,11 @@ void taskZoneControl(void *parameter)
 
   Zone::Controller zoneController = Eeprom::loadZoneController();
 
-  DynamicJsonDocument doc = zoneController.toJSON();
-  std::string json;
-  serializeJson(doc, json);
-  Serial.println("Loaded: ");
-  Serial.println(json.c_str());
+  // DynamicJsonDocument doc = zoneController.toJSON();
+  // std::string json;
+  // serializeJson(doc, json);
+  // Serial.println("Loaded: ");
+  // Serial.println(json.c_str());
 
   for (;;)
   {
@@ -201,6 +201,16 @@ void setupTask(void *parameter)
   Utils::scanForI2C();
 
   Eeprom::setup();
+
+  pinMode(15, INPUT);
+  int resetButtonState = digitalRead(15);
+  Serial.println(resetButtonState);
+  if (resetButtonState == 1)
+  {
+    Eeprom::clearZoneController();
+  }
+  // Serial.println(Zone::Controller::jsonSize());
+  //
   Display::setup();
   Status::setup();
   SystemConfig systemConfig = Eeprom::loadSystemConfig();
@@ -286,7 +296,7 @@ void setupTask(void *parameter)
     xTaskCreatePinnedToCore(
         taskZoneControl,
         "taskZoneControl",
-        1024 * 14,
+        1024 * 24,
         NULL,
         2,
         NULL,
@@ -309,7 +319,7 @@ void setup()
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
-      1024 * 16,
+      1024 * 24,
       NULL,
       100,
       NULL,

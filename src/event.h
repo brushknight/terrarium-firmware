@@ -34,10 +34,49 @@ namespace Event
     public:
         int brightness;
         Control::Color color;
+        LightEvent() {} // just for empty array of events
         LightEvent(std::string s, std::string u, int dSec, int b, Control::Color c) : Event(s, u, dSec)
         {
             brightness = b;
             color = c;
+        }
+        static int jsonSize()
+        {
+            return 128 + Control::Color::jsonSize(); // to be defined
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["set"] = set;
+            doc["since"] = since;
+            doc["until"] = until;
+            doc["duration_sec"] = durationSec;
+            doc["brightness"] = brightness;
+            doc["color"] = color.toJSON();
+            // Serial.printf("DEBUG - to JSON temp: %0.2f\n",doc["temperature"]);
+            return doc;
+        }
+
+        static LightEvent fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return LightEvent::fromJSONObj(doc);
+        }
+
+        static LightEvent fromJSONObj(DynamicJsonDocument doc)
+        {
+            LightEvent event;
+            event.set = doc["set"];
+            event.since = doc["since"].as<std::string>();
+            event.until = doc["until"].as<std::string>();
+            event.durationSec = doc["duration_sec"];
+            // Serial.printf("DEBUG - from JSON temp: %0.2f\n",doc["temperature"]);
+            event.brightness = doc["brightness"];
+            event.color = Control::Color::fromJSONObj(doc["color"]);
+
+            return event;
         }
     };
 
