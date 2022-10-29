@@ -126,6 +126,21 @@ namespace RealTime
         }
     }
 
+    void syncFromNTPOnce()
+    {
+        Serial.println("RealTime: sync from NTP Once");
+        Net::connect();
+        struct tm timeinfo;
+        int attempts = 0;
+        if (!getLocalTime(&timeinfo))
+        {
+            Serial.println("Failed to obtain time, retry");
+            // configTzTime(timezoneNTP, ntpServer1, ntpServer2, ntpServer3);
+            configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
+            attempts++;
+        }
+    }
+
     bool saveTimeToRTC()
     {
         Serial.println("RealTime: saving time into RTC");

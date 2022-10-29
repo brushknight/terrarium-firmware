@@ -24,6 +24,8 @@ void taskFetchSensors(void *parameter)
   {
     Measure::readSensors();
 
+    data.sharedSensors = *Measure::getSharedSensors();
+
     vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
   }
 }
@@ -52,16 +54,30 @@ void taskZoneControl(void *parameter)
   }
 }
 
-// void taskCheckRtcBattery(void *parameter)
-// {
-//   // add display reset if needed each N minutes
+void taskCheckRtcBattery(void *parameter)
+{
+  // add display reset if needed each N minutes
 
-//   for (;;)
-//   {
-//     data.RtcBatteryPercent = RealTime::getBatteryPercent();
-//     vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-//   }
-// }
+  for (;;)
+  {
+    data.RtcBatteryPercent = RealTime::getBatteryPercent();
+    vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+  }
+}
+
+void taskResetEepromChecker(void *parameter)
+{
+
+  for (;;)
+  {
+    if (Eeprom::resetEepromChecker())
+    {
+      Serial.println("EEPROM reset");
+      ESP.restart();
+    }
+    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+  }
+}
 
 // void taskDisplayRender(void *parameter)
 // {
@@ -82,54 +98,23 @@ void taskZoneControl(void *parameter)
 //   }
 // }
 
-// void taskClimateControl(void *parameter)
-// {
-//   Serial.println("Starting climate control");
-//   Climate::setup(Eeprom::loadClimateConfig());
-//   Climate::enableSensors();
+void taskSyncRTCfromNTP(void *parameter)
+{
+  for (;;)
+  {
+    RealTime::syncFromNTPOnce();
+    vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
+  }
+}
 
-//   for (;;)
-//   {
-
-//     DataClimateZone *result = Climate::control(RealTime::getHour(), RealTime::getMinute());
-
-//     for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-//     {
-//       data.climateZones[i] = result[i];
-//     }
-
-//     vTaskDelay(CLIMATE_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-//   }
-// }
-
-// void taskLightControl(void *parameter)
-// {
-//   Serial.println("Starting Light control");
-//   Zone::Controller config = Eeprom::loadZoneController();
-//   // Light::setup(config);
-//   // Light::EventData eventData;
-
-//   // for (;;)
-//   // {
-//   //   eventData = Light::control(RealTime::getHour(), RealTime::getMinute());
-
-//   //   for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
-//   //   {
-//   //     data.lightEvents[i] = eventData.active[i];
-//   //   }
-
-//   //   vTaskDelay(LIGHT_LOOP_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-//   // }
-// }
-
-// void taskWatchNetworkStatus(void *parameter)
-// {
-//   for (;;)
-//   {
-//     data.WiFiStatus = Net::isConnected();
-//     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
-//   }
-// }
+void taskWatchNetworkStatus(void *parameter)
+{
+  for (;;)
+  {
+    data.WiFiStatus = Net::isConnected();
+    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+  }
+}
 
 void demoSetup()
 {
@@ -196,23 +181,19 @@ void demoLoop(void *parameter)
 void setupTask(void *parameter)
 {
   Serial.begin(115200);
-  Serial.println("Controller starting [  ]");
+  Serial.println("Controller starting");
   Wire.begin();
+
+  Serial.println("Scanning for i2c devices");
   Utils::scanForI2C();
 
-  Eeprom::setup();
-
-  pinMode(15, INPUT);
-  int resetButtonState = digitalRead(15);
-  Serial.println(resetButtonState);
-  if (resetButtonState == 1)
-  {
-    Eeprom::clearZoneController();
-  }
-  // Serial.println(Zone::Controller::jsonSize());
-  //
-  Display::setup();
   Status::setup();
+
+  Eeprom::setup();
+  Eeprom::resetEepromChecker();
+
+  Display::setup();
+
   SystemConfig systemConfig = Eeprom::loadSystemConfig();
   data = Data();
 
@@ -259,23 +240,41 @@ void setupTask(void *parameter)
     //     NULL,
     //     1);
 
-    // xTaskCreatePinnedToCore(
-    //     taskCheckRtcBattery,
-    //     "taskCheckRtcBattery",
-    //     1024,
-    //     NULL,
-    //     1,
-    //     NULL,
-    //     1);
+    xTaskCreatePinnedToCore(
+        taskCheckRtcBattery,
+        "taskCheckRtcBattery",
+        1024,
+        NULL,
+        1,
+        NULL,
+        1);
 
-    // xTaskCreatePinnedToCore(
-    //     taskWatchNetworkStatus,
-    //     "taskWatchNetworkStatus",
-    //     1024,
-    //     NULL,
-    //     2,
-    //     NULL,
-    //     0);
+    xTaskCreatePinnedToCore(
+        taskResetEepromChecker,
+        "taskResetEepromChecker",
+        1024 * 2,
+        NULL,
+        1,
+        NULL,
+        1);
+
+    xTaskCreatePinnedToCore(
+        taskSyncRTCfromNTP,
+        "taskSyncRTCfromNTP",
+        1024 * 2,
+        NULL,
+        1,
+        NULL,
+        1);
+
+    xTaskCreatePinnedToCore(
+        taskWatchNetworkStatus,
+        "taskWatchNetworkStatus",
+        1024,
+        NULL,
+        2,
+        NULL,
+        0);
 
     if (RealTime::isWiFiRequired())
     {

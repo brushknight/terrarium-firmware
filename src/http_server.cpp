@@ -138,6 +138,18 @@ namespace HttpServer
         request->send(502, "text/plain", "Internal server error");
     }
 
+    void onGetSensors(AsyncWebServerRequest *request)
+    {
+        DynamicJsonDocument doc(1024 * 2  + Measure::EnvironmentSensors::jsonSize());
+
+        doc["sensors"] = (*data).sharedSensors.toJSON();
+
+        std::string requestBody;
+        serializeJson(doc, requestBody);
+
+        request->send(200, "application/json", requestBody.c_str());
+    }
+
     void onGetMetrics(AsyncWebServerRequest *request)
     {
         DynamicJsonDocument doc(1024 * 2 + Zone::ZonesStatuses::jsonSize());
@@ -167,11 +179,11 @@ namespace HttpServer
 
         server.on("/", HTTP_GET, onFormControllerConfig);
         server.on("/climate", HTTP_GET, onFormClimateConfig);
-
         server.on("/api/metrics", HTTP_GET, onGetMetrics);
         server.on("/api/config-system", HTTP_GET, onGetSystemConfig);
         server.on("/api/config-system", HTTP_POST, onPostSystemConfig);
         server.on("/api/reset", HTTP_POST, onPostReset);
+        server.on("/api/sensors", HTTP_GET, onGetSensors);
         server.on("/api/reset-system", HTTP_POST, onPostResetSystem);
         server.on("/api/reset-climate", HTTP_POST, onPostResetClimate);
         server.on("/api/config-climate", HTTP_GET, onGetClimateConfig);

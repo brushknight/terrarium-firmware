@@ -18,6 +18,9 @@ namespace Measure
     bool readDHT22(int port, float *t, float *h);
     bool readDS18B20(int port, float *t);
 
+    const int sensorPortCount = 6;
+    const int sensorTypesSupported = 3;
+
     class SensorID
     {
     public:
@@ -62,6 +65,22 @@ namespace Measure
             sensorID.type = doc["type"];
 
             return sensorID;
+        }
+        static std::string typeToHuman(int type)
+        {
+            if (type == SENSOR_TYPE_BME280)
+            {
+                return "BME280";
+            }
+            else if (type == SENSOR_TYPE_DHT22)
+            {
+                return "DHT22";
+            }
+            else if (type == SENSOR_TYPE_DS18B20)
+            {
+                return "DS18B20";
+            }
+            return "unknown";
         }
     };
 
@@ -113,6 +132,21 @@ namespace Measure
         {
             return h;
         }
+        static int jsonSize()
+        {
+            return 96;
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+
+            doc["port"] = port;
+            doc["type"] = SensorID::typeToHuman(type);
+            doc["humidity"] = h;
+            doc["temperature"] = t;
+
+            return doc;
+        }
     };
 
     class BME280 : public EnvironmentSensor
@@ -146,7 +180,7 @@ namespace Measure
     class EnvironmentSensors
     {
     public:
-        EnvironmentSensor list[18];
+        EnvironmentSensor list[sensorPortCount * sensorTypesSupported];
         EnvironmentSensor get(SensorID sID)
         {
             if (sID.type == SENSOR_TYPE_DHT22)
@@ -188,6 +222,25 @@ namespace Measure
         {
             return list[port + 12].read();
         };
+        static int jsonSize()
+        {
+            return 64 + EnvironmentSensor::jsonSize() * sensorPortCount * sensorTypesSupported;
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            int index = 0;
+            for (int i = 0; i < sensorPortCount * sensorTypesSupported; i++)
+            {
+                if (list[i].enabled())
+                {
+                    doc[index] = list[i].toJSON();
+                    index++;
+                }
+            }
+
+            return doc;
+        }
     };
 
     bool scan();

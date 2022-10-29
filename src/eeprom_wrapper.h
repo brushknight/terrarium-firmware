@@ -5,6 +5,7 @@
 #include "SparkFun_External_EEPROM.h"
 #include "config.h"
 #include "zone.h"
+#include "status.h"
 
 namespace Eeprom
 {
@@ -24,6 +25,7 @@ namespace Eeprom
     bool isSystemConfigSetExternalEEPROM();
     bool isZoneControllerSetExternalEEPROM();
     void saveZoneControllerTask(void *parameter);
+    bool resetEepromChecker();
 }
 
 #endif

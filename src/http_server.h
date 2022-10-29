@@ -8,6 +8,7 @@
 #include "ArduinoJson.h"
 #include "real_time.h"
 #include "zone.h"
+#include "measure.h"
 #include <Update.h>
 
 namespace HttpServer
@@ -18,6 +19,7 @@ namespace HttpServer
     void onGetSystemConfig(AsyncWebServerRequest *request);
     void onPostSystemConfig(AsyncWebServerRequest *request);
     void onGetClimateConfig(AsyncWebServerRequest *request);
+    void onGetSensors(AsyncWebServerRequest *request);
     void onPostReset(AsyncWebServerRequest *request);
     void onPostResetSystem(AsyncWebServerRequest *request);
     void onPostResetClimate(AsyncWebServerRequest *request);

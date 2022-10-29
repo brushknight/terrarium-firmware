@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "zone.h"
+#include "measure.h"
 
 // todo: add different type of events
 
@@ -25,6 +26,7 @@ class Data
 {
 public:
     Zone::ZonesStatuses zones;
+    Measure::EnvironmentSensors sharedSensors;
     // change to granular statuses
     // connection status wifi/bt
     bool WiFiStatus;

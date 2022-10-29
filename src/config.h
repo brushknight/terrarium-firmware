@@ -35,6 +35,7 @@
 #define LIGHT_LOOP_INTERVAL_SEC 5
 #define DISPLAY_RENDER_INTERVAL_SEC 1
 #define BATTERY_CHECK_INTERVAL_SEC 60 * 5
+#define SYNC_RTC_SEC 60 * 5
 
 // Hardware
 #define SENSORS_ENABLE_PIN 32
@@ -54,191 +55,13 @@
 // lights
 #define LEDPIN 23
 
+// buttons
+#define BUTTON_RESET_EEPROM 15
+
 const int SENSOR_PINS[6] = {DHT_0, DHT_1, DHT_2, DHT_3, DHT_4, DHT_5};
 const int I2C_BUSES[6] = {3, 0, 1, 2, 4, 5};
 const int RELAY_PINS[3] = {RELAY_0_PIN, RELAY_1_PIN, RELAY_2_PIN};
 
-class Schedule
-{
-public:
-    int sinceHour;
-    int sinceMinute;
-    int untilHour;
-    int untilMinute;
-    float temperature;
-    bool isSet = false;
-    static int jsonSize()
-    {
-        return 100;
-    }
-    DynamicJsonDocument toJSON()
-    {
-        DynamicJsonDocument doc(jsonSize());
-
-        doc["sinceHour"] = sinceHour;
-        doc["sinceMinute"] = sinceMinute;
-        doc["untilHour"] = untilHour;
-        doc["untilMinute"] = untilMinute;
-        doc["temperature"] = temperature;
-        doc["isSet"] = isSet;
-
-        return doc;
-    }
-    static Schedule fromJSON(DynamicJsonDocument doc)
-    {
-        Schedule schedule;
-
-        schedule.sinceHour = doc["sinceHour"];
-        schedule.sinceMinute = doc["sinceMinute"];
-        schedule.untilHour = doc["untilHour"];
-        schedule.untilMinute = doc["untilMinute"];
-        schedule.temperature = doc["temperature"];
-        schedule.isSet = doc["isSet"];
-
-        return schedule;
-    }
-};
-
-class ClimateZoneConfig
-{
-public:
-    std::string name;
-    std::string slug;
-    int relayPin = 0;
-    int dht22SensorPins[MAX_DHT22_SENSORS_IN_CLIMATE_ZONE] = {0, 0, 0};
-    bool isSet = false;
-    Schedule schedule[MAX_SCHEDULE_COUNT];
-    static int jsonSize()
-    {
-        return (200 + Schedule::jsonSize() * MAX_SCHEDULE_COUNT) * MAX_CLIMATE_ZONES;
-    }
-    DynamicJsonDocument toJSON()
-    {
-        DynamicJsonDocument doc(jsonSize());
-
-        doc["name"] = name;
-        doc["slug"] = slug;
-        doc["relayPin"] = relayPin;
-        for (int j = 0; j < MAX_DHT22_SENSORS_IN_CLIMATE_ZONE; j++)
-        {
-            doc["dht22SensorPins"][j] = dht22SensorPins[j];
-        }
-
-        doc["isSet"] = isSet;
-        for (int k = 0; k < MAX_SCHEDULE_COUNT; k++)
-        {
-            doc["schedule"][k] = schedule[k].toJSON();
-        }
-
-        return doc;
-    }
-    static ClimateZoneConfig fromJSON(DynamicJsonDocument doc)
-    {
-        ClimateZoneConfig climateZoneConfig;
-        climateZoneConfig.name = doc["name"].as<std::string>();
-        climateZoneConfig.slug = doc["slug"].as<std::string>();
-        climateZoneConfig.relayPin = doc["relayPin"];
-        climateZoneConfig.isSet = doc["isSet"];
-
-        for (int i = 0; i < MAX_DHT22_SENSORS_IN_CLIMATE_ZONE; i++)
-        {
-            climateZoneConfig.dht22SensorPins[i] = doc["dht22SensorPins"][i];
-        }
-
-        for (int j = 0; j < MAX_SCHEDULE_COUNT; j++)
-        {
-            climateZoneConfig.schedule[j] = Schedule::fromJSON(doc["schedule"][j]);
-        }
-        return climateZoneConfig;
-    }
-};
-
-class LightEvent
-{
-public:
-    std::string name;
-    std::string since;
-    std::string until;
-    int relay;
-    int intencity;   // 0 - 100
-    int durationSec; // duration in seconds
-    bool isSet()
-    {
-        return relay > 0;
-    }
-    static int jsonSize()
-    {
-        return 192;
-    }
-    DynamicJsonDocument toJSON()
-    {
-        DynamicJsonDocument doc(jsonSize());
-
-        doc["name"] = name;
-        doc["since"] = since;
-        doc["until"] = until;
-        doc["relay"] = relay;
-        doc["intencity"] = intencity;
-        doc["durationSec"] = durationSec;
-
-        return doc;
-    }
-    static LightEvent fromJSON(DynamicJsonDocument doc)
-    {
-        LightEvent event;
-
-        event.name = doc["name"].as<std::string>();
-        event.since = doc["since"].as<std::string>();
-        event.until = doc["until"].as<std::string>();
-        event.relay = doc["relay"];
-        event.intencity = doc["intencity"];
-        event.durationSec = doc["durationSec"];
-
-        return event;
-    }
-};
-
-class ClimateConfig
-{
-public:
-    ClimateZoneConfig climateZoneConfigs[MAX_CLIMATE_ZONES];
-    LightEvent lightEvents[MAX_LIGHT_EVENTS];
-
-    static int jsonSize()
-    {
-        return ClimateZoneConfig::jsonSize() * MAX_CLIMATE_ZONES + LightEvent::jsonSize() * MAX_LIGHT_EVENTS;
-    }
-    DynamicJsonDocument toJSON()
-    {
-        DynamicJsonDocument doc(jsonSize());
-        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-        {
-            doc["climateZoneConfigs"][i] = climateZoneConfigs[i].toJSON();
-        }
-        for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
-        {
-            doc["lightEvents"][i] = lightEvents[i].toJSON();
-        }
-        return doc;
-    }
-    static ClimateConfig fromJSON(std::string json)
-    {
-        ClimateConfig config;
-
-        DynamicJsonDocument doc(jsonSize());
-        deserializeJson(doc, json);
-
-        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-        {
-            config.climateZoneConfigs[i] = ClimateZoneConfig::fromJSON(doc["climateZoneConfigs"][i]);
-        }
-        for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
-        {
-            config.lightEvents[i] = LightEvent::fromJSON(doc["lightEvents"][i]);
-        }
-        return config;
-    }
-};
 
 class SystemConfig
 {
@@ -274,7 +97,5 @@ public:
         return config;
     }
 };
-
-ClimateConfig loadInitClimateConfig();
 
 #endif

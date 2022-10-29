@@ -15,6 +15,7 @@ namespace RealTime
     bool isWiFiRequired();
     void syncFromRTC();
     void syncFromNTP();
+    void syncFromNTPOnce();
     bool saveTimeToRTC();
     std::string getTime();
     int getHour();

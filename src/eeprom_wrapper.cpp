@@ -49,6 +49,44 @@ namespace Eeprom
         }
     }
 
+    bool resetEepromChecker()
+    {
+        pinMode(BUTTON_RESET_EEPROM, INPUT);
+        int resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
+        for (int i = 0; i < 3; i++)
+        {
+            resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
+            //Serial.printf("Reset button %f\n", resetButtonState);
+            if (resetButtonState == 1)
+            {
+                Status::setWarning();
+                vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+            }
+            else
+            {
+                Status::turnLedOff();
+                return false;
+            }
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
+            //Serial.printf("Reset button %f\n", resetButtonState);
+            if (resetButtonState == 1)
+            {
+                Status::setError();
+                vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+            }
+            else
+            {
+                Status::turnLedOff();
+                return false;
+            }
+        }
+        clearZoneController();
+        return true;
+    }
+
     void clear()
     {
         clearSystemSettings();
@@ -210,7 +248,7 @@ namespace Eeprom
         for (int i = 0; i < json.length(); ++i)
         {
             externalEEPROM.write(i + ZONE_CONTROLLER_INDEX, json[i]);
-            //Serial.println(json[i]);
+            // Serial.println(json[i]);
         }
 
         externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
@@ -245,12 +283,13 @@ namespace Eeprom
 
     Zone::Controller loadZoneController()
     {
-        if (isZoneControllerSaving) {
+        if (isZoneControllerSaving)
+        {
             for (int i = 0; i < 60; i++)
             {
                 Serial.println("Loading zone controller - waiting");
                 vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-                
+
                 if (!isZoneControllerSaving)
                 {
                     continue; // jump to loading step
