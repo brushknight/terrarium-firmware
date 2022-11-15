@@ -19,7 +19,6 @@ namespace Eeprom
     const int ZONE_CONTROLLER_SET_INDEX = SYSTEM_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH;
 
     const int ZONE_CONTROLLER_INDEX = ZONE_CONTROLLER_SET_INDEX + 1;
-    const int ZONE_CONTROLLER_LENGTH = 4096;
 
     const uint8_t externallAddress = 0x50;
     ExternalEEPROM externalEEPROM;
@@ -98,7 +97,7 @@ namespace Eeprom
         if (isExternalEEPROM)
         {
             Serial.println("Clearing external EEPROM");
-            for (int i = 0; i < externalEEPROM.length(); i++)
+            for (int i = 0; i < Zone::Controller::jsonSize(); i++)
             {
                 externalEEPROM.write(i, 0);
                 if (i % 1000 == 0)
@@ -311,7 +310,7 @@ namespace Eeprom
             }
         }
 
-        Serial.println("Loading climate config");
+        Serial.println("Loading zone controller");
 
         if (wasZoneControllerLoaded)
         {
@@ -323,9 +322,11 @@ namespace Eeprom
             isZoneControllerLoading = true;
             Serial.println("Loading zone controller from external eeprom");
 
-            char raw[ZONE_CONTROLLER_LENGTH];
+            int zoneControllerSize = Zone::Controller::jsonSize();
 
-            for (int i = 0; i < ZONE_CONTROLLER_LENGTH; ++i)
+            char raw[zoneControllerSize];
+
+            for (int i = 0; i < zoneControllerSize; ++i)
             {
                 raw[i] = char(externalEEPROM.read(i + ZONE_CONTROLLER_INDEX));
                 // Serial.println(raw[i]);

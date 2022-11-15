@@ -161,7 +161,8 @@ namespace RealTime
         }
     }
 
-    std::string getTime(){
+    std::string getTime()
+    {
         int hour = 0;
         int minute = 0;
         int second = 0;
@@ -290,6 +291,5 @@ namespace RealTime
     {
         return esp_timer_get_time() / 1000000;
     }
-
 
 }

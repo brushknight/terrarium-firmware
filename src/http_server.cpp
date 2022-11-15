@@ -1,12 +1,18 @@
 #include "http_server.h"
 
-// #include <AsyncElegantOTA.h>
+// fix for md5 error https://github.com/me-no-dev/ESPAsyncWebServer/issues/1085
+#include <AsyncElegantOTA.h>
 
 namespace HttpServer
 {
     AsyncWebServer server(80);
 
     Data *data;
+
+    AsyncWebServer *getServer()
+    {
+        return &server;
+    }
 
     void onPostReset(AsyncWebServerRequest *request)
     {
@@ -46,9 +52,9 @@ namespace HttpServer
         request->send(404, "text/plain", "Not found");
     }
 
-    void onFormControllerConfig(AsyncWebServerRequest *request)
+    void onFormSettings(AsyncWebServerRequest *request)
     {
-        request->send_P(200, "text/html", CONTROLLER_CONFIG_FORM);
+        request->send_P(200, "text/html", SETTINGS_FORM);
     }
 
     void onFormClimateConfig(AsyncWebServerRequest *request)
@@ -56,10 +62,12 @@ namespace HttpServer
         request->send_P(200, "text/html", CLIMATE_CONFIG_FORM);
     }
 
-    void onGetSystemConfig(AsyncWebServerRequest *request)
+    void onGetSettings(AsyncWebServerRequest *request)
     {
-        Zone::Controller config = Eeprom::loadZoneController();
+        SystemConfig config = Eeprom::loadSystemConfig();
         DynamicJsonDocument json = config.toJSON();
+
+        json["wifiPassword"] = "DELETED";
 
         std::string requestBody;
         serializeJson(json, requestBody);
@@ -78,7 +86,7 @@ namespace HttpServer
         request->send(200, "application/json", requestBody.c_str());
     }
 
-    void onPostSystemConfig(AsyncWebServerRequest *request)
+    void onPostSettings(AsyncWebServerRequest *request)
     {
         // ssid, pass, id
         SystemConfig config = Eeprom::loadSystemConfig();
@@ -140,7 +148,7 @@ namespace HttpServer
 
     void onGetSensors(AsyncWebServerRequest *request)
     {
-        DynamicJsonDocument doc(1024 * 2  + Measure::EnvironmentSensors::jsonSize());
+        DynamicJsonDocument doc(1024 * 2 + Measure::EnvironmentSensors::jsonSize());
 
         doc["sensors"] = (*data).sharedSensors.toJSON();
 
@@ -166,7 +174,6 @@ namespace HttpServer
 
         doc["climate"] = (*data).zones.toJSON();
 
-
         std::string requestBody;
         serializeJson(doc, requestBody);
 
@@ -177,17 +184,18 @@ namespace HttpServer
     {
         data = givenData;
 
-        server.on("/", HTTP_GET, onFormControllerConfig);
+        server.on("/", HTTP_GET, onFormSettings);
+        server.on("/settings", HTTP_GET, onFormSettings);
         server.on("/climate", HTTP_GET, onFormClimateConfig);
         server.on("/api/metrics", HTTP_GET, onGetMetrics);
-        server.on("/api/config-system", HTTP_GET, onGetSystemConfig);
-        server.on("/api/config-system", HTTP_POST, onPostSystemConfig);
+        server.on("/api/settings", HTTP_GET, onGetSettings);
+        server.on("/api/settings", HTTP_POST, onPostSettings);
         server.on("/api/reset", HTTP_POST, onPostReset);
         server.on("/api/sensors", HTTP_GET, onGetSensors);
         server.on("/api/reset-system", HTTP_POST, onPostResetSystem);
         server.on("/api/reset-climate", HTTP_POST, onPostResetClimate);
-        server.on("/api/config-climate", HTTP_GET, onGetClimateConfig);
-        server.on("/api/config-climate", HTTP_POST, onPostClimateConfig);
+        server.on("/api/climate", HTTP_GET, onGetClimateConfig);
+        server.on("/api/climate", HTTP_POST, onPostClimateConfig);
 
         server.onNotFound(notFound);
 
@@ -198,7 +206,7 @@ namespace HttpServer
             Serial.println("Setup mode");
         }
 
-        // AsyncElegantOTA.begin(&server);
+        AsyncElegantOTA.begin(&server);
 
         server.begin();
         Serial.println("Server started [OK]");

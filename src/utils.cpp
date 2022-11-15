@@ -72,17 +72,31 @@ namespace Utils
     bool checkScheduleTimeWindow(std::string now, std::string since, std::string until)
     {
 
-        //Serial.printf("%s, %s, %s\n", since.c_str(), now.c_str(), until.c_str());
+        // Serial.printf("%s, %s, %s\n", since.c_str(), now.c_str(), until.c_str());
         if (since.compare(until) < 0)
         {
-            //Serial.printf("since.compare(now) <= 0 && until.compare(now) > 0\n");
+            // Serial.printf("since.compare(now) <= 0 && until.compare(now) > 0\n");
             return since.compare(now) <= 0 && until.compare(now) > 0;
         }
         else
         {
-            //Serial.printf("since.compare(now) <= 0 || until.compare(now) > 0\n");
+            // Serial.printf("since.compare(now) <= 0 || until.compare(now) > 0\n");
             return since.compare(now) <= 0 || until.compare(now) > 0;
         }
+    }
+
+    // Function that gets current epoch time
+    unsigned long getTimestamp()
+    {
+        time_t now;
+        struct tm timeinfo;
+        if (!getLocalTime(&timeinfo))
+        {
+            // Serial.println("Failed to obtain time");
+            return (0);
+        }
+        time(&now);
+        return now;
     }
 
 }

@@ -62,7 +62,6 @@ const int SENSOR_PINS[6] = {DHT_0, DHT_1, DHT_2, DHT_3, DHT_4, DHT_5};
 const int I2C_BUSES[6] = {3, 0, 1, 2, 4, 5};
 const int RELAY_PINS[3] = {RELAY_0_PIN, RELAY_1_PIN, RELAY_2_PIN};
 
-
 class SystemConfig
 {
 public:

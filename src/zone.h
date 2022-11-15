@@ -24,9 +24,10 @@ namespace Zone
         float targetTemperature = 0;
         std::string slug = "";
         boolean heaterStatus = false;
+        int timestamp = 0;
         static int jsonSize()
         {
-            return 96;
+            return 128;
         }
         boolean isSet()
         {
@@ -38,6 +39,7 @@ namespace Zone
             doc["average_temperature"] = averageTemperature;
             doc["target_temperature"] = targetTemperature;
             doc["heater_status"] = heaterStatus;
+            doc["timestamp"] = timestamp;
             // doc["slug"] = slug;
             return doc;
         }
@@ -233,8 +235,8 @@ namespace Zone
 
             // check sensors, get average
 
-            float tempSum = 0;
-            float sensorsCount = 0;
+            float temperatureSum = 0;
+            float checkedSensorsCount = 0;
 
             for (int i = 0; i < 3; i++)
             {
@@ -242,23 +244,26 @@ namespace Zone
                 {
                     Serial.printf("sensor status %d, temp %.2f\n", (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
 
-                    tempSum += (*sharedSensors).get(sensorIDs[i]).temperature();
-                    sensorsCount++;
+                    float t = (*sharedSensors).get(sensorIDs[i]).temperature();
+
+                    if (t > 0)
+                    {
+                        temperatureSum += (*sharedSensors).get(sensorIDs[i]).temperature();
+                        checkedSensorsCount++;
+                    }
                 }
             }
 
-            status.averageTemperature = sensorsCount > 0 ? tempSum / sensorsCount : -100;
+            status.averageTemperature = checkedSensorsCount > 0 ? temperatureSum / checkedSensorsCount : -100;
             status.targetTemperature = activeEvent.temperature;
-            // throw error
-
-            // compare temperature to required
-            // adjust corresponding relay via controller
 
             Serial.printf("Average temperature %.2f, target  %.2f\n", status.averageTemperature, status.targetTemperature);
 
+            status.timestamp = Utils::getTimestamp();
+
             if (status.averageTemperature < 0)
             {
-                Serial.println("ERROR: temperature cant be subzero");
+                Serial.println("ERROR: temperature can't be subzero");
                 return status;
             }
 
@@ -303,7 +308,7 @@ namespace Zone
 
         static int jsonSize()
         {
-            return 96 + TemperatureZoneStatus::jsonSize() + Event::LightEvent::jsonSize() * maxDimmerZonesEventsCount;
+            return 128 + DimmerZoneStatus::jsonSize() + Event::LightEvent::jsonSize() * maxDimmerZonesEventsCount;
         }
 
         DynamicJsonDocument toJSON()
@@ -456,7 +461,7 @@ namespace Zone
         static int jsonSize()
         {
             // TODO test without this extra 4k
-            return 4096 + 128 + TemperatureZone::jsonSize() * maxTemperatureZonesCount + DimmerZone::jsonSize() * maxDimmerZonesCount;
+            return 4096 + 1024 + 128 + TemperatureZone::jsonSize() * maxTemperatureZonesCount + DimmerZone::jsonSize() * maxDimmerZonesCount;
         }
 
         // return as json

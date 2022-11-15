@@ -56,9 +56,10 @@ namespace Net
         delay(100);
 
         char buffer[100];
-        sprintf(buffer, "%s#%s", "Terrarium controller ID", Eeprom::loadSystemConfig().id.c_str());
+        sprintf(buffer, "%s %s", "Terrarium controller", Eeprom::loadSystemConfig().id.c_str());
 
         WiFi.setHostname(buffer);
+        //Serial.println(buffer);
 
         int attempts = 0;
 

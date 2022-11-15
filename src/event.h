@@ -32,7 +32,7 @@ namespace Event
     class LightEvent : public Event
     {
     public:
-        int brightness;
+        int brightness = 0;
         Control::Color color;
         LightEvent() {} // just for empty array of events
         LightEvent(std::string s, std::string u, int dSec, int b, Control::Color c) : Event(s, u, dSec)

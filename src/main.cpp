@@ -12,6 +12,8 @@
 
 #include <Adafruit_BME280.h>
 
+//#include <AsyncElegantOTA.h>
+
 Data data;
 
 bool initialSetupMode = false;
@@ -261,7 +263,7 @@ void setupTask(void *parameter)
     xTaskCreatePinnedToCore(
         taskSyncRTCfromNTP,
         "taskSyncRTCfromNTP",
-        1024 * 2,
+        1024 * 4,
         NULL,
         1,
         NULL,
@@ -304,6 +306,7 @@ void setupTask(void *parameter)
     Net::connect();
     Net::setWiFiName(&data);
     HttpServer::start(&data, false);
+    //AsyncElegantOTA.begin(HttpServer::getServer());
     Serial.println("Controller started [OK]");
   }
 
@@ -318,7 +321,7 @@ void setup()
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
-      1024 * 24,
+      1024 * 32,
       NULL,
       100,
       NULL,
