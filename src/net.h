@@ -4,6 +4,7 @@
 #include <SPI.h>
 #include <WiFi.h>
 #include "display.h"
+#include "eeprom_wrapper.h"
 // #include "status.h"
 
 namespace Net

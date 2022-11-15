@@ -126,6 +126,21 @@ namespace RealTime
         }
     }
 
+    void syncFromNTPOnce()
+    {
+        Serial.println("RealTime: sync from NTP Once");
+        Net::connect();
+        struct tm timeinfo;
+        int attempts = 0;
+        if (!getLocalTime(&timeinfo))
+        {
+            Serial.println("Failed to obtain time, retry");
+            // configTzTime(timezoneNTP, ntpServer1, ntpServer2, ntpServer3);
+            configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
+            attempts++;
+        }
+    }
+
     bool saveTimeToRTC()
     {
         Serial.println("RealTime: saving time into RTC");
@@ -144,6 +159,27 @@ namespace RealTime
             Serial.println("Failed to flash RTC");
             return false;
         }
+    }
+
+    std::string getTime()
+    {
+        int hour = 0;
+        int minute = 0;
+        int second = 0;
+
+        struct tm timeinfo;
+        if (!getLocalTime(&timeinfo))
+        {
+            Serial.println("getHour() Failed to obtain time");
+
+            return 0;
+        }
+
+        hour = timeinfo.tm_hour;
+        minute = timeinfo.tm_min;
+        second = timeinfo.tm_sec;
+
+        return Utils::hourMinuteToString(hour, minute);
     }
 
     int getHour()
@@ -256,16 +292,4 @@ namespace RealTime
         return esp_timer_get_time() / 1000000;
     }
 
-    bool checkScheduleTimeWindow(std::string now, std::string since, std::string until)
-    {
-
-        if (since.compare(until) < 0)
-        {
-            return since.compare(now) <= 0 && until.compare(now) > 0;
-        }
-        else
-        {
-            return since.compare(now) <= 0 || until.compare(now) > 0;
-        }
-    }
 }

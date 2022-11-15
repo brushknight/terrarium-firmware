@@ -2,6 +2,8 @@
 #define TERRARIUM_DATA
 
 #include "config.h"
+#include "zone.h"
+#include "measure.h"
 
 // todo: add different type of events
 
@@ -11,19 +13,6 @@ public:
     bool isInSetupMode = false;
     std::string apName;
     std::string ipAddr;
-};
-
-class DataClimateZone
-{
-public:
-    std::string name;
-    std::string slug;
-    float temperature;
-    float targetTemperature;
-    float humidity;
-    bool heatingPhase;
-    bool heaterStatus;
-    bool isSet = false;
 };
 
 class Metadata
@@ -36,9 +25,8 @@ public:
 class Data
 {
 public:
-    // [] climate zone - temp, humid, heating phase, heater status
-    DataClimateZone climateZones[MAX_CLIMATE_ZONES];
-    LightEvent lightEvents[MAX_LIGHT_EVENTS];
+    Zone::ZonesStatuses zones;
+    Measure::EnvironmentSensors sharedSensors;
     // change to granular statuses
     // connection status wifi/bt
     bool WiFiStatus;

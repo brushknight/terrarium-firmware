@@ -1,12 +1,18 @@
 #include "http_server.h"
 
-// #include <AsyncElegantOTA.h>
+// fix for md5 error https://github.com/me-no-dev/ESPAsyncWebServer/issues/1085
+#include <AsyncElegantOTA.h>
 
 namespace HttpServer
 {
     AsyncWebServer server(80);
 
     Data *data;
+
+    AsyncWebServer *getServer()
+    {
+        return &server;
+    }
 
     void onPostReset(AsyncWebServerRequest *request)
     {
@@ -19,11 +25,11 @@ namespace HttpServer
         ESP.restart();
     }
 
-    void onPostResetController(AsyncWebServerRequest *request)
+    void onPostResetSystem(AsyncWebServerRequest *request)
     {
-        Eeprom::clearController();
+        Eeprom::clearSystemSettings();
 
-        request->send(200, "text/plain", "Controller configuration cleared, rebooting in 3 seconds");
+        request->send(200, "text/plain", "System configuration cleared, rebooting in 3 seconds");
 
         vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
 
@@ -32,7 +38,7 @@ namespace HttpServer
 
     void onPostResetClimate(AsyncWebServerRequest *request)
     {
-        Eeprom::clearClimate();
+        Eeprom::clearZoneController();
 
         request->send(200, "text/plain", "Climate configuration cleared, rebooting in 3 seconds");
 
@@ -46,9 +52,9 @@ namespace HttpServer
         request->send(404, "text/plain", "Not found");
     }
 
-    void onFormControllerConfig(AsyncWebServerRequest *request)
+    void onFormSettings(AsyncWebServerRequest *request)
     {
-        request->send_P(200, "text/html", CONTROLLER_CONFIG_FORM);
+        request->send_P(200, "text/html", SETTINGS_FORM);
     }
 
     void onFormClimateConfig(AsyncWebServerRequest *request)
@@ -56,10 +62,12 @@ namespace HttpServer
         request->send_P(200, "text/html", CLIMATE_CONFIG_FORM);
     }
 
-    void onGetControllerConfig(AsyncWebServerRequest *request)
+    void onGetSettings(AsyncWebServerRequest *request)
     {
-        ClimateConfig config = Eeprom::loadClimateConfig();
+        SystemConfig config = Eeprom::loadSystemConfig();
         DynamicJsonDocument json = config.toJSON();
+
+        json["wifiPassword"] = "DELETED";
 
         std::string requestBody;
         serializeJson(json, requestBody);
@@ -69,7 +77,7 @@ namespace HttpServer
 
     void onGetClimateConfig(AsyncWebServerRequest *request)
     {
-        ClimateConfig config = Eeprom::loadClimateConfig();
+        Zone::Controller config = Eeprom::loadZoneController();
         DynamicJsonDocument json = config.toJSON();
 
         std::string requestBody;
@@ -78,10 +86,10 @@ namespace HttpServer
         request->send(200, "application/json", requestBody.c_str());
     }
 
-    void onPostControllerConfig(AsyncWebServerRequest *request)
+    void onPostSettings(AsyncWebServerRequest *request)
     {
         // ssid, pass, id
-        ControllerConfig config = Eeprom::loadControllerConfig();
+        SystemConfig config = Eeprom::loadSystemConfig();
 
         int params = request->params();
         for (int i = 0; i < params; i++)
@@ -107,7 +115,7 @@ namespace HttpServer
 
         // do some validation
 
-        Eeprom::saveControllerConfig(config);
+        Eeprom::saveSystemConfig(config);
 
         request->send(200, "text/plain", "Controller configuration updated, rebooting in 3 seconds");
 
@@ -119,7 +127,7 @@ namespace HttpServer
     void onPostClimateConfig(AsyncWebServerRequest *request)
     {
 
-        ClimateConfig config;
+        Zone::Controller config;
         int params = request->params();
         for (int i = 0; i < params; i++)
         {
@@ -128,8 +136,8 @@ namespace HttpServer
             if (p->name().compareTo(String("json_config")) == 0)
             {
 
-                config = ClimateConfig::fromJSON(p->value().c_str());
-                Eeprom::saveClimateConfig(config);
+                config = Zone::Controller::fromJSON(p->value().c_str());
+                Eeprom::saveZoneController(config);
 
                 request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
             }
@@ -138,11 +146,23 @@ namespace HttpServer
         request->send(502, "text/plain", "Internal server error");
     }
 
+    void onGetSensors(AsyncWebServerRequest *request)
+    {
+        DynamicJsonDocument doc(1024 * 2 + Measure::EnvironmentSensors::jsonSize());
+
+        doc["sensors"] = (*data).sharedSensors.toJSON();
+
+        std::string requestBody;
+        serializeJson(doc, requestBody);
+
+        request->send(200, "application/json", requestBody.c_str());
+    }
+
     void onGetMetrics(AsyncWebServerRequest *request)
     {
-        DynamicJsonDocument doc(1024 + MAX_LIGHT_EVENTS * LightEvent::jsonSize());
+        DynamicJsonDocument doc(1024 * 2 + Zone::ZonesStatuses::jsonSize());
 
-        ControllerConfig controllerConfig = Eeprom::loadControllerConfig();
+        SystemConfig controllerConfig = Eeprom::loadSystemConfig();
 
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
         doc["metadata"]["id"] = controllerConfig.id.c_str();
@@ -152,30 +172,7 @@ namespace HttpServer
         doc["metadata"]["build_time"] = BUILD_TIME;
         doc["system"]["rtc_battery"] = (*data).RtcBatteryPercent;
 
-        for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-        {
-            if ((*data).climateZones[i].isSet)
-            {
-                std::string slug = (*data).climateZones[i].slug;
-
-                doc["climate"][slug]["name"] = (*data).climateZones[i].name;
-                doc["climate"][slug]["heating"] = (*data).climateZones[i].heatingPhase;
-                doc["climate"][slug]["temperature"] = (*data).climateZones[i].temperature;
-                doc["climate"][slug]["targetTemperature"] = (*data).climateZones[i].targetTemperature;
-                doc["climate"][slug]["humidity"] = (*data).climateZones[i].humidity;
-            }
-        }
-
-        int lightEventIndex = 0;
-        for (int i = 0; i < MAX_LIGHT_EVENTS; i++)
-        {
-            LightEvent event = (*data).lightEvents[i];
-            if (event.isSet())
-            {
-                doc["light"][lightEventIndex] = event.toJSON();
-                lightEventIndex++;
-            }
-        }
+        doc["climate"] = (*data).zones.toJSON();
 
         std::string requestBody;
         serializeJson(doc, requestBody);
@@ -187,17 +184,18 @@ namespace HttpServer
     {
         data = givenData;
 
-        server.on("/", HTTP_GET, onFormControllerConfig);
+        server.on("/", HTTP_GET, onFormSettings);
+        server.on("/settings", HTTP_GET, onFormSettings);
         server.on("/climate", HTTP_GET, onFormClimateConfig);
-
         server.on("/api/metrics", HTTP_GET, onGetMetrics);
-        server.on("/api/config-controller", HTTP_GET, onGetControllerConfig);
-        server.on("/api/config-controller", HTTP_POST, onPostControllerConfig);
+        server.on("/api/settings", HTTP_GET, onGetSettings);
+        server.on("/api/settings", HTTP_POST, onPostSettings);
         server.on("/api/reset", HTTP_POST, onPostReset);
-        server.on("/api/reset-controller", HTTP_POST, onPostResetController);
+        server.on("/api/sensors", HTTP_GET, onGetSensors);
+        server.on("/api/reset-system", HTTP_POST, onPostResetSystem);
         server.on("/api/reset-climate", HTTP_POST, onPostResetClimate);
-        server.on("/api/config-climate", HTTP_GET, onGetClimateConfig);
-        server.on("/api/config-climate", HTTP_POST, onPostClimateConfig);
+        server.on("/api/climate", HTTP_GET, onGetClimateConfig);
+        server.on("/api/climate", HTTP_POST, onPostClimateConfig);
 
         server.onNotFound(notFound);
 
@@ -208,7 +206,7 @@ namespace HttpServer
             Serial.println("Setup mode");
         }
 
-        // AsyncElegantOTA.begin(&server);
+        AsyncElegantOTA.begin(&server);
 
         server.begin();
         Serial.println("Server started [OK]");

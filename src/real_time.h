@@ -4,11 +4,10 @@
 #include "time.h"
 #include "Arduino.h"
 #include <RTClib.h>
-#include "display.h"
 #include "net.h"
 #include "utils.h"
 #include <string>
-// #include "status.h"
+
 
 namespace RealTime
 {
@@ -16,7 +15,9 @@ namespace RealTime
     bool isWiFiRequired();
     void syncFromRTC();
     void syncFromNTP();
+    void syncFromNTPOnce();
     bool saveTimeToRTC();
+    std::string getTime();
     int getHour();
     int getMinute();
     int getSecond();

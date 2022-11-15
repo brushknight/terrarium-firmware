@@ -140,28 +140,28 @@ namespace Display
 
             int enabledClimateZones = 0;
 
-            for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-            {
-                if (data.climateZones[i].isSet)
-                {
-                    enabledClimateZones++;
-                }
-            }
+            // for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+            // {
+            //     if (data.climateZones[i].isSet)
+            //     {
+            //         enabledClimateZones++;
+            //     }
+            // }
 
-            for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
-            {
-                if (data.climateZones[i].isSet)
-                {
-                    if (enabledClimateZones == 2)
-                    {
-                        renderClimateZone(data.climateZones[i], 12 * i + 2);
-                    }
-                    else
-                    {
-                        renderClimateZone(data.climateZones[i], 6 * i + 2);
-                    }
-                }
-            }
+            // for (int i = 0; i < MAX_CLIMATE_ZONES; i++)
+            // {
+            //     if (data.climateZones[i].isSet)
+            //     {
+            //         if (enabledClimateZones == 2)
+            //         {
+            //             renderClimateZone(data.climateZones[i], 12 * i + 2);
+            //         }
+            //         else
+            //         {
+            //             renderClimateZone(data.climateZones[i], 6 * i + 2);
+            //         }
+            //     }
+            // }
 
             lcd.setCursor(19, 0);
             if (data.WiFiStatus)
@@ -202,32 +202,32 @@ namespace Display
         lcd.print(data.ipAddr.c_str());
     }
 
-    void renderClimateZone(DataClimateZone data, int offset)
-    {
-        lcd.setCursor(offset, 0);
-        if (data.heaterStatus)
-        {
-            lcd.write(1);
-        }
-        else
-        {
-            lcd.write(0);
-        }
-        lcd.setCursor(offset + 3, 0);
-        if (data.heatingPhase)
-        {
-            lcd.write(2);
-        }
-        else
-        {
-            lcd.write(3);
-        }
-        lcd.setCursor(offset, 1);
-        lcd.print(floatToString(data.temperature));
+    // void renderClimateZone(DataClimateZone data, int offset)
+    // {
+    //     lcd.setCursor(offset, 0);
+    //     if (data.heaterStatus)
+    //     {
+    //         lcd.write(1);
+    //     }
+    //     else
+    //     {
+    //         lcd.write(0);
+    //     }
+    //     lcd.setCursor(offset + 3, 0);
+    //     if (data.heatingPhase)
+    //     {
+    //         lcd.write(2);
+    //     }
+    //     else
+    //     {
+    //         lcd.write(3);
+    //     }
+    //     lcd.setCursor(offset, 1);
+    //     lcd.print(floatToString(data.temperature));
 
-        lcd.setCursor(offset, 2);
-        lcd.print(floatToString(data.humidity));
-    }
+    //     lcd.setCursor(offset, 2);
+    //     lcd.print(floatToString(data.humidity));
+    // }
 
     char *floatToString(double value)
     {
