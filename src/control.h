@@ -13,10 +13,11 @@ namespace Control
 
     struct Color
     {
-        int r = 0;
-        int g = 0;
-        int b = 0;
-        int brightness = 0;
+
+    public:
+        int red = 0;
+        int green = 0;
+        int blue = 0;
         static int jsonSize()
         {
             return 64; // to be defined
@@ -24,10 +25,9 @@ namespace Control
         DynamicJsonDocument toJSON()
         {
             DynamicJsonDocument doc(jsonSize());
-            doc["r"] = r;
-            doc["g"] = g;
-            doc["b"] = b;
-            doc["brightness"] = brightness;
+            doc["r"] = red;
+            doc["g"] = green;
+            doc["b"] = blue;
             return doc;
         }
 
@@ -42,14 +42,12 @@ namespace Control
         static Color fromJSONObj(DynamicJsonDocument doc)
         {
             Color color;
-            color.r = doc["r"];
-            color.g = doc["g"];
-            color.b = doc["b"];
-            color.brightness = doc["brightness"];
+            color.red = doc["r"];
+            color.green = doc["g"];
+            color.blue = doc["b"];
             return color;
         }
     };
-
     class Switch
     {
     private:
@@ -136,16 +134,27 @@ namespace Control
     {
     private:
         Color state;
+        int brightness = 0; // max 255
         Adafruit_NeoPixel *pixels;
-        int pixelsCount = 1;
+        int pixelsCount = 10;
+        int pixelsOffset = 1;
+        int ledPin = LEDPIN;
+        void applyHardware()
+        {
+            for (int i = pixelsOffset; i < pixelsCount; i++)
+            {
+                pixels->setPixelColor(i, (state.red << 16) + (state.green << 8) + state.blue);
+            }
+            pixels->setBrightness(brightness);
+            pixels->show();
+        }
 
     public:
         // ColorLight(){};
         ColorLight()
         {
-
             int pixelFormat = NEO_GRB + NEO_KHZ800;
-            pixels = new Adafruit_NeoPixel(pixelsCount, LEDPIN, pixelFormat);
+            pixels = new Adafruit_NeoPixel(pixelsCount + pixelsOffset, ledPin, pixelFormat);
             pixels->begin();
         };
         // bool enabled()
@@ -158,15 +167,19 @@ namespace Control
         }
         void on()
         {
-            state.brightness = 0;
+            brightness = 0;
+            applyHardware();
         }
         void off()
         {
-            state.brightness = 100;
+            brightness = 255;
+            applyHardware();
         }
-        void setColor(Color c)
+        void setColorAndBrightness(Color c, int percent)
         {
             state = c;
+            brightness = 255.0 * (((float)percent)/100.0);
+            applyHardware();
         }
     };
 
@@ -241,9 +254,9 @@ namespace Control
             dimmers.list[port].setBrigntness(percent);
             return true;
         };
-        bool setColor(int port, Color color)
+        bool setColorAndBrightness(int port, Color color, int percent)
         {
-            colorLights.list[port].setColor(color);
+            colorLights.list[port].setColorAndBrightness(color, percent);
             return true;
         };
     };

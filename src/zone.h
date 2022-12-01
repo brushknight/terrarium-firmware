@@ -13,9 +13,11 @@ namespace Zone
 {
     const int maxTemperatureZonesCount = 3;
     const int maxTemperatureZonesSensorsCount = 3;
-    const int maxTemperatureZonesEventsCount = 10;
+    const int maxTemperatureZonesEventsCount = 5;
     const int maxDimmerZonesCount = 3;
-    const int maxDimmerZonesEventsCount = 10;
+    const int maxDimmerZonesEventsCount = 5;
+    const int maxColorLightZonesCount = 1;
+    const int maxColorLightZonesEventsCount = 5;
 
     class TemperatureZoneStatus
     {
@@ -103,11 +105,52 @@ namespace Zone
         }
     };
 
+    class ColorLightZoneStatus
+    {
+    public:
+        std::string slug = "";
+        Control::Color color;
+        int brightness = 0;
+        static int jsonSize()
+        {
+            return 96 + Control::Color::jsonSize();
+        }
+        boolean isSet()
+        {
+            return slug != "";
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["color"] = color.toJSON();
+            doc["brightness"] = brightness;
+            // doc["slug"] = slug;
+            return doc;
+        }
+        static ColorLightZoneStatus fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return ColorLightZoneStatus::fromJSONObj(doc);
+        }
+
+        static ColorLightZoneStatus fromJSONObj(DynamicJsonDocument doc)
+        {
+            ColorLightZoneStatus zoneStatus;
+
+            zoneStatus.color = Control::Color::fromJSONObj(doc["color"]);
+            zoneStatus.brightness = doc["brightness"];
+            return zoneStatus;
+        }
+    };
+
     class ZonesStatuses
     {
     public:
         TemperatureZoneStatus temperatureZones[maxTemperatureZonesCount];
         DimmerZoneStatus dimmerZones[maxDimmerZonesCount];
+        ColorLightZoneStatus colorLightZones[maxColorLightZonesCount];
         static int jsonSize()
         {
             return 64 + TemperatureZoneStatus::jsonSize() * maxTemperatureZonesCount + DimmerZoneStatus::jsonSize() * maxDimmerZonesCount;
@@ -127,6 +170,13 @@ namespace Zone
                 if (dimmerZones[i].isSet())
                 {
                     doc["dimmer_zones"][dimmerZones[i].slug] = dimmerZones[i].toJSON();
+                }
+            }
+            for (int i = 0; i < maxColorLightZonesCount; i++)
+            {
+                if (colorLightZones[i].isSet())
+                {
+                    doc["color_light_zones"][colorLightZones[i].slug] = colorLightZones[i].toJSON();
                 }
             }
             return doc;
@@ -224,7 +274,7 @@ namespace Zone
 
             Event::TemperatureEvent activeEvent;
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
             {
                 if (events[i].isActive(now))
                 {
@@ -238,11 +288,11 @@ namespace Zone
             float temperatureSum = 0;
             float checkedSensorsCount = 0;
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
             {
                 if (sensorIDs[i].isSet())
                 {
-                    Serial.printf("sensor status %d, temp %.2f\n", (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
+                    // Serial.printf("sensor status %d, temp %.2f\n", (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
 
                     float t = (*sharedSensors).get(sensorIDs[i]).temperature();
 
@@ -256,6 +306,10 @@ namespace Zone
 
             status.averageTemperature = checkedSensorsCount > 0 ? temperatureSum / checkedSensorsCount : -100;
             status.targetTemperature = activeEvent.temperature;
+            if (activeEvent.transform.isSet())
+            {
+                status.targetTemperature = activeEvent.transformedValue(now);
+            }
 
             Serial.printf("Average temperature %.2f, target  %.2f\n", status.averageTemperature, status.targetTemperature);
 
@@ -358,12 +412,9 @@ namespace Zone
 
         DimmerZoneStatus loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
-            // TODO return status
-            //  find active event (latest in the window)
-
             Event::LightEvent activeEvent;
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < maxDimmerZonesEventsCount; i++)
             {
                 if (events[i].isActive(now))
                 {
@@ -381,11 +432,113 @@ namespace Zone
         }
     };
 
+    class ColorLightZone
+    {
+    private:
+        bool enabled = false;
+
+    public:
+        std::string slug = "";
+        Event::LightEvent events[maxDimmerZonesEventsCount];
+        int ledPort = -1;
+        ColorLightZoneStatus status;
+
+        ColorLightZone()
+        {
+            // stub for empty array creation
+        }
+
+        ColorLightZone(std::string s)
+        {
+            enabled = true;
+            slug = s;
+        }
+
+        static int jsonSize()
+        {
+            return 128 + ColorLightZoneStatus::jsonSize() + Event::LightEvent::jsonSize() * maxDimmerZonesEventsCount;
+        }
+
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["slug"] = slug;
+            doc["enabled"] = enabled;
+            for (int i = 0; i < maxDimmerZonesEventsCount; i++)
+            {
+                doc["events"][i] = events[i].toJSON();
+            }
+            doc["led_port"] = ledPort;
+            return doc;
+        }
+
+        static ColorLightZone fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return ColorLightZone::fromJSONObj(doc);
+        }
+
+        static ColorLightZone fromJSONObj(DynamicJsonDocument doc)
+        {
+            ColorLightZone zone;
+            zone.slug = doc["slug"].as<std::string>();
+            zone.ledPort = doc["led_port"];
+            zone.enabled = doc["enabled"];
+            for (int i = 0; i < maxColorLightZonesEventsCount; i++)
+            {
+                zone.events[i] = Event::LightEvent::fromJSONObj(doc["events"][i]);
+            }
+
+            return zone;
+        }
+
+        void reset()
+        {
+            enabled = false;
+        }
+
+        bool isEnabled()
+        {
+            return enabled;
+        }
+
+        ColorLightZoneStatus loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        {
+            Event::LightEvent activeEvent;
+
+            for (int i = 0; i < maxColorLightZonesEventsCount; i++)
+            {
+                if (events[i].isActive(now))
+                {
+                    activeEvent = events[i];
+                    Serial.printf("color light zone active event id: %d\n", i);
+                }
+            }
+
+            int brightness = activeEvent.brightness;
+            if (activeEvent.transform.isSet())
+            {
+                brightness = activeEvent.transformedValue(now);
+            }
+
+            (*controller).setColorAndBrightness(ledPort, activeEvent.color, brightness);
+            status.color = activeEvent.color;
+            status.brightness = brightness;
+
+            status.slug = slug;
+
+            return status;
+        }
+    };
+
     class Controller
     {
     private:
         TemperatureZone temperatureZones[maxTemperatureZonesCount];
         DimmerZone dimmerZones[maxDimmerZonesCount];
+        ColorLightZone colorLightZones[maxColorLightZonesCount];
         bool paused = false;
 
         void pause()
@@ -420,8 +573,19 @@ namespace Zone
                         statuses.dimmerZones[i] = dimmerZones[i].loopTick(now, sharedSensors, controller);
                     }
                 }
+                for (int i = 0; i < maxColorLightZonesCount; i++)
+                {
+                    if (colorLightZones[i].isEnabled())
+                    {
+                        statuses.colorLightZones[i] = colorLightZones[i].loopTick(now, sharedSensors, controller);
+                    }
+                }
             }
             return statuses;
+        }
+        TemperatureZone getTemperatureZone(int index)
+        {
+            return temperatureZones[index];
         }
         void addTemperatureZone(TemperatureZone tempZone)
         {
@@ -461,7 +625,7 @@ namespace Zone
         static int jsonSize()
         {
             // TODO test without this extra 4k
-            return 4096 + 1024 + 128 + TemperatureZone::jsonSize() * maxTemperatureZonesCount + DimmerZone::jsonSize() * maxDimmerZonesCount;
+            return 1024 * 2 + 128 + TemperatureZone::jsonSize() * maxTemperatureZonesCount + DimmerZone::jsonSize() * maxDimmerZonesCount + ColorLightZone::jsonSize() * maxColorLightZonesCount;
         }
 
         // return as json
@@ -476,13 +640,23 @@ namespace Zone
             {
                 doc["dimmer_zones"][i] = dimmerZones[i].toJSON();
             }
+            for (int i = 0; i < maxColorLightZonesCount; i++)
+            {
+                doc["color_light_zones"][i] = colorLightZones[i].toJSON();
+            }
             return doc;
         }
 
         static Controller fromJSON(std::string json)
         {
-            DynamicJsonDocument doc(jsonSize());
+            DynamicJsonDocument doc = DynamicJsonDocument(jsonSize());
+            Serial.println(jsonSize());
+            Serial.println(json.length());
+            Serial.println(doc.capacity());
             deserializeJson(doc, json);
+
+            Serial.println("slug");
+            Serial.println(doc["temperature_zones"][0]["slug"].as<std::string>().c_str());
 
             return Controller::fromJSONObj(doc);
         }
@@ -490,6 +664,10 @@ namespace Zone
         static Controller fromJSONObj(DynamicJsonDocument doc)
         {
             Controller controller;
+
+            Serial.println(doc.capacity());
+            Serial.println("slug");
+            Serial.println(doc["temperature_zones"][0]["slug"].as<std::string>().c_str());
 
             for (int i = 0; i < maxTemperatureZonesCount; i++)
             {
@@ -500,6 +678,14 @@ namespace Zone
             {
                 controller.dimmerZones[i] = DimmerZone::fromJSONObj(doc["dimmer_zones"][i]);
             }
+
+            for (int i = 0; i < maxColorLightZonesCount; i++)
+            {
+                controller.colorLightZones[i] = ColorLightZone::fromJSONObj(doc["color_light_zones"][i]);
+            }
+
+            Serial.println("Controller fromJSONObj()");
+            Serial.println(controller.temperatureZones[0].slug.c_str());
 
             return controller;
         }

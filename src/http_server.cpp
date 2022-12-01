@@ -1,6 +1,7 @@
 #include "http_server.h"
 
 // fix for md5 error https://github.com/me-no-dev/ESPAsyncWebServer/issues/1085
+// fix for freertos https://github.com/me-no-dev/AsyncTCP/pull/134
 #include <AsyncElegantOTA.h>
 
 namespace HttpServer
@@ -136,6 +137,8 @@ namespace HttpServer
             if (p->name().compareTo(String("json_config")) == 0)
             {
 
+                Serial.println("POST: raw config");
+                Serial.println(p->value().c_str());
                 config = Zone::Controller::fromJSON(p->value().c_str());
                 Eeprom::saveZoneController(config);
 
@@ -170,7 +173,8 @@ namespace HttpServer
         doc["metadata"]["time"]["minute"] = RealTime::getMinute();
         doc["metadata"]["time"]["uptime"] = RealTime::getUptimeSec();
         doc["metadata"]["build_time"] = BUILD_TIME;
-        doc["system"]["rtc_battery"] = (*data).RtcBatteryPercent;
+        doc["system"]["rtc"]["percent"] = (*data).RtcBatteryPercent;
+        doc["system"]["rtc"]["mV"] = (*data).RtcBatteryMilliVolt;
 
         doc["climate"] = (*data).zones.toJSON();
 

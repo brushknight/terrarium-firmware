@@ -1,31 +1,11 @@
 #include <Arduino.h>
 #include <unity.h>
-#include "../src/real_time.cpp"
 #include "../src/utils.cpp"
-#include "../src/config.h"
-#include "../src/config.cpp"
-
-void test_config_serialization(void)
-{
-
-    Config config = loadInitClimateConfig();
-    config.climateZoneConfigs[0].relayPin = 10;
-    DynamicJsonDocument doc = config.toJSON();
-    // Lastly, you can print the resulting JSON to a String
-    std::string output;
-    serializeJson(doc, output);
-    Config actualConfig = Config::fromJSON(output);
-    
-
-    TEST_ASSERT_EQUAL(
-        config.climateZoneConfigs[0].relayPin, 
-        actualConfig.climateZoneConfigs[0].relayPin);
-}
 
 void test_schedule_table(std::string now, std::string since, std::string until, bool expected)
 {
 
-    int actual = RealTime::checkScheduleTimeWindow(now, since, until);
+    int actual = Utils::checkScheduleTimeWindow(now, since, until);
     Serial.printf("%s | %s -> %s\n", now.c_str(), since.c_str(), until.c_str());
     TEST_ASSERT_EQUAL(expected, actual);
 }
@@ -49,7 +29,7 @@ void setup()
     delay(2000);
     Serial.begin(115200);
     UNITY_BEGIN();
-    RUN_TEST(test_config_serialization);
+    //RUN_TEST(test_config_serialization);
     RUN_TEST(test_schedule);
 }
 

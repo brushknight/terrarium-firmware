@@ -52,33 +52,44 @@ namespace Eeprom
     {
         pinMode(BUTTON_RESET_EEPROM, INPUT);
         int resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
+        int previousResetButtonState = 0;
         for (int i = 0; i < 3; i++)
         {
             resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
-            //Serial.printf("Reset button %f\n", resetButtonState);
+            // Serial.printf("Reset button %f\n", resetButtonState);
             if (resetButtonState == 1)
             {
                 Status::setWarning();
                 vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+                previousResetButtonState = 1;
             }
             else
             {
-                Status::turnLedOff();
+                if (previousResetButtonState == 1)
+                {
+                    Status::turnLedOff();
+                }
+                previousResetButtonState = 0;
                 return false;
             }
         }
         for (int i = 0; i < 3; i++)
         {
             resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
-            //Serial.printf("Reset button %f\n", resetButtonState);
+            // Serial.printf("Reset button %f\n", resetButtonState);
             if (resetButtonState == 1)
             {
                 Status::setError();
                 vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+                previousResetButtonState = 1;
             }
             else
             {
-                Status::turnLedOff();
+                if (previousResetButtonState == 1)
+                {
+                    Status::turnLedOff();
+                }
+                previousResetButtonState = 0;
                 return false;
             }
         }
@@ -90,6 +101,22 @@ namespace Eeprom
     {
         clearSystemSettings();
         clearZoneController();
+    }
+
+    void clearZoneControllerFull()
+    {
+        if (isExternalEEPROM)
+        {
+            Serial.println("Clearing external EEPROM");
+            for (int i = 0; i < externalEEPROM.length(); i++)
+            {
+                externalEEPROM.write(i, 0);
+                if (i % 1000 == 0)
+                {
+                    Serial.println(i);
+                }
+            }
+        }
     }
 
     void clearZoneController()
@@ -237,6 +264,7 @@ namespace Eeprom
         // Serial.println("Cleaning zone controller to eeprom before saving");
         // clearZoneController();
         Serial.println("saving zone controller to eeprom");
+        Serial.println(zoneController.getTemperatureZone(0).slug.c_str());
         DynamicJsonDocument doc = zoneController.toJSON();
         // Lastly, you can print the resulting JSON to a String
         std::string json;
@@ -268,11 +296,11 @@ namespace Eeprom
             xTaskCreatePinnedToCore(
                 saveZoneControllerTask,
                 "saveZoneControllerTask",
-                1024 * 16,
+                1024 * 24,
                 NULL,
                 3,
                 NULL,
-                1);
+                0);
         }
         else
         {

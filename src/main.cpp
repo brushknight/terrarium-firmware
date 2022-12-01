@@ -63,6 +63,7 @@ void taskCheckRtcBattery(void *parameter)
   for (;;)
   {
     data.RtcBatteryPercent = RealTime::getBatteryPercent();
+    data.RtcBatteryMilliVolt = RealTime::getBatteryVoltage();
     vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
   }
 }
@@ -184,6 +185,10 @@ void setupTask(void *parameter)
 {
   Serial.begin(115200);
   Serial.println("Controller starting");
+
+  Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
+  Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
+
   Wire.begin();
 
   Serial.println("Scanning for i2c devices");
@@ -192,6 +197,7 @@ void setupTask(void *parameter)
   Status::setup();
 
   Eeprom::setup();
+  //Eeprom::clearZoneControllerFull();
   Eeprom::resetEepromChecker();
 
   Display::setup();
@@ -306,7 +312,7 @@ void setupTask(void *parameter)
     Net::connect();
     Net::setWiFiName(&data);
     HttpServer::start(&data, false);
-    //AsyncElegantOTA.begin(HttpServer::getServer());
+    // AsyncElegantOTA.begin(HttpServer::getServer());
     Serial.println("Controller started [OK]");
   }
 
@@ -318,10 +324,13 @@ void setupTask(void *parameter)
 
 void setup()
 {
+
+
+
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
-      1024 * 32,
+      1024 * 34,
       NULL,
       100,
       NULL,

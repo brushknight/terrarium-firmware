@@ -65,7 +65,7 @@ namespace Utils
     {
         static char buffer[10];
         sprintf(buffer, "%02d:%02d", hour, minute);
-        // Serial.println(buffer);
+        //Serial.println(buffer);
         return std::string(buffer);
     }
 
