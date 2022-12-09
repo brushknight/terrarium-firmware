@@ -63,11 +63,50 @@ namespace Event
     public:
         int hours = 0;
         int minutes = 0;
+        // int seconds = 0;
+        Time(){}
+        Time (int h, int m){
+            hours = h;
+            minutes = m;
+        }
         std::string toString()
         {
             return Utils::hourMinuteToString(hours, minutes);
         }
-        // returns diff in minutes
+        int toMin()
+        {
+            return hours * 60 + minutes;
+        }
+        // returns (update logic to the best practices)
+        // 1 - when this > that
+        // 0 - when this = that
+        // -1 - when this < that
+        int compare(Time to)
+        {
+            if (toMin() > to.toMin())
+            {
+                return 1;
+            }
+            else if (toMin() < to.toMin())
+            {
+                return -1;
+            }
+            return 0;
+        }
+
+        bool inRange(Time from, Time to)
+        {
+            // overnight transition
+            if (from.compare(to))
+            {
+                return compare(from) >= 0 || compare(to) <= 0;
+            }
+            else
+            {
+                return compare(from) >= 0 && compare(to) <= 0;
+            }
+        }
+
         int diff(Time target)
         {
             // todo: add test suites
@@ -125,13 +164,12 @@ namespace Event
             set = true;
         }
         // returns percent in float format
-        float transformPercent(std::string now)
+        float transformPercent(Time now)
         {
-            Time nowTime = Time::fromString(now);
-            int passedMinutes = since.diff(nowTime);
+            int passedMinutes = since.diff(now);
             return ((float)passedMinutes) / ((float)durationMin);
         }
-        float transformedValue(std::string now)
+        float transformedValue(Time now)
         {
 
             float tPercent = transformPercent(now);
@@ -146,9 +184,14 @@ namespace Event
             }
             return 0;
         }
-        bool isActive(std::string now)
+        bool isActive(Time now)
         {
-            return set && Utils::checkScheduleTimeWindow(now, since.toString(), until.toString());
+            if (!set)
+            {
+                return false;
+            }
+
+            return now.inRange(since, until);
         }
     };
 

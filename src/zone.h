@@ -267,7 +267,7 @@ namespace Zone
             return enabled;
         }
 
-        TemperatureZoneStatus loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        TemperatureZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             // TODO return status
             //  find active event (latest in the window)
@@ -410,7 +410,7 @@ namespace Zone
             return enabled;
         }
 
-        DimmerZoneStatus loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        DimmerZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             Event::LightEvent activeEvent;
 
@@ -504,7 +504,7 @@ namespace Zone
             return enabled;
         }
 
-        ColorLightZoneStatus loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ColorLightZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             Event::LightEvent activeEvent;
 
@@ -552,7 +552,7 @@ namespace Zone
 
     public:
         Controller() {}
-        ZonesStatuses loopTick(std::string now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ZonesStatuses loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             ZonesStatuses statuses;
             // TODO return list of statuses

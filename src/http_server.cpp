@@ -184,6 +184,20 @@ namespace HttpServer
         request->send(200, "application/json", requestBody.c_str());
     }
 
+    void onGetTerrispot(AsyncWebServerRequest *request)
+    {
+        DynamicJsonDocument doc(1024);
+
+        SystemConfig controllerConfig = Eeprom::loadSystemConfig();
+
+        doc["status"] = "ok";
+
+        std::string requestBody;
+        serializeJson(doc, requestBody);
+
+        request->send(200, "application/json", requestBody.c_str());
+    }
+
     void start(Data *givenData, bool isSetupMode)
     {
         data = givenData;
@@ -200,6 +214,7 @@ namespace HttpServer
         server.on("/api/reset-climate", HTTP_POST, onPostResetClimate);
         server.on("/api/climate", HTTP_GET, onGetClimateConfig);
         server.on("/api/climate", HTTP_POST, onPostClimateConfig);
+        server.on("/api/terrispot", HTTP_GET, onGetTerrispot);
 
         server.onNotFound(notFound);
 

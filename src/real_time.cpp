@@ -182,6 +182,25 @@ namespace RealTime
         return Utils::hourMinuteToString(hour, minute);
     }
 
+    Event::Time getTimeObj(){
+
+        int hour = 0;
+        int minute = 0;
+
+        struct tm timeinfo;
+        if (!getLocalTime(&timeinfo))
+        {
+            Serial.println("getHour() Failed to obtain time");
+
+            return Event::Time(-1,-1);
+        }
+
+        hour = timeinfo.tm_hour;
+        minute = timeinfo.tm_min;
+
+        return Event::Time(hour, minute);
+    }
+
     int getHour()
     {
         int hour = 0;

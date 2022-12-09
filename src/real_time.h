@@ -7,7 +7,7 @@
 #include "net.h"
 #include "utils.h"
 #include <string>
-
+#include "event.h"
 
 namespace RealTime
 {
@@ -18,6 +18,7 @@ namespace RealTime
     void syncFromNTPOnce();
     bool saveTimeToRTC();
     std::string getTime();
+    Event::Time getTimeObj();
     int getHour();
     int getMinute();
     int getSecond();

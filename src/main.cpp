@@ -49,7 +49,7 @@ void taskZoneControl(void *parameter)
 
   for (;;)
   {
-    std::string time = RealTime::getTime();
+    Event::Time time = RealTime::getTimeObj();
     data.zones = zoneController.loopTick(time, Measure::getSharedSensors(), &controller);
 
     vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
