@@ -2,17 +2,29 @@
 #define TERRARIUM_EVENT
 
 #include "Arduino.h"
-#include "utils.h"
 #include "control.h"
+#include "utils.h"
 
 namespace Event
 {
+    // std::string hourMinuteToString(int hour, int minute)
+    // {
+    //     static char buffer[10];
+    //     sprintf(buffer, "%02d:%02d", hour, minute);
+    //     //Serial.println(buffer);
+    //     return std::string(buffer);
+    // }
 
     class Transform
     {
     public:
         int from = 0;
         int to = 0;
+        Transform(){}
+        Transform(int f, int t){
+            from = f;
+            to = t;
+        }
         bool isSet()
         {
             return from > 0 || to > 0;
@@ -63,9 +75,10 @@ namespace Event
     public:
         int hours = 0;
         int minutes = 0;
-        // int seconds = 0;
-        Time(){}
-        Time (int h, int m){
+        int seconds = 0; // not fully implemented
+        Time() {}
+        Time(int h, int m)
+        {
             hours = h;
             minutes = m;
         }
@@ -76,6 +89,10 @@ namespace Event
         int toMin()
         {
             return hours * 60 + minutes;
+        }
+        int toSec()
+        {
+            return toMin() * 60 + seconds;
         }
         // returns (update logic to the best practices)
         // 1 - when this > that
@@ -96,8 +113,12 @@ namespace Event
 
         bool inRange(Time from, Time to)
         {
+            if (from.compare(to) == 0){
+                // this means that this is all day event, any time will be
+                return true;
+            }
             // overnight transition
-            if (from.compare(to))
+            if (from.compare(to) > 0)
             {
                 return compare(from) >= 0 || compare(to) <= 0;
             }
@@ -107,6 +128,7 @@ namespace Event
             }
         }
 
+        // diff in minutes
         int diff(Time target)
         {
             // todo: add test suites
@@ -133,6 +155,10 @@ namespace Event
         static Time fromString(std::string str)
         {
             Time object;
+
+            // todo add check for corrupted strings
+            // todo add check for h:m vs h:m:s
+            // str.length();
 
             char h[] = {str.c_str()[0], str.c_str()[1], 0};
             char m[] = {str.c_str()[3], str.c_str()[4], 0};
@@ -161,6 +187,7 @@ namespace Event
             since = Time::fromString(s);
             until = Time::fromString(u);
             durationMin = since.diff(until);
+            durationSec = dSec;
             set = true;
         }
         // returns percent in float format
@@ -172,8 +199,11 @@ namespace Event
         float transformedValue(Time now)
         {
 
+            if (transform.direction() == 0)
+            {
+                return transform.from;
+            }
             float tPercent = transformPercent(now);
-
             if (transform.direction() == -1)
             {
                 return transform.from - tPercent * (transform.from - transform.to);
@@ -183,6 +213,10 @@ namespace Event
                 return transform.from + tPercent * (transform.to - transform.from);
             }
             return 0;
+        }
+        bool isSet()
+        {
+            return set;
         }
         bool isActive(Time now)
         {

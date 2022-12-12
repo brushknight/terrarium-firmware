@@ -22,6 +22,9 @@ namespace Zone
     class TemperatureZoneStatus
     {
     public:
+        bool isTargetSet = false;
+        bool isActorSet = false;
+        bool isCurrentTempSet = false;
         float averageTemperature = 0;
         float targetTemperature = 0;
         std::string slug = "";
@@ -31,6 +34,21 @@ namespace Zone
         {
             return 128;
         }
+        void setCurrentTemp(float temp)
+        {
+            averageTemperature = temp;
+            isCurrentTempSet = true;
+        }
+        void setTarget(float target)
+        {
+            targetTemperature = target;
+            isTargetSet = true;
+        }
+        void setHeater(bool heater)
+        {
+            heaterStatus = heater;
+            isActorSet = true;
+        }
         boolean isSet()
         {
             return slug != "";
@@ -38,9 +56,18 @@ namespace Zone
         DynamicJsonDocument toJSON()
         {
             DynamicJsonDocument doc(jsonSize());
-            doc["average_temperature"] = averageTemperature;
-            doc["target_temperature"] = targetTemperature;
-            doc["heater_status"] = heaterStatus;
+            if (isCurrentTempSet)
+            {
+                doc["average_temperature"] = averageTemperature;
+            }
+            if (isTargetSet)
+            {
+                doc["target_temperature"] = targetTemperature;
+            }
+            if (isActorSet)
+            {
+                doc["heater_status"] = heaterStatus;
+            }
             doc["timestamp"] = timestamp;
             // doc["slug"] = slug;
             return doc;
@@ -292,7 +319,7 @@ namespace Zone
             {
                 if (sensorIDs[i].isSet())
                 {
-                    // Serial.printf("sensor status %d, temp %.2f\n", (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
+                    Serial.printf("sensor status %d, temp %.2f\n", (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
 
                     float t = (*sharedSensors).get(sensorIDs[i]).temperature();
 
@@ -304,35 +331,52 @@ namespace Zone
                 }
             }
 
-            status.averageTemperature = checkedSensorsCount > 0 ? temperatureSum / checkedSensorsCount : -100;
-            status.targetTemperature = activeEvent.temperature;
+            status.slug = slug;
+            float averageTemperature = checkedSensorsCount > 0 ? temperatureSum / checkedSensorsCount : -100;
+
+            if (averageTemperature < 0)
+            {
+                Serial.println("ERROR: temperature can't be subzero");
+                // off for safty reasons
+                (*controller).turnSwitchOff(heaterPort);
+                status.setHeater(false);
+                return status;
+            }
+
+            status.setCurrentTemp(averageTemperature);
+
+            status.timestamp = Utils::getTimestamp();
+
+            if (!activeEvent.isSet())
+            {
+                return status;
+            }
+
+            if (activeEvent.temperature > -1)
+            {
+                status.setTarget(activeEvent.temperature);
+            }
+
             if (activeEvent.transform.isSet())
             {
-                status.targetTemperature = activeEvent.transformedValue(now);
+                status.setTarget(activeEvent.transformedValue(now));
             }
 
             Serial.printf("Average temperature %.2f, target  %.2f\n", status.averageTemperature, status.targetTemperature);
 
-            status.timestamp = Utils::getTimestamp();
-
-            if (status.averageTemperature < 0)
+            if (heaterPort > -1)
             {
-                Serial.println("ERROR: temperature can't be subzero");
-                return status;
+                if (status.averageTemperature < status.targetTemperature)
+                {
+                    (*controller).turnSwitchOn(heaterPort);
+                    status.setHeater(true);
+                }
+                else
+                {
+                    (*controller).turnSwitchOff(heaterPort);
+                    status.setHeater(false);
+                }
             }
-
-            if (status.averageTemperature < status.targetTemperature)
-            {
-                (*controller).turnSwitchOn(heaterPort);
-                status.heaterStatus = true;
-            }
-            else
-            {
-                (*controller).turnSwitchOff(heaterPort);
-                status.heaterStatus = false;
-            }
-
-            status.slug = slug;
 
             return status;
         }

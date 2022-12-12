@@ -45,6 +45,10 @@ namespace Net
             return;
         }
 
+        char buffer[100];
+        sprintf(buffer, "%s %s", "Terrarium controller", Eeprom::loadSystemConfig().id.c_str());
+        WiFi.setHostname(buffer);
+
         WiFi.setAutoReconnect(true);
 
         Serial.println("Connection to wifi");
@@ -55,11 +59,8 @@ namespace Net
         WiFi.disconnect();
         delay(100);
 
-        char buffer[100];
-        sprintf(buffer, "%s %s", "Terrarium controller", Eeprom::loadSystemConfig().id.c_str());
 
-        WiFi.setHostname(buffer);
-        //Serial.println(buffer);
+        WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
 
         int attempts = 0;
 
@@ -88,6 +89,7 @@ namespace Net
         Serial.println("You're connected to the network");
         Serial.printf("Your IP is: %s\n", WiFi.localIP().toString());
         Serial.println(WiFi.localIP().toString());
+        Serial.println(WiFi.getHostname());
 
         // Status::setConnectingToWiFiStatus(Status::IDLE);
     }

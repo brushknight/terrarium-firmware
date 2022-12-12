@@ -136,7 +136,7 @@ namespace Control
         Color state;
         int brightness = 0; // max 255
         Adafruit_NeoPixel *pixels;
-        int pixelsCount = 10;
+        int pixelsCount = 30;
         int pixelsOffset = 1;
         int ledPin = LEDPIN;
         void applyHardware()

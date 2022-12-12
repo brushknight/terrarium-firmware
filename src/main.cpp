@@ -312,7 +312,7 @@ void setupTask(void *parameter)
     Net::connect();
     Net::setWiFiName(&data);
     HttpServer::start(&data, false);
-    // AsyncElegantOTA.begin(HttpServer::getServer());
+    data.mac = Utils::getMac();
     Serial.println("Controller started [OK]");
   }
 
@@ -324,9 +324,6 @@ void setupTask(void *parameter)
 
 void setup()
 {
-
-
-
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",

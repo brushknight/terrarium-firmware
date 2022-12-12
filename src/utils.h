@@ -15,6 +15,7 @@ namespace Utils
     std::string hourMinuteToString(int hour, int minute);
     bool checkScheduleTimeWindow(std::string now, std::string since, std::string until);
     unsigned long getTimestamp();
+    std::string getMac();
 }
 
 #endif
