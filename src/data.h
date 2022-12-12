@@ -32,6 +32,8 @@ public:
     bool WiFiStatus;
     bool BluetoothStatus;
     int RtcBatteryPercent;
+    int RtcBatteryMilliVolt;
+    std::string mac;
     Metadata metadata;
     InitialSetup initialSetup;
     // terrarium metadata

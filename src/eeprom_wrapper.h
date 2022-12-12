@@ -14,6 +14,7 @@ namespace Eeprom
 
     void clear();
     void clearZoneController();
+    void clearZoneControllerFull();
     void clearSystemSettings();
     void saveSystemConfig(SystemConfig config);
     void saveZoneController(Zone::Controller config);

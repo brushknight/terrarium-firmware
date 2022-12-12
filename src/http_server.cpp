@@ -1,6 +1,41 @@
 #include "http_server.h"
 
 // fix for md5 error https://github.com/me-no-dev/ESPAsyncWebServer/issues/1085
+/*
+
+you modify in the library directory your_directory/Arduino/libraries/ESPAsyncWebServer-master/src/WebAuthentication.cpp
+
+line 72 with this (the comment are the old line ......)
+
+#ifdef ESP32
+mbedtls_md5_init(&_ctx);
+mbedtls_md5_update_ret (&_ctx,data,len);
+mbedtls_md5_finish_ret(&_ctx,data);
+mbedtls_internal_md5_process( &_ctx ,data);
+// mbedtls_md5_starts(&_ctx);
+// mbedtls_md5_update(&_ctx, data, len);
+// mbedtls_md5_finish(&_ctx, _buf);
+
+*/
+
+// fix for freertos https://github.com/me-no-dev/AsyncTCP/pull/134
+/*
+
+libdeps/AsyncTCP/src/AsyncTCP.h
+
+extern "C" {
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/semphr.h"
+    #include "lwip/pbuf.h"
+}
+
+In order to avoid #error "include FreeRTOS.h" must appear in source files before "include semphr.h" 
+semphr.h which located in include/freertos/freertos/semphr.h:74:3, "freertos/FreeRTOS.h" 
+library has to be included. PlatformIO on ubuntu-latest
+
+
+
+*/
 #include <AsyncElegantOTA.h>
 
 namespace HttpServer
@@ -136,6 +171,8 @@ namespace HttpServer
             if (p->name().compareTo(String("json_config")) == 0)
             {
 
+                Serial.println("POST: raw config");
+                Serial.println(p->value().c_str());
                 config = Zone::Controller::fromJSON(p->value().c_str());
                 Eeprom::saveZoneController(config);
 
@@ -165,14 +202,30 @@ namespace HttpServer
         SystemConfig controllerConfig = Eeprom::loadSystemConfig();
 
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
+        doc["metadata"]["mac"] = (*data).mac.c_str();
         doc["metadata"]["id"] = controllerConfig.id.c_str();
         doc["metadata"]["time"]["hour"] = RealTime::getHour();
         doc["metadata"]["time"]["minute"] = RealTime::getMinute();
         doc["metadata"]["time"]["uptime"] = RealTime::getUptimeSec();
         doc["metadata"]["build_time"] = BUILD_TIME;
-        doc["system"]["rtc_battery"] = (*data).RtcBatteryPercent;
+        doc["system"]["rtc"]["percent"] = (*data).RtcBatteryPercent;
+        doc["system"]["rtc"]["mV"] = (*data).RtcBatteryMilliVolt;
 
         doc["climate"] = (*data).zones.toJSON();
+
+        std::string requestBody;
+        serializeJson(doc, requestBody);
+
+        request->send(200, "application/json", requestBody.c_str());
+    }
+
+    void onGetTerrispot(AsyncWebServerRequest *request)
+    {
+        DynamicJsonDocument doc(1024);
+
+        SystemConfig controllerConfig = Eeprom::loadSystemConfig();
+
+        doc["status"] = "ok";
 
         std::string requestBody;
         serializeJson(doc, requestBody);
@@ -196,6 +249,7 @@ namespace HttpServer
         server.on("/api/reset-climate", HTTP_POST, onPostResetClimate);
         server.on("/api/climate", HTTP_GET, onGetClimateConfig);
         server.on("/api/climate", HTTP_POST, onPostClimateConfig);
+        server.on("/api/terrispot", HTTP_GET, onGetTerrispot);
 
         server.onNotFound(notFound);
 
