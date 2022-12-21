@@ -50,6 +50,8 @@ void taskZoneControl(void *parameter)
   for (;;)
   {
     Event::Time time = RealTime::getTimeObj();
+    // debug info
+    Serial.println(time.toString().c_str());
     data.zones = zoneController.loopTick(time, Measure::getSharedSensors(), &controller);
 
     vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
@@ -119,68 +121,6 @@ void taskWatchNetworkStatus(void *parameter)
   }
 }
 
-void demoSetup()
-{
-  Utils::scanForI2C();
-  Status::setup();
-  RealTime::setup(true);
-  Measure::scan();
-  // Eeprom::clear();
-}
-
-void demoLoop(void *parameter)
-{
-  Zone::Controller config = Zone::Controller();
-  Eeprom::saveZoneController(config);
-
-  for (;;)
-  {
-    Serial.println("loop starts");
-    // heap_caps_check_integrity_all(true);
-    config = Eeprom::loadZoneController();
-
-    Serial.println();
-    Serial.println("config loaded");
-    // Serial.println(config.climateZoneConfigs[0].name.c_str());
-    // Serial.println(config.climateZoneConfigs[0].dht22SensorPins[0]);
-    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-
-    // Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
-    // Status::setError();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-    // Status::setWarning();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-    // Status::setPink();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-    // Climate::disableSensors();
-    // Status::setBlue();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-    // Status::setPurple();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-
-    // digitalWrite(RELAY_0_PIN, HIGH);
-    // digitalWrite(RELAY_1_PIN, HIGH);
-    // digitalWrite(RELAY_2_PIN, HIGH);
-
-    // Status::setPurple();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-    // Status::setBlue();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-    // Status::setPink();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-    // Climate::enableSensors();
-    // Status::setWarning();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-    // Status::setError();
-    // vTaskDelay(0.5 * 1000 / portTICK_PERIOD_MS);
-
-    // digitalWrite(RELAY_0_PIN, LOW);
-    // digitalWrite(RELAY_1_PIN, LOW);
-    // digitalWrite(RELAY_2_PIN, LOW);
-    Serial.println("loop ends");
-  }
-}
-
 void setupTask(void *parameter)
 {
   Serial.begin(115200);
@@ -197,29 +137,17 @@ void setupTask(void *parameter)
   Status::setup();
 
   Eeprom::setup();
-  //Eeprom::clearZoneControllerFull();
+  // Eeprom::clearZoneControllerFull();
   Eeprom::resetEepromChecker();
 
-  Display::setup();
+  // Display::setup();
 
   SystemConfig systemConfig = Eeprom::loadSystemConfig();
   data = Data();
 
   initialSetupMode = !Eeprom::isMemorySet();
 
-  if (DEMO_BOARD)
-  {
-    demoSetup();
-    xTaskCreatePinnedToCore(
-        demoLoop,
-        "demoLoop",
-        50000,
-        NULL,
-        1,
-        NULL,
-        0);
-  }
-  else if (initialSetupMode)
+  if (initialSetupMode)
   {
 
     // Setup mode
@@ -336,13 +264,5 @@ void setup()
 
 void loop()
 {
-  if (DEMO_BOARD)
-  {
-    Serial.println(F("Loop function"));
-    delay(100000);
-  }
-  else
-  {
-    delay(100000);
-  }
+  delay(100000);
 }
