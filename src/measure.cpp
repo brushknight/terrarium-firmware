@@ -20,7 +20,7 @@ namespace Measure
             {
                 if (!sharedSensors.readDHT22(i))
                 {
-                    Serial.printf("DHT %d failed\n", i);
+                    Serial.printf("DHT port: %d failed\n", i);
                 }
             }
 
@@ -30,7 +30,7 @@ namespace Measure
 
                 if (!sharedSensors.readBME280(i))
                 {
-                    Serial.printf("BME280 %d failed\n", i);
+                    Serial.printf("BME280 port: %d failed\n", i);
                 }
             }
             // Serial.printf("BME280 %d check\n", i);
@@ -39,7 +39,7 @@ namespace Measure
 
                 if (!sharedSensors.readDS18B20(i))
                 {
-                    Serial.printf("DS18B20 %d failed\n", i);
+                    Serial.printf("DS18B20 port: %d failed\n", i);
                 }
             }
         }

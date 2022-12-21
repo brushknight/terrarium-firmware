@@ -141,7 +141,7 @@ namespace Control
         int ledPin = LEDPIN;
         void applyHardware()
         {
-            for (int i = pixelsOffset; i < pixelsCount; i++)
+            for (int i = pixelsOffset; i < pixelsCount + pixelsOffset; i++)
             {
                 pixels->setPixelColor(i, (state.red << 16) + (state.green << 8) + state.blue);
             }
@@ -256,6 +256,7 @@ namespace Control
         };
         bool setColorAndBrightness(int port, Color color, int percent)
         {
+            // Serial.printf("LED %d %d%% %d %d %d\n", port, percent, color.red, color.green, color.blue);
             colorLights.list[port].setColorAndBrightness(color, percent);
             return true;
         };

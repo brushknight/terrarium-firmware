@@ -59,7 +59,6 @@ namespace Net
         WiFi.disconnect();
         delay(100);
 
-
         WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
 
         int attempts = 0;
@@ -69,17 +68,21 @@ namespace Net
 
         std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
         std::string wifiPassword = Eeprom::loadSystemConfig().wifiPassword;
+ 
+        //Serial.println(wifiPassword.c_str());
 
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 
         while (!WiFi.isConnected())
         {
             attempts++;
-            delay(1 * 100);
+            delay(1 * 500);
 
-            Serial.println(statusToString(WiFi.status()));
-            if (attempts >= 200)
+            
+            if (attempts >= 10)
             {
+                Serial.println(statusToString(WiFi.status()));
+                delay(1 * 1000);
                 attempts = 0;
                 // WiFi.begin(WIFI_SSID, WIFI_PASS);
             }
