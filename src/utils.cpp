@@ -69,9 +69,9 @@ namespace Utils
         return std::string(buffer);
     }
 
-    bool isInTimeWindow(){
+    // bool isInTimeWindow(){
 
-    }
+    // }
 
     bool checkScheduleTimeWindow(std::string now, std::string since, std::string until)
     {
