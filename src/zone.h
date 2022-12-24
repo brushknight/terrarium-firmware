@@ -8,6 +8,7 @@
 #include "measure.h"
 #include <string>
 #include "ArduinoJson.h"
+#include "data_structures.h"
 
 namespace Zone
 {
@@ -27,12 +28,18 @@ namespace Zone
         bool isCurrentTempSet = false;
         float averageTemperature = 0;
         float targetTemperature = 0;
+        float temperatureError = 0;
         std::string slug = "";
         boolean heaterStatus = false;
         int timestamp = 0;
+        std::string error = "";
         static int jsonSize()
         {
-            return 128;
+            return 196;
+        }
+        void addError(std::string e)
+        {
+            error = e;
         }
         void setCurrentTemp(float temp)
         {
@@ -67,6 +74,11 @@ namespace Zone
             if (isActorSet)
             {
                 doc["heater_status"] = heaterStatus;
+            }
+            doc["temperature_error"] = temperatureError;
+            if (error != "")
+            {
+                doc["error"] = error;
             }
             doc["timestamp"] = timestamp;
             // doc["slug"] = slug;
@@ -299,6 +311,8 @@ namespace Zone
             // TODO return status
             //  find active event (latest in the window)
 
+            status = TemperatureZoneStatus();
+
             Event::TemperatureEvent activeEvent;
 
             for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
@@ -310,45 +324,58 @@ namespace Zone
                 }
             }
 
-            // check sensors, get average
-
-            float temperatureSum = 0;
-            float checkedSensorsCount = 0;
+            TemperatureMeasurments tm;
 
             for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
             {
                 if (sensorIDs[i].isSet())
                 {
-                    Serial.printf("sensor status %d, temp %.2f\n", (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
+                    Serial.printf("sensor %d status %d, temp %.2f\n", i, (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
 
                     float t = (*sharedSensors).get(sensorIDs[i]).temperature();
 
+                    if (t < 0)
+                    {
+                        status.addError("ERROR: temperature is subzero");
+                    }
+
                     if (t > 0)
                     {
-                        temperatureSum += (*sharedSensors).get(sensorIDs[i]).temperature();
-                        checkedSensorsCount++;
+                        tm.add(t);
                     }
                 }
             }
 
-            status.slug = slug;
-            float averageTemperature = checkedSensorsCount > 0 ? temperatureSum / checkedSensorsCount : -100;
-
-            if (averageTemperature < 0)
+            status.temperatureError = tm.calcError();
+            float maxTempError = 1.0;
+            if (status.temperatureError > maxTempError)
             {
-                Serial.println("ERROR: temperature can't be subzero");
-                // off for safty reasons
+
+                static char errTempDiff[100];
+                sprintf(errTempDiff, "ERROR: temperature difference across sensors (%0.2f) is higher than it should be (0.2%f)", status.temperatureError, maxTempError);
+
+                status.addError(std::string(errTempDiff));
+                Serial.println(errTempDiff);
+            }
+
+            status.slug = slug;
+
+            if (tm.count() == 0)
+            {
+                status.addError("ERROR: no temperature sensros found");
+                Serial.println("ERROR: no temperature sensros found");
                 (*controller).turnSwitchOff(heaterPort);
                 status.setHeater(false);
                 return status;
             }
 
-            status.setCurrentTemp(averageTemperature);
-
+            status.setCurrentTemp(tm.calcAverage());
             status.timestamp = Utils::getTimestamp();
 
             if (!activeEvent.isSet())
             {
+                status.addError("ERROR: no active event found");
+                Serial.println("ERROR: no active event found");
                 return status;
             }
 
@@ -456,6 +483,8 @@ namespace Zone
 
         DimmerZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
+            status = DimmerZoneStatus();
+
             Event::LightEvent activeEvent;
 
             for (int i = 0; i < maxDimmerZonesEventsCount; i++)
@@ -550,6 +579,9 @@ namespace Zone
 
         ColorLightZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
+            
+            status = ColorLightZoneStatus();
+
             Event::LightEvent activeEvent;
 
             for (int i = 0; i < maxColorLightZonesEventsCount; i++)

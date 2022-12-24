@@ -6,6 +6,7 @@
 #include "../src/utils.cpp"
 #include "../src/config.h"
 #include "../src/event.h"
+#include "test_data_structures.h"
 
 void test_time_inRange_unit(std::string now, std::string since, std::string until, bool expected)
 {
@@ -160,6 +161,8 @@ void setup()
     RUN_TEST(test_transform_direction);
     RUN_TEST(test_event_transformPercent);
     RUN_TEST(test_event_transformedValue);
+    RUN_TEST(test_TemperatureMeasurments_calcError);
+    return;
 }
 
 void loop()
