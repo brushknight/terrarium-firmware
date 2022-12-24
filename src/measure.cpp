@@ -15,7 +15,8 @@ namespace Measure
     {
         for (int i = 0; i < 6; i++)
         {
-            // Serial.printf("DHT %d check\n", i);
+            // debug
+            Serial.printf("DHT %d check\n", i);
             if (sharedSensors.getDHT22(i).enabled())
             {
                 if (!sharedSensors.readDHT22(i))
@@ -24,7 +25,8 @@ namespace Measure
                 }
             }
 
-            // Serial.printf("BME280 %d check\n", i);
+            // debug
+            Serial.printf("BME280 %d check\n", i);
             if (sharedSensors.getBME280(i).enabled())
             {
 
@@ -33,7 +35,9 @@ namespace Measure
                     Serial.printf("BME280 port: %d failed\n", i);
                 }
             }
-            // Serial.printf("BME280 %d check\n", i);
+
+            // debug
+            Serial.printf("DS18B20 %d check\n", i);
             if (sharedSensors.getDS18B20(i).enabled())
             {
 
@@ -52,18 +56,18 @@ namespace Measure
 
         int pin = SENSOR_PINS[port];
 
-        //Serial.printf("reading DHT22 at port %d, GPIO %d\n", port, pin);
+        // Serial.printf("reading DHT22 at port %d, GPIO %d\n", port, pin);
 
         int status = DHT.read22(pin);
 
         if (status == DHTLIB_OK)
         {
-            //Serial.printf("DHT22 at port %d, GPIO %d\n", port, pin);
+            // Serial.printf("DHT22 at port %d, GPIO %d\n", port, pin);
 
             *h = DHT.getHumidity();
             *t = DHT.getTemperature();
 
-            //Serial.printf("DHT22 DEBUG: t:%.2f, h:%.2f\n", *t, *h);
+            // Serial.printf("DHT22 DEBUG: t:%.2f, h:%.2f\n", *t, *h);
 
             return true;
         }
@@ -77,20 +81,20 @@ namespace Measure
 
         int bus = I2C_BUSES[port];
 
-        //Serial.printf("reading BME280 at port %d, multiplexer bus %d\n", port, bus);
+        // Serial.printf("reading BME280 at port %d, multiplexer bus %d\n", port, bus);
 
         Utils::TCA9548A(bus, false);
         bool statusBme = bme.begin(0x76);
 
         if (statusBme)
         {
-            //Serial.printf("BME280 at port %d, multiplexer bus %d\n", port, bus);
+            // Serial.printf("BME280 at port %d, multiplexer bus %d\n", port, bus);
 
             *t = bme.readTemperature();
             // float p = bme.readPressure() / 100.0F;
             *h = bme.readHumidity();
 
-            //Serial.printf("BME280 DEBUG: t:%.2f, h:%.2f\n", *t, *h);
+            // Serial.printf("BME280 DEBUG: t:%.2f, h:%.2f\n", *t, *h);
 
             return true;
         }
@@ -108,7 +112,7 @@ namespace Measure
 
         sensors.begin();
         sensors.requestTemperatures();
-        //Serial.printf("reading DS18B20 at port %d, GPIO %d\n", port, pin);
+        // Serial.printf("reading DS18B20 at port %d, GPIO %d\n", port, pin);
 
         // DeviceAddress addr;
         // sensors.getAddress(addr, 0);
@@ -119,14 +123,15 @@ namespace Measure
 
         if (temperature == 85.0 || temperature == -127.0)
         {
+            Serial.printf("DS18B20 port %d error code %0.2f\n",port,  temperature);
             return false;
         }
 
-        //Serial.printf("DS18B20 at port %d, GPIO %d\n", port, pin);
+        // Serial.printf("DS18B20 at port %d, GPIO %d\n", port, pin);
 
         *t = temperature;
 
-        //Serial.printf("DS18B20 DEBUG: t:%.2f\n", *t);
+        // Serial.printf("DS18B20 DEBUG: t:%.2f\n", *t);
 
         return true;
     }
@@ -180,6 +185,8 @@ namespace Measure
 
     bool scan()
     {
+        Serial.println("Scan for sensors");
+
         pinMode(SENSORS_ENABLE_PIN, OUTPUT);
         digitalWrite(SENSORS_ENABLE_PIN, HIGH);
 

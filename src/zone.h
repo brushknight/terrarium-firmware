@@ -311,6 +311,8 @@ namespace Zone
             // TODO return status
             //  find active event (latest in the window)
 
+            status = TemperatureZoneStatus();
+
             Event::TemperatureEvent activeEvent;
 
             for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
@@ -328,7 +330,7 @@ namespace Zone
             {
                 if (sensorIDs[i].isSet())
                 {
-                    Serial.printf("sensor status %d, temp %.2f\n", (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
+                    Serial.printf("sensor %d status %d, temp %.2f\n", i, (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
 
                     float t = (*sharedSensors).get(sensorIDs[i]).temperature();
 
@@ -351,7 +353,6 @@ namespace Zone
 
                 static char errTempDiff[100];
                 sprintf(errTempDiff, "ERROR: temperature difference across sensors (%0.2f) is higher than it should be (0.2%f)", status.temperatureError, maxTempError);
-
 
                 status.addError(std::string(errTempDiff));
                 Serial.println(errTempDiff);
@@ -482,6 +483,8 @@ namespace Zone
 
         DimmerZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
+            status = DimmerZoneStatus();
+
             Event::LightEvent activeEvent;
 
             for (int i = 0; i < maxDimmerZonesEventsCount; i++)
@@ -576,6 +579,9 @@ namespace Zone
 
         ColorLightZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
+            
+            status = ColorLightZoneStatus();
+
             Event::LightEvent activeEvent;
 
             for (int i = 0; i < maxColorLightZonesEventsCount; i++)
