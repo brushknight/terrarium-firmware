@@ -1,8 +1,9 @@
 #include "net.h"
 
-
 namespace Net
 {
+
+    bool isConnectingStarted = false;
 
     bool isConnected()
     {
@@ -45,6 +46,21 @@ namespace Net
             return;
         }
 
+        if (isConnectingStarted)
+        {
+            while (true)
+            {
+                if (WiFi.isConnected())
+                {
+                    return;
+                }
+                Serial.println("Another thread is connecting, waiting.");
+                delay(1000 * 5); // each 5s
+            }
+        }
+
+        isConnectingStarted = true;
+
         char buffer[100];
         sprintf(buffer, "%s %s", "Terrarium controller", Eeprom::loadSystemConfig().id.c_str());
         WiFi.setHostname(buffer);
@@ -56,6 +72,7 @@ namespace Net
         // Status::setConnectingToWiFiStatus(Status::WORKING);
 
         WiFi.mode(WIFI_STA);
+        delay(5);
         WiFi.disconnect();
         delay(100);
 
@@ -68,8 +85,8 @@ namespace Net
 
         std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
         std::string wifiPassword = Eeprom::loadSystemConfig().wifiPassword;
- 
-        //Serial.println(wifiPassword.c_str());
+
+        // Serial.println(wifiPassword.c_str());
 
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 
@@ -78,7 +95,6 @@ namespace Net
             attempts++;
             delay(1 * 500);
 
-            
             if (attempts >= 10)
             {
                 Serial.println(statusToString(WiFi.status()));
