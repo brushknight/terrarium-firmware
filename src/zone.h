@@ -148,11 +148,11 @@ namespace Zone
     {
     public:
         std::string slug = "";
-        Control::Color color;
+        Color color;
         int brightness = 0;
         static int jsonSize()
         {
-            return 96 + Control::Color::jsonSize();
+            return 96 + Color::jsonSize();
         }
         boolean isSet()
         {
@@ -178,7 +178,7 @@ namespace Zone
         {
             ColorLightZoneStatus zoneStatus;
 
-            zoneStatus.color = Control::Color::fromJSONObj(doc["color"]);
+            zoneStatus.color = Color::fromJSONObj(doc["color"]);
             zoneStatus.brightness = doc["brightness"];
             return zoneStatus;
         }
@@ -306,7 +306,7 @@ namespace Zone
             return enabled;
         }
 
-        TemperatureZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        TemperatureZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             // TODO return status
             //  find active event (latest in the window)
@@ -481,7 +481,7 @@ namespace Zone
             return enabled;
         }
 
-        DimmerZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        DimmerZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             status = DimmerZoneStatus();
 
@@ -577,7 +577,7 @@ namespace Zone
             return enabled;
         }
 
-        ColorLightZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ColorLightZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             
             status = ColorLightZoneStatus();
@@ -628,7 +628,7 @@ namespace Zone
 
     public:
         Controller() {}
-        ZonesStatuses loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ZonesStatuses loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             ZonesStatuses statuses;
             // TODO return list of statuses

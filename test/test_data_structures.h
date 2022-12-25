@@ -18,7 +18,7 @@ void test_TemperatureMeasurments_calcError2_unit(float first, float second, floa
     TEST_ASSERT_EQUAL_FLOAT_MESSAGE(expected, actual, message);
 }
 
-void test_TemperatureMeasurments_calcError3_unit(float first, float second,float third, float expected)
+void test_TemperatureMeasurments_calcError3_unit(float first, float second, float third, float expected)
 {
 
     TemperatureMeasurments tm = TemperatureMeasurments();
@@ -35,6 +35,17 @@ void test_TemperatureMeasurments_calcError3_unit(float first, float second,float
     TEST_ASSERT_EQUAL_FLOAT_MESSAGE(expected, actual, message);
 }
 
+void test_Color_fromKelvin_unit(int k, Color expected)
+{
+
+    Color actual = Color(k);
+
+    TEST_ASSERT_EQUAL_INT(expected.red, actual.red);
+    TEST_ASSERT_EQUAL_INT(expected.green, actual.green);
+    TEST_ASSERT_EQUAL_INT(expected.blue, actual.blue);
+    TEST_ASSERT_EQUAL_INT(expected.kelvin, actual.kelvin);
+}
+
 void test_TemperatureMeasurments_calcError(void)
 {
     test_TemperatureMeasurments_calcError2_unit(1.0, 2.0, 1.0);
@@ -45,9 +56,13 @@ void test_TemperatureMeasurments_calcError(void)
     test_TemperatureMeasurments_calcError2_unit(2.0, 1.5, 0.5);
     test_TemperatureMeasurments_calcError2_unit(2.0, 1.0, 1.0);
 
-
     test_TemperatureMeasurments_calcError3_unit(2.0, 1.5, 1.0, 1.0);
     test_TemperatureMeasurments_calcError3_unit(2.0, 2.1, 1.5, 0.6);
+}
 
-
+void test_Color_fromKelvin(void)
+{
+    test_Color_fromKelvin_unit(1000, Color(255, 56, 0, 1000));
+    test_Color_fromKelvin_unit(900, Color(255, 56, 0, 1000));
+    test_Color_fromKelvin_unit(1050, Color(255, 71, 0, 1100));
 }

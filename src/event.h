@@ -4,173 +4,11 @@
 #include "Arduino.h"
 #include "control.h"
 #include "utils.h"
+#include "transform.h"
+#include "data_structures.h"
 
 namespace Event
 {
-    // std::string hourMinuteToString(int hour, int minute)
-    // {
-    //     static char buffer[10];
-    //     sprintf(buffer, "%02d:%02d", hour, minute);
-    //     //Serial.println(buffer);
-    //     return std::string(buffer);
-    // }
-
-    class Transform
-    {
-    public:
-        int from = 0;
-        int to = 0;
-        Transform(){}
-        Transform(int f, int t){
-            from = f;
-            to = t;
-        }
-        bool isSet()
-        {
-            return from > 0 || to > 0;
-        }
-        int direction()
-        {
-            if (from > to)
-            {
-                return -1;
-            }
-            else if (to > from)
-            {
-                return 1;
-            }
-            return 0;
-        }
-        static int jsonSize()
-        {
-            return 32; // to be adjusted
-        }
-        DynamicJsonDocument toJSON()
-        {
-            DynamicJsonDocument doc(jsonSize());
-            doc["from"] = from;
-            doc["to"] = to;
-            return doc;
-        }
-
-        static Transform fromJSON(std::string json)
-        {
-            DynamicJsonDocument doc(jsonSize());
-            deserializeJson(doc, json);
-
-            return Transform::fromJSONObj(doc);
-        }
-
-        static Transform fromJSONObj(DynamicJsonDocument doc)
-        {
-            Transform transform;
-            transform.from = doc["from"];
-            transform.to = doc["to"];
-            return transform;
-        }
-    };
-
-    class Time
-    {
-    public:
-        int hours = 0;
-        int minutes = 0;
-        int seconds = 0; // not fully implemented
-        Time() {}
-        Time(int h, int m)
-        {
-            hours = h;
-            minutes = m;
-        }
-        std::string toString()
-        {
-            return Utils::hourMinuteToString(hours, minutes);
-        }
-        int toMin()
-        {
-            return hours * 60 + minutes;
-        }
-        int toSec()
-        {
-            return toMin() * 60 + seconds;
-        }
-        // returns (update logic to the best practices)
-        // 1 - when this > that
-        // 0 - when this = that
-        // -1 - when this < that
-        int compare(Time to)
-        {
-            if (toMin() > to.toMin())
-            {
-                return 1;
-            }
-            else if (toMin() < to.toMin())
-            {
-                return -1;
-            }
-            return 0;
-        }
-
-        bool inRange(Time from, Time to)
-        {
-            if (from.compare(to) == 0){
-                // this means that this is all day event, any time will be
-                return true;
-            }
-            // overnight transition
-            if (from.compare(to) > 0)
-            {
-                return compare(from) >= 0 || compare(to) <= 0;
-            }
-            else
-            {
-                return compare(from) >= 0 && compare(to) <= 0;
-            }
-        }
-
-        // diff in minutes
-        int diff(Time target)
-        {
-            // todo: add test suites
-            int targetMinutes = target.minutes;
-            int targetHours = target.hours;
-
-            int diffMinutes = target.minutes - minutes;
-
-            if (minutes > targetMinutes)
-            {
-                diffMinutes = 60 - minutes + targetMinutes;
-                targetHours--;
-            }
-
-            int diffHours = target.hours - hours;
-
-            if (hours > targetHours)
-            {
-                diffHours = 24 - hours + targetHours;
-            }
-
-            return diffMinutes + diffHours * 60;
-        }
-        static Time fromString(std::string str)
-        {
-            Time object;
-
-            // todo add check for corrupted strings
-            // todo add check for h:m vs h:m:s
-            // str.length();
-
-            char h[] = {str.c_str()[0], str.c_str()[1], 0};
-            char m[] = {str.c_str()[3], str.c_str()[4], 0};
-
-            object.hours = atoi(h);
-            object.minutes = atoi(m);
-
-            // Serial.printf("time - %d:%d", object.hours, object.minutes);
-
-            return object;
-        }
-    };
 
     class Event
     {
@@ -180,7 +18,7 @@ namespace Event
         Time until;
         int durationSec = -1;
         int durationMin = -1;
-        Transform transform;
+        Transform::Transform transform;
         Event() {}
         Event(std::string s, std::string u, int dSec)
         {
@@ -233,32 +71,33 @@ namespace Event
     {
     public:
         int brightness = 0;
-        Control::Color color;
+        std::string type = "simple";
+        Color color;
         LightEvent() {} // just for empty array of events
-        LightEvent(std::string s, std::string u, int dSec, int b, Control::Color c) : Event(s, u, dSec)
+        LightEvent(std::string s, std::string u, int dSec, int b, Color c) : Event(s, u, dSec)
         {
             brightness = b;
             color = c;
         }
-        LightEvent(std::string s, std::string u, int dSec, Transform t) : Event(s, u, dSec)
+        LightEvent(std::string s, std::string u, int dSec, Transform::Transform t) : Event(s, u, dSec)
         {
             transform = t;
         }
         static int jsonSize()
         {
-            return 128 + Control::Color::jsonSize() + Transform::jsonSize(); // to be defined
+            return 156 + Color::jsonSize() + Transform::Transform::jsonSize(); // to be defined
         }
         DynamicJsonDocument toJSON()
         {
             DynamicJsonDocument doc(jsonSize());
             doc["set"] = set;
+            doc["type"] = type;
             doc["since"] = since.toString();
             doc["until"] = until.toString();
             doc["duration_sec"] = durationSec;
             doc["brightness"] = brightness;
             doc["color"] = color.toJSON();
             doc["transform"] = transform.toJSON();
-            // Serial.printf("DEBUG - to JSON temp: %0.2f\n",doc["temperature"]);
             return doc;
         }
 
@@ -274,13 +113,16 @@ namespace Event
         {
             LightEvent event;
             event.set = doc["set"];
+            if (doc.containsKey("type"))
+            {
+                event.type = doc["type"].as<std::string>();
+            }
             event.since = Time::fromString(doc["since"].as<std::string>());
             event.until = Time::fromString(doc["until"].as<std::string>());
             event.durationSec = doc["duration_sec"];
-            // Serial.printf("DEBUG - from JSON temp: %0.2f\n",doc["temperature"]);
             event.brightness = doc["brightness"];
-            event.color = Control::Color::fromJSONObj(doc["color"]);
-            event.transform = Transform::fromJSONObj(doc["transform"]);
+            event.color = Color::fromJSONObj(doc["color"]);
+            event.transform = Transform::Transform::fromJSONObj(doc["transform"]);
             event.durationMin = event.since.diff(event.until);
             return event;
         }
@@ -295,13 +137,13 @@ namespace Event
         {
             temperature = t;
         }
-        TemperatureEvent(std::string s, std::string u, int dSec, Transform t) : Event(s, u, dSec)
+        TemperatureEvent(std::string s, std::string u, int dSec, Transform::Transform t) : Event(s, u, dSec)
         {
             transform = t;
         }
         static int jsonSize()
         {
-            return 128 + Transform::jsonSize();
+            return 128 + Transform::Transform::jsonSize();
         }
 
         DynamicJsonDocument toJSON()
@@ -334,7 +176,7 @@ namespace Event
             event.durationSec = doc["duration_sec"];
             // Serial.printf("DEBUG - from JSON temp: %0.2f\n",doc["temperature"]);
             event.temperature = doc["temperature"];
-            event.transform = Transform::fromJSONObj(doc["transform"]);
+            event.transform = Transform::Transform::fromJSONObj(doc["transform"]);
             event.durationMin = event.since.diff(event.until);
             return event;
         }

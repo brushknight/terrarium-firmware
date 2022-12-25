@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include <Adafruit_NeoPixel.h>
 #include "config.h"
+#include "data_structures.h"
 
 namespace Control
 {
@@ -11,43 +12,6 @@ namespace Control
     void analogPinHigh(int pin);
     void analogPinLow(int pin);
 
-    struct Color
-    {
-
-    public:
-        int red = 0;
-        int green = 0;
-        int blue = 0;
-        static int jsonSize()
-        {
-            return 64; // to be defined
-        }
-        DynamicJsonDocument toJSON()
-        {
-            DynamicJsonDocument doc(jsonSize());
-            doc["r"] = red;
-            doc["g"] = green;
-            doc["b"] = blue;
-            return doc;
-        }
-
-        static Color fromJSON(std::string json)
-        {
-            DynamicJsonDocument doc(jsonSize());
-            deserializeJson(doc, json);
-
-            return Color::fromJSONObj(doc);
-        }
-
-        static Color fromJSONObj(DynamicJsonDocument doc)
-        {
-            Color color;
-            color.red = doc["r"];
-            color.green = doc["g"];
-            color.blue = doc["b"];
-            return color;
-        }
-    };
     class Switch
     {
     private:

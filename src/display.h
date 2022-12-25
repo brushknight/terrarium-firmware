@@ -6,6 +6,7 @@
 #include "config.h"
 #include "data.h"
 #include "real_time.h"
+#include "data_structures.h"
 
 namespace Display
 {

@@ -11,9 +11,9 @@
 void test_time_inRange_unit(std::string now, std::string since, std::string until, bool expected)
 {
 
-    Event::Time nowTime = Event::Time::fromString(now);
-    Event::Time sinceTime = Event::Time::fromString(since);
-    Event::Time untilTime = Event::Time::fromString(until);
+    Time nowTime = Time::fromString(now);
+    Time sinceTime = Time::fromString(since);
+    Time untilTime = Time::fromString(until);
 
     bool actual = nowTime.inRange(sinceTime, untilTime);
 
@@ -33,8 +33,8 @@ void test_time_inRange_unit(std::string now, std::string since, std::string unti
 void test_time_compare_unit(std::string now, std::string to, int expected)
 {
 
-    Event::Time nowTime = Event::Time::fromString(now);
-    Event::Time toTime = Event::Time::fromString(to);
+    Time nowTime = Time::fromString(now);
+    Time toTime = Time::fromString(to);
 
     int actual = nowTime.compare(toTime);
 
@@ -47,8 +47,8 @@ void test_time_compare_unit(std::string now, std::string to, int expected)
 
 void test_time_diff_unit(std::string now, std::string to, int expected)
 {
-    Event::Time nowTime = Event::Time::fromString(now);
-    Event::Time toTime = Event::Time::fromString(to);
+    Time nowTime = Time::fromString(now);
+    Time toTime = Time::fromString(to);
 
     int actual = nowTime.diff(toTime);
 
@@ -62,7 +62,7 @@ void test_time_diff_unit(std::string now, std::string to, int expected)
 void test_transform_direction_unit(int from, int to, int expected)
 {
 
-    Event::Transform tr = Event::Transform(from, to);
+    Transform::Transform tr = Transform::Transform(from, to);
 
     int actual = tr.direction();
 
@@ -76,7 +76,7 @@ void test_transform_direction_unit(int from, int to, int expected)
 void test_event_transformPercent_unit(std::string now, std::string since, std::string until, float expected)
 {
     Event::Event e = Event::Event(since, until, 0);
-    Event::Time nowTime = Event::Time::fromString(now);
+    Time nowTime = Time::fromString(now);
 
     float actual = e.transformPercent(nowTime);
 
@@ -92,7 +92,7 @@ void test_event_transformedValue_unit(std::string now, std::string since, std::s
     Event::Event e = Event::Event(since, until, 0);
     e.transform.from = from;
     e.transform.to = to;
-    Event::Time nowTime = Event::Time::fromString(now);
+    Time nowTime = Time::fromString(now);
 
     float actual = e.transformedValue(nowTime);
 
@@ -162,6 +162,7 @@ void setup()
     RUN_TEST(test_event_transformPercent);
     RUN_TEST(test_event_transformedValue);
     RUN_TEST(test_TemperatureMeasurments_calcError);
+    RUN_TEST(test_Color_fromKelvin);
     return;
 }
 

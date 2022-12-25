@@ -9,7 +9,7 @@
 #include "measure.h"
 #include "control.h"
 #include "zone.h"
-
+#include "data_structures.h"
 #include <Adafruit_BME280.h>
 
 #include <sys/time.h>
@@ -45,7 +45,7 @@ void taskZoneControl(void *parameter)
 
   for (;;)
   {
-    Event::Time time = RealTime::getTimeObj();
+    Time time = RealTime::getTimeObj();
     // debug info
     Serial.println(time.toString().c_str());
     data.zones = zoneController.loopTick(time, Measure::getSharedSensors(), &controller);
@@ -182,7 +182,7 @@ void setupTask(void *parameter)
     xTaskCreatePinnedToCore(
         taskZoneControl,
         "taskZoneControl",
-        1024 * 24,
+        1024 * 32,
         NULL,
         2,
         NULL,

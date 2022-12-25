@@ -8,6 +8,7 @@
 #include "utils.h"
 #include <string>
 #include "event.h"
+#include "data_structures.h"
 
 namespace RealTime
 {
@@ -20,7 +21,7 @@ namespace RealTime
     bool isRtcSyncRequired();
     void initRTC();
     std::string getTime();
-    Event::Time getTimeObj();
+    Time getTimeObj();
     int getHour();
     int getMinute();
     int getSecond();
