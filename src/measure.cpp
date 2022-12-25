@@ -16,7 +16,7 @@ namespace Measure
         for (int i = 0; i < 6; i++)
         {
             // debug
-            Serial.printf("DHT %d check\n", i);
+            // Serial.printf("DHT %d check\n", i);
             if (sharedSensors.getDHT22(i).enabled())
             {
                 if (!sharedSensors.readDHT22(i))
@@ -26,7 +26,7 @@ namespace Measure
             }
 
             // debug
-            Serial.printf("BME280 %d check\n", i);
+            // Serial.printf("BME280 %d check\n", i);
             if (sharedSensors.getBME280(i).enabled())
             {
 
@@ -37,7 +37,7 @@ namespace Measure
             }
 
             // debug
-            Serial.printf("DS18B20 %d check\n", i);
+            // Serial.printf("DS18B20 %d check\n", i);
             if (sharedSensors.getDS18B20(i).enabled())
             {
 
