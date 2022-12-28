@@ -20,7 +20,23 @@ namespace Zone
     const int maxColorLightZonesCount = 1;
     const int maxColorLightZonesEventsCount = 5;
 
-    class TemperatureZoneStatus
+    class ZoneStatus
+    {
+    public:
+        std::string slug = "";
+        std::string error = "";
+        int timestamp = 0;
+        void addError(std::string e)
+        {
+            error = e;
+        }
+        boolean isSet()
+        {
+            return slug != "";
+        }
+    };
+
+    class TemperatureZoneStatus : public ZoneStatus
     {
     public:
         bool isTargetSet = false;
@@ -29,18 +45,13 @@ namespace Zone
         float averageTemperature = 0;
         float targetTemperature = 0;
         float temperatureError = 0;
-        std::string slug = "";
         boolean heaterStatus = false;
-        int timestamp = 0;
-        std::string error = "";
+
         static int jsonSize()
         {
             return 196;
         }
-        void addError(std::string e)
-        {
-            error = e;
-        }
+
         void setCurrentTemp(float temp)
         {
             averageTemperature = temp;
@@ -55,10 +66,6 @@ namespace Zone
         {
             heaterStatus = heater;
             isActorSet = true;
-        }
-        boolean isSet()
-        {
-            return slug != "";
         }
         DynamicJsonDocument toJSON()
         {
@@ -91,7 +98,6 @@ namespace Zone
 
             return TemperatureZoneStatus::fromJSONObj(doc);
         }
-
         static TemperatureZoneStatus fromJSONObj(DynamicJsonDocument doc)
         {
             TemperatureZoneStatus temperatureZoneStatus;
@@ -105,18 +111,13 @@ namespace Zone
         }
     };
 
-    class DimmerZoneStatus
+    class DimmerZoneStatus : public ZoneStatus
     {
     public:
-        std::string slug = "";
         int brightness = 0;
         static int jsonSize()
         {
             return 96;
-        }
-        boolean isSet()
-        {
-            return slug != "";
         }
         DynamicJsonDocument toJSON()
         {
@@ -144,19 +145,14 @@ namespace Zone
         }
     };
 
-    class ColorLightZoneStatus
+    class ColorLightZoneStatus : public ZoneStatus
     {
     public:
-        std::string slug = "";
         Color color;
         int brightness = 0;
         static int jsonSize()
         {
             return 96 + Color::jsonSize();
-        }
-        boolean isSet()
-        {
-            return slug != "";
         }
         DynamicJsonDocument toJSON()
         {
@@ -496,6 +492,13 @@ namespace Zone
                 }
             }
 
+            if (!activeEvent.isSet())
+            {
+                status.addError("ERROR: no active event found");
+                Serial.println("ERROR: no active event found");
+                return status;
+            }
+
             (*controller).setDimmer(dimmerPort, activeEvent.brightness);
             status.brightness = activeEvent.brightness;
 
@@ -579,7 +582,7 @@ namespace Zone
 
         ColorLightZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
-            
+
             status = ColorLightZoneStatus();
 
             Event::LightEvent activeEvent;
@@ -593,15 +596,37 @@ namespace Zone
                 }
             }
 
-            int brightness = activeEvent.brightness;
-            if (activeEvent.transform.isSet())
+            if (!activeEvent.isSet())
             {
-                brightness = activeEvent.transformedValue(now);
+                status.addError("ERROR: no active event found");
+                Serial.println("ERROR: no active event found");
+                return status;
             }
 
-            (*controller).setColorAndBrightness(ledPort, activeEvent.color, brightness);
-            status.color = activeEvent.color;
-            status.brightness = brightness;
+            if (activeEvent.isCircadian())
+            {
+                // get max brightness
+                // get time window
+                
+                // find noon*
+                // calculate percentage passed
+                // request kelvin temperature
+                // calculate needed brightness
+                // apply
+            }
+            else
+            {
+                // simple
+                int brightness = activeEvent.brightness;
+                if (activeEvent.transform.isSet())
+                {
+                    brightness = activeEvent.transformedValue(now);
+                }
+
+                (*controller).setColorAndBrightness(ledPort, activeEvent.color, brightness);
+                status.color = activeEvent.color;
+                status.brightness = brightness;
+            }
 
             status.slug = slug;
 

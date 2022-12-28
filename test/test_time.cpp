@@ -7,6 +7,7 @@
 #include "../src/config.h"
 #include "../src/event.h"
 #include "test_data_structures.h"
+#include "test_transform.h"
 
 void test_time_inRange_unit(std::string now, std::string since, std::string until, bool expected)
 {
@@ -163,6 +164,7 @@ void setup()
     RUN_TEST(test_event_transformedValue);
     RUN_TEST(test_TemperatureMeasurments_calcError);
     RUN_TEST(test_Color_fromKelvin);
+    RUN_TEST(test_Transform_circadianKelvins);
     return;
 }
 

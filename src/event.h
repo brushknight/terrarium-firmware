@@ -34,6 +34,37 @@ namespace Event
             int passedMinutes = since.diff(now);
             return ((float)passedMinutes) / ((float)durationMin);
         }
+        // return 1 if rising, 0 if noon, -1 if faiding
+        int isRising(Time now)
+        {
+            int durationMinHalf = durationMin / 2;
+            int passedMinutes = since.diff(now);
+            if (passedMinutes < durationMinHalf)
+            {
+                return 1;
+            }
+            else if (passedMinutes == durationMinHalf)
+            {
+                return 0;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        // split time windows in half and find how much time passed in it
+        float risingPercent(Time now)
+        {
+            int durationMinHalf = durationMin / 2;
+            int passedMinutes = since.diff(now);
+            return ((float)passedMinutes) / ((float)durationMinHalf);
+        }
+        float fadingPercent(Time now)
+        {
+            int durationMinHalf = durationMin / 2;
+            int passedMinutes = since.diff(now);
+            return ((float)passedMinutes - (float)durationMinHalf) / ((float)durationMinHalf);
+        }
         float transformedValue(Time now)
         {
 
@@ -82,6 +113,10 @@ namespace Event
         LightEvent(std::string s, std::string u, int dSec, Transform::Transform t) : Event(s, u, dSec)
         {
             transform = t;
+        }
+        bool isCircadian()
+        {
+            return type == "circadian";
         }
         static int jsonSize()
         {

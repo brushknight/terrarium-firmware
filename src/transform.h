@@ -3,6 +3,8 @@
 
 #include <string>
 #include "ArduinoJson.h"
+#include "constants.h"
+#include "utils_pure.h"
 
 namespace Transform
 {
@@ -63,6 +65,8 @@ namespace Transform
         }
     };
 
+    // percent should be from 0.00 to 1.00
+    int circadianKelvins(bool rising, float percent);
 }
 
 #endif
