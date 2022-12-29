@@ -12,9 +12,11 @@
 
 #include <Adafruit_BME280.h>
 
-//#include <AsyncElegantOTA.h>
+// #include <AsyncElegantOTA.h>
 
 Data data;
+Control::Controller controller;
+// Control::Controller *controller;
 
 bool initialSetupMode = false;
 
@@ -34,7 +36,7 @@ void taskFetchSensors(void *parameter)
 
 void taskZoneControl(void *parameter)
 {
-  Control::Controller controller = Control::Controller();
+  // Control::Controller controller = Control::Controller();
   controller.resetPorts();
 
   Zone::Controller zoneControllerToSave = Zone::Controller();
@@ -123,16 +125,25 @@ void taskWatchNetworkStatus(void *parameter)
 
 void setupTask(void *parameter)
 {
+
   Serial.begin(115200);
+  Wire.begin();
+
   Serial.println("Controller starting");
 
   Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
   Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
 
-  Wire.begin();
+  // Wire.begin();
 
   Serial.println("Scanning for i2c devices");
   Utils::scanForI2C();
+
+  controller.begin();
+  controller.resetPorts();
+
+  Serial.println("Initial reset performed");
+
 
   Status::setup();
 
@@ -252,6 +263,10 @@ void setupTask(void *parameter)
 
 void setup()
 {
+  // Serial.begin(115200);
+  // Wire.begin();
+
+  // Serial.println("Debug");
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
@@ -265,4 +280,21 @@ void setup()
 void loop()
 {
   delay(100000);
+  // Serial.println("Debug");
 }
+
+
+// void setup() {
+//   // initialize digital pin LED_BUILTIN as an output.
+//   // pinMode(LED_BUILTIN, OUTPUT);
+//   Serial.begin(115200);
+// }
+
+// // the loop function runs over and over again forever
+// void loop() {
+//   Serial.println("test");
+//   // digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
+//   delay(1000);                      // wait for a second
+//   // digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
+//   // delay(1000);                      // wait for a second
+// }
