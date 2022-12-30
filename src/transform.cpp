@@ -5,8 +5,8 @@ namespace Transform
     // percent should be from 0.00 to 1.00
     int circadianKelvins(bool rising, float percent)
     {
-        float max = 6500;
-        float min = 1000;
+        float max = kelvinNoon;
+        float min = kelvinSunset;
 
         if (rising)
         {

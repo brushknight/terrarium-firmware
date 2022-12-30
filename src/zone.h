@@ -9,6 +9,7 @@
 #include <string>
 #include "ArduinoJson.h"
 #include "data_structures.h"
+#include "constants.h"
 
 namespace Zone
 {
@@ -606,13 +607,35 @@ namespace Zone
             if (activeEvent.isCircadian())
             {
                 // get max brightness
+                // brightness from 0 to set or use transform
                 // get time window
-                
-                // find noon*
-                // calculate percentage passed
-                // request kelvin temperature
-                // calculate needed brightness
-                // apply
+
+                int maxBrightness = activeEvent.brightness;
+                int minBrightness = 0;
+                int kelvins = 0;
+                if (activeEvent.transform.isSet())
+                {
+                    maxBrightness = activeEvent.transform.to;
+                    minBrightness = activeEvent.transform.from;
+                }
+
+                int isRising = activeEvent.isRising(now);
+                if (isRising == 1)
+                {
+                    kelvins = Transform::circadianKelvins(true, activeEvent.risingPercent(now));
+                }
+                else if (isRising == -1)
+                {
+                    kelvins = Transform::circadianKelvins(false, activeEvent.fadingPercent(now));
+                }
+                else
+                {
+                    kelvins = kelvinNoon;
+                }
+
+                status.brightness = maxBrightness;
+                status.color = Color(kelvins);
+
             }
             else
             {
@@ -623,10 +646,10 @@ namespace Zone
                     brightness = activeEvent.transformedValue(now);
                 }
 
-                (*controller).setColorAndBrightness(ledPort, activeEvent.color, brightness);
                 status.color = activeEvent.color;
                 status.brightness = brightness;
             }
+            (*controller).setColorAndBrightness(ledPort, status.color, status.brightness);
 
             status.slug = slug;
 

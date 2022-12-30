@@ -3,6 +3,9 @@
 
 const int kelvinValuesCount = 111;
 
+const int kelvinNoon = 6500;
+const int kelvinSunset = 1000;
+
 const int kelvinValues[kelvinValuesCount] = {
     1000, 1100, 1200, 1300, 1400,
     1500, 1600, 1700, 1800, 1900,
