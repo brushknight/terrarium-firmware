@@ -1,7 +1,7 @@
 #ifndef TERRARIUM_RTC
 #define TERRARIUM_RTC
 
-#include "time.h"
+#include <sys/time.h>
 #include "Arduino.h"
 #include <RTClib.h>
 #include "net.h"
@@ -11,12 +11,14 @@
 
 namespace RealTime
 {
-    void setup(bool rtcEnabled);
+    void setup();
     bool isWiFiRequired();
     void syncFromRTC();
     void syncFromNTP();
     void syncFromNTPOnce();
     bool saveTimeToRTC();
+    bool isRtcSyncRequired();
+    void initRTC();
     std::string getTime();
     Event::Time getTimeObj();
     int getHour();
