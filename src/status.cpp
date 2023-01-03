@@ -20,6 +20,7 @@ namespace Status
         pixels = new Adafruit_NeoPixel(LED_COUNT, LEDPIN, pixelFormat);
         pixels->begin();
         pixels->setBrightness(LED_BRIGHTNESS);
+        turnLedOff();
     }
 
     void setClimateStatus(int status)
