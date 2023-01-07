@@ -183,15 +183,15 @@ namespace Measure
         return false;
     }
 
+    void enable(){
+        Serial.println("Enabling sensors");
+        pinMode(SENSORS_ENABLE_PIN, OUTPUT);
+        digitalWrite(SENSORS_ENABLE_PIN, HIGH);
+    }
+
     bool scan()
     {
         Serial.println("Scan for sensors");
-
-        pinMode(SENSORS_ENABLE_PIN, OUTPUT);
-        digitalWrite(SENSORS_ENABLE_PIN, HIGH);
-
-        sleep(3);
-
         for (int i = 0; i < 6; i++)
         {
             if (scanDHT22(i))
