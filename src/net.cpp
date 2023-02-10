@@ -80,13 +80,15 @@ namespace Net
 
         int attempts = 0;
 
-        // Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
-        // Serial.println(Eeprom::readWiFiPassFromMemory().c_str());
+  
 
         std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
         std::string wifiPassword = Eeprom::loadSystemConfig().wifiPassword;
 
         // Serial.println(wifiPassword.c_str());
+
+    //   Serial.println(wifiSSID.c_str());
+    //     Serial.println(wifiPassword.c_str());
 
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 
