@@ -244,6 +244,7 @@ namespace Measure
     };
 
     bool scan();
+    void enable();
     bool readSensors();
     EnvironmentSensors *getSharedSensors();
 }

@@ -22,7 +22,7 @@ bool initialSetupMode = false;
 
 void taskFetchSensors(void *parameter)
 {
-  Measure::scan();
+  //Measure::scan();
 
   for (;;)
   {
@@ -211,6 +211,11 @@ void setup()
   // Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
 
   Wire.begin();
+  Measure::enable();
+  delay(5000);
+  Measure::scan();
+  delay(2000);
+  Measure::scan();
 
   // setup initial time (from RTC and will be adjusted later)
   RealTime::initRTC();
@@ -235,15 +240,19 @@ void loop()
 
 // void setup()
 // {
+
 //   Serial.begin(115200);
-//   RealTime::initRTC();
-//   RealTime::syncFromRTC();
-  
+//   Serial.println("Controller starting");
+//   Wire.begin();
+//   Measure::enable();
+//   sleep(5);
+//   Measure::scan();
+//   sleep(2);
+//   Measure::scan();
 // }
 
 // void loop()
 // {
-//   RealTime::printLocalTime();
+//   Measure::readSensors();
 //   delay(1000);
 // }
-

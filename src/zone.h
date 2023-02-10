@@ -352,7 +352,7 @@ namespace Zone
             {
 
                 static char errTempDiff[100];
-                sprintf(errTempDiff, "ERROR: temperature difference across sensors (%0.2f) is higher than it should be (0.2%f)", status.temperatureError, maxTempError);
+                sprintf(errTempDiff, "ERROR: temperature difference across sensors (%0.2f) is higher than it should be (%0.2f)", status.temperatureError, maxTempError);
 
                 status.addError(std::string(errTempDiff));
                 Serial.println(errTempDiff);
