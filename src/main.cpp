@@ -22,7 +22,7 @@ bool initialSetupMode = false;
 
 void taskFetchSensors(void *parameter)
 {
-  //Measure::scan();
+  // Measure::scan();
 
   for (;;)
   {
@@ -201,58 +201,70 @@ void setupTask(void *parameter)
   }
 }
 
-void setup()
-{
-
-  Serial.begin(115200);
-  Serial.println("Controller starting");
-
-  // Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
-  // Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
-
-  Wire.begin();
-  Measure::enable();
-  delay(5000);
-  Measure::scan();
-  delay(2000);
-  Measure::scan();
-
-  // setup initial time (from RTC and will be adjusted later)
-  RealTime::initRTC();
-  RealTime::syncFromRTC();
-  RealTime::printLocalTime();
-  delay(5000);
-
-  xTaskCreatePinnedToCore(
-      setupTask,
-      "setupTask",
-      1024 * 34,
-      NULL,
-      100,
-      NULL,
-      0);
-}
-
-void loop()
-{
-  delay(100000);
-}
-
 // void setup()
 // {
 
 //   Serial.begin(115200);
 //   Serial.println("Controller starting");
+
+//   // Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
+//   // Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
+
 //   Wire.begin();
 //   Measure::enable();
-//   sleep(5);
+//   delay(5000);
 //   Measure::scan();
-//   sleep(2);
+//   delay(2000);
 //   Measure::scan();
+
+//   // setup initial time (from RTC and will be adjusted later)
+//   RealTime::initRTC();
+//   RealTime::syncFromRTC();
+//   RealTime::printLocalTime();
+//   delay(5000);
+
+//   xTaskCreatePinnedToCore(
+//       setupTask,
+//       "setupTask",
+//       1024 * 34,
+//       NULL,
+//       100,
+//       NULL,
+//       0);
 // }
 
 // void loop()
 // {
-//   Measure::readSensors();
-//   delay(1000);
+//   delay(100000);
 // }
+
+int dimmerPin1 = 32;
+int dimmerPin2 = 33;
+
+void setup()
+{
+
+  Serial.begin(115200);
+  Serial.println("Controller starting");
+  pinMode(dimmerPin1, OUTPUT); // sets the pin as output
+  pinMode(dimmerPin2, OUTPUT);
+}
+
+void loop()
+{
+
+  for (int i = 0; i < 255; i++)
+  {
+    Serial.println(i);
+    analogWrite(dimmerPin1, i);
+    analogWrite(dimmerPin2, i);
+    delay(10);
+  }
+  for (int i = 255; i > 0; i--)
+  {
+    Serial.println(i);
+    analogWrite(dimmerPin1, i);
+    analogWrite(dimmerPin2, i);
+    delay(10);
+  }
+}
