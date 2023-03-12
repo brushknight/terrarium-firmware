@@ -3,112 +3,81 @@
 namespace RealTime
 {
 
+    // todo - make it custom ntp - optional
     const char *ntpServer1 = "10.0.0.51";
     const char *ntpServer2 = "pool.ntp.org";
     const char *ntpServer3 = "1.europe.pool.ntp.org";
-    const long gmtOffset_sec = 3600;  // todo fix this to be +1
-    const int daylightOffset_sec = 0; // fix this to accept DST
-    // const char* timezoneNTP = "CET";
-
-    // setup(rtc_enabled)
-    // syncFromNTP()
-    // flashRTC(time)
-    // syncFromRTC()
-    // getTime()
-    // getHour()
-    // getMinute()
-    // getSecond()
-    // getDate()
+    const long gmtOffset_sec = 3600;                        // todo fix this to be +1
+    const int daylightOffset_sec = 3600;                    // fix this to accept DST
+    const char *timeZone = "CET-1CEST,M3.5.0/2,M10.5.0/ 3"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
 
     RTC_DS3231 rtc;
 
-    bool isWiFiRequired()
+    bool rtcBeginFailed = false;
+
+    void initRTC()
     {
-        if (!rtc.begin())
-        {
-            Serial.println("Couldn't find RTC, check wiring!");
-            return true;
-        }
-        return rtc.lostPower();
+        rtcBeginFailed = !rtc.begin();
     }
 
-    void setup(bool rtcEnabled)
+    bool isWiFiRequired()
     {
-        // Status::setFetchingTimeStatus(Status::WORKING);
+        return rtcBeginFailed || isRtcSyncRequired();
+    }
+
+    bool isRtcSyncRequired()
+    {
+        DateTime rtcDateTime = rtc.now();
+        return rtcDateTime.unixtime() < 1644065211; // Sat, 05 Feb 2022 12:46:48 GMT
+    }
+
+    void setup()
+    {
         Serial.println("RealTime: setup started");
 
-        if (rtcEnabled)
+        if (rtcBeginFailed)
         {
-            Serial.println("RealTime: RTC enalbed");
-            if (!rtc.begin())
-            {
-                // Status::setFetchingTimeStatus(Status::WARNING);
-                Serial.println("Couldn't find RTC, check wiring!");
-                Serial.flush();
-                syncFromNTP();
-                // abort(); -> only if NTP time failed
+            // Status::setFetchingTimeStatus(Status::WARNING);
+            Serial.println("Couldn't find RTC, check wiring!");
+            // Serial.flush();
+            // syncFromNTP();
+            // // abort(); -> only if NTP time failed
 
-                printLocalTime();
+            // printLocalTime();
 
-                return;
-            }
-
-            // or rtc time is a shit
-            if (!rtc.lostPower())
-            {
-                syncFromRTC();
-            }
-            else
-            {
-                // Status::setFetchingTimeStatus(Status::WARNING);
-                Serial.println("RealTime: RTC lost power");
-                syncFromNTP();
-                // validate time here
-                saveTimeToRTC();
-            }
+            return;
         }
 
-        else
+        Serial.println("RealTime: RTC enalbed");
+
+        syncFromRTC();
+
+        delay(1000);
+
+        if (isRtcSyncRequired())
         {
+            Serial.println("RealTime: RTC time expired");
             syncFromNTP();
+            // validate time here
+            saveTimeToRTC();
         }
+
         printLocalTime();
+
         Utils::log("RealTime: setup finished");
-        // Status::setFetchingTimeStatus(Status::IDLE);
     }
 
     void syncFromRTC()
     {
-        Serial.println("RealTime: sync from RTC");
         DateTime rtcDateTime = rtc.now();
-
-        Serial.print("minutes from RTC: ");
-        Serial.println(rtcDateTime.minute());
-
         struct timeval tv;
         tv.tv_sec = rtcDateTime.unixtime();
 
-        if (tv.tv_sec < 1644065211)
-        { // Sat, 05 Feb 2022 12:46:48 GMT
-            syncFromNTP();
-        }
-        else
-        {
-            Serial.print("UNIX timestamp from RTC: ");
-            Serial.println(tv.tv_sec);
+        Serial.printf("TIMESTAMP from RTC %d\n", tv.tv_sec);
 
-            timezone tz_utcPlus1 = {gmtOffset_sec, daylightOffset_sec};
-
-            // setenv("TZ",timezone.c_str(),1);
-
-            settimeofday(&tv, &tz_utcPlus1);
-
-            struct timeval tv_set;
-            gettimeofday(&tv_set, &tz_utcPlus1);
-
-            Serial.print("UNIX timestamp set from RTC: ");
-            Serial.println(tv_set.tv_sec);
-        }
+        settimeofday(&tv, NULL);
+        setenv("TZ", timeZone, 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+        tzset();
     }
 
     void syncFromNTP()
@@ -120,8 +89,8 @@ namespace RealTime
         while (!getLocalTime(&timeinfo))
         {
             Serial.println("Failed to obtain time, retry");
-            // configTzTime(timezoneNTP, ntpServer1, ntpServer2, ntpServer3);
-            configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
+            configTzTime(timeZone, ntpServer1, ntpServer2, ntpServer3);
+            // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
     }
@@ -135,8 +104,8 @@ namespace RealTime
         if (!getLocalTime(&timeinfo))
         {
             Serial.println("Failed to obtain time, retry");
-            // configTzTime(timezoneNTP, ntpServer1, ntpServer2, ntpServer3);
-            configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
+            configTzTime(timeZone, ntpServer1, ntpServer2, ntpServer3);
+            // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
     }
@@ -144,21 +113,16 @@ namespace RealTime
     bool saveTimeToRTC()
     {
         Serial.println("RealTime: saving time into RTC");
-        struct tm timeinfo;
-        if (getLocalTime(&timeinfo))
-        {
 
-            Serial.print("minutes saving into RTC: ");
-            Serial.println(timeinfo.tm_min);
+        time_t now;
+        struct tm timeDetails;
 
-            rtc.adjust(mktime(&timeinfo));
-            return true;
-        }
-        else
-        {
-            Serial.println("Failed to flash RTC");
-            return false;
-        }
+        time(&now);
+        localtime_r(&now, &timeDetails);
+
+        rtc.adjust(mktime(&timeDetails));
+
+        return true;
     }
 
     std::string getTime()
@@ -182,65 +146,25 @@ namespace RealTime
         return Utils::hourMinuteToString(hour, minute);
     }
 
-    Event::Time getTimeObj(){
+    Event::Time getTimeObj()
+    {
+        time_t now;
+        struct tm timeDetails;
 
-        int hour = 0;
-        int minute = 0;
+        time(&now);
+        localtime_r(&now, &timeDetails);
 
-        struct tm timeinfo;
-        if (!getLocalTime(&timeinfo))
-        {
-            Serial.println("getHour() Failed to obtain time");
-
-            return Event::Time(-1,-1);
-        }
-
-        hour = timeinfo.tm_hour;
-        minute = timeinfo.tm_min;
-
-        return Event::Time(hour, minute);
+        return Event::Time(timeDetails.tm_hour, timeDetails.tm_min);
     }
 
     int getHour()
     {
-        int hour = 0;
-
-        struct tm timeinfo;
-        if (!getLocalTime(&timeinfo))
-        {
-            Serial.println("getHour() Failed to obtain time");
-
-            return 0;
-        }
-
-        hour = timeinfo.tm_hour;
-        return hour;
+        return getTimeObj().hours;
     }
 
     int getMinute()
     {
-
-        // time_t now;
-        // struct tm timeinfo1;
-        // time(&now);
-        // localtime_r(&now, &timeinfo1);
-
-        // Serial.print(">>>>> minutes RTC: ");
-        // Serial.println(timeinfo1.tm_min);
-
-        int minute = 0;
-
-        struct tm timeinfo;
-        if (!getLocalTime(&timeinfo))
-        {
-            Serial.println("getMinute() Failed to obtain time");
-            // abort();
-            return 0;
-        }
-
-        minute = timeinfo.tm_min;
-
-        return minute;
+        return getTimeObj().minutes;
     }
 
     int getSecond()
@@ -262,13 +186,14 @@ namespace RealTime
 
     void printLocalTime()
     {
-        struct tm timeinfo;
-        if (!getLocalTime(&timeinfo))
-        {
-            Serial.println("printLocalTime() Failed to obtain time");
-            return;
-        }
-        Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+
+        time_t now;
+        struct tm timeDetails;
+
+        time(&now);
+        localtime_r(&now, &timeDetails);
+
+        Serial.println(&timeDetails, "TIME > %A, %B %d %Y %H:%M:%S");
     }
 
     int getBatteryPercent()

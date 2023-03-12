@@ -21,7 +21,7 @@ namespace Net
         // Connect to Wi - Fi network with SSID and password
         Serial.print("Setting AP (Access Point)…");
         // Remove the password parameter, if you want the AP (Access Point) to be open
-        const char *ssid = "Terrarium Controller";
+        const char *ssid = "Terrarium Controller ";
         const char *pass = "1234567890";
         WiFi.softAP(ssid, pass);
 
@@ -80,27 +80,31 @@ namespace Net
 
         int attempts = 0;
 
-        // Serial.println(Eeprom::readWiFiSSIDFromMemory().c_str());
-        // Serial.println(Eeprom::readWiFiPassFromMemory().c_str());
+  
 
         std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
         std::string wifiPassword = Eeprom::loadSystemConfig().wifiPassword;
 
         // Serial.println(wifiPassword.c_str());
 
+    //   Serial.println(wifiSSID.c_str());
+    //     Serial.println(wifiPassword.c_str());
+
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 
         while (!WiFi.isConnected())
         {
             attempts++;
-            delay(1 * 500);
+            delay(1 * 1000);
 
-            if (attempts >= 10)
+            if (attempts % 10 == 0)
             {
                 Serial.println(statusToString(WiFi.status()));
-                delay(1 * 1000);
+            }
+            if(attempts > 30){
+                Serial.println("Wifi: 30s no connection, retrying to connect");
                 attempts = 0;
-                // WiFi.begin(WIFI_SSID, WIFI_PASS);
+                WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
             }
         }
 

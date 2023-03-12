@@ -12,6 +12,8 @@
 
 #include <Adafruit_BME280.h>
 
+#include <sys/time.h>
+
 // #include <AsyncElegantOTA.h>
 
 Data data;
@@ -22,7 +24,7 @@ bool initialSetupMode = false;
 
 void taskFetchSensors(void *parameter)
 {
-  Measure::scan();
+  //Measure::scan();
 
   for (;;)
   {
@@ -43,12 +45,6 @@ void taskZoneControl(void *parameter)
 
   Zone::Controller zoneController = Eeprom::loadZoneController();
 
-  // DynamicJsonDocument doc = zoneController.toJSON();
-  // std::string json;
-  // serializeJson(doc, json);
-  // Serial.println("Loaded: ");
-  // Serial.println(json.c_str());
-
   for (;;)
   {
     Event::Time time = RealTime::getTimeObj();
@@ -62,8 +58,6 @@ void taskZoneControl(void *parameter)
 
 void taskCheckRtcBattery(void *parameter)
 {
-  // add display reset if needed each N minutes
-
   for (;;)
   {
     data.RtcBatteryPercent = RealTime::getBatteryPercent();
@@ -86,25 +80,6 @@ void taskResetEepromChecker(void *parameter)
   }
 }
 
-// void taskDisplayRender(void *parameter)
-// {
-//   // add display reset if needed each N minutes
-//   vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-//   int frameCounter = 0;
-//   for (;;)
-//   {
-//     Display::render(data);
-//     vTaskDelay(DISPLAY_RENDER_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-//     frameCounter++;
-
-//     if (frameCounter == 60 * 10)
-//     {
-//       Display::registerIcons();
-//       frameCounter = 0;
-//     }
-//   }
-// }
-
 void taskSyncRTCfromNTP(void *parameter)
 {
   for (;;)
@@ -126,15 +101,13 @@ void taskWatchNetworkStatus(void *parameter)
 void setupTask(void *parameter)
 {
 
-  Serial.begin(115200);
-  Wire.begin();
+  // Serial.begin(115200);
+  // Wire.begin();
 
   Serial.println("Controller starting");
 
   Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
   Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
-
-  // Wire.begin();
 
   Serial.println("Scanning for i2c devices");
   Utils::scanForI2C();
@@ -144,11 +117,8 @@ void setupTask(void *parameter)
 
   Serial.println("Initial reset performed");
 
-
   Status::setup();
-
   Eeprom::setup();
-  // Eeprom::clearZoneControllerFull();
   Eeprom::resetEepromChecker();
 
   // Display::setup();
@@ -160,32 +130,28 @@ void setupTask(void *parameter)
 
   if (initialSetupMode)
   {
-
-    // Setup mode
-    // data.initialSetup.apName =
+    Serial.println("Scanning for i2c devices");
+    Utils::scanForI2C();
     Net::setupAP();
-    // data.initialSetup.isInSetupMode = true;
     Serial.println(data.initialSetup.apName.c_str());
     Serial.println(data.initialSetup.ipAddr.c_str());
 
-    // data.initialSetup.ipAddr = std::string(WiFi.softAPIP().toString().c_str());
     HttpServer::start(&data, true);
     Status::setPurple();
   }
   else
   {
+    if (RealTime::isWiFiRequired())
+    {
+      Net::connect();
+      Net::setWiFiName(&data);
+      RealTime::syncFromNTP();
+      RealTime::saveTimeToRTC();
+    }
+
     Eeprom::loadZoneController();
 
     data.metadata.id = Eeprom::loadSystemConfig().id;
-
-    // xTaskCreatePinnedToCore(
-    //     taskDisplayRender,
-    //     "taskDisplayRender",
-    //     4192,
-    //     NULL,
-    //     2,
-    //     NULL,
-    //     1);
 
     xTaskCreatePinnedToCore(
         taskCheckRtcBattery,
@@ -223,13 +189,6 @@ void setupTask(void *parameter)
         NULL,
         0);
 
-    if (RealTime::isWiFiRequired())
-    {
-      Net::connect();
-      Net::setWiFiName(&data);
-    }
-    RealTime::setup(true);
-
     xTaskCreatePinnedToCore(
         taskFetchSensors,
         "taskFetchSensors",
@@ -263,10 +222,25 @@ void setupTask(void *parameter)
 
 void setup()
 {
-  // Serial.begin(115200);
-  // Wire.begin();
+  Serial.begin(115200);
+  Serial.println("Controller starting");
 
-  // Serial.println("Debug");
+  // Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
+  // Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
+
+  Wire.begin();
+  Measure::enable();
+  delay(5000);
+  Measure::scan();
+  delay(2000);
+  Measure::scan();
+
+  // setup initial time (from RTC and will be adjusted later)
+  RealTime::initRTC();
+  RealTime::syncFromRTC();
+  RealTime::printLocalTime();
+  delay(5000);
+
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
@@ -282,19 +256,3 @@ void loop()
   delay(100000);
   // Serial.println("Debug");
 }
-
-
-// void setup() {
-//   // initialize digital pin LED_BUILTIN as an output.
-//   // pinMode(LED_BUILTIN, OUTPUT);
-//   Serial.begin(115200);
-// }
-
-// // the loop function runs over and over again forever
-// void loop() {
-//   Serial.println("test");
-//   // digitalWrite(LED_BUILTIN, HIGH);  // turn the LED on (HIGH is the voltage level)
-//   delay(1000);                      // wait for a second
-//   // digitalWrite(LED_BUILTIN, LOW);   // turn the LED off by making the voltage LOW
-//   // delay(1000);                      // wait for a second
-// }
