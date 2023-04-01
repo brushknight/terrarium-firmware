@@ -5,6 +5,8 @@
 #include <Adafruit_NeoPixel.h>
 #include "config.h"
 #include "data_structures.h"
+#include <PCF8574.h>
+
 
 namespace Control
 {
@@ -12,29 +14,115 @@ namespace Control
     void analogPinHigh(int pin);
     void analogPinLow(int pin);
 
+
+    struct HardwareLayer
+    {
+
+    public:
+        PCF8574 pcf = PCF8574(0x20);
+        bool isGPIOExpanderFound = false;
+
+        HardwareLayer(){}
+        void begin(){
+            // Set pinMode to OUTPUT
+            pcf.pinMode(0, OUTPUT);
+            pcf.pinMode(1, OUTPUT);
+            pcf.pinMode(2, OUTPUT);
+            pcf.pinMode(3, OUTPUT);
+
+            Serial.println("Init pcf8574");
+            if (pcf.begin())
+            {
+                Serial.println("pcf8574 connected");
+                isGPIOExpanderFound = true;
+            }
+            else
+            {
+                Serial.println("no pcf8574 found"); // means this is old pcb
+            }
+        }
+        void setExpanderPort(int port, bool value)
+        {
+            pcf.digitalWrite(port, value ? HIGH : LOW);
+        }
+
+        void setRelayTo(int relayIndex, bool value)
+        {
+            if (isGPIOExpanderFound)
+            {
+                setExpanderPort(relayIndex, value); // right now relays are 0,1,2 ports of expander
+            }
+            else
+            {
+                int pinNumber = RELAY_PINS[relayIndex];
+                if (value)
+                {
+                    analogPinHigh(pinNumber);
+                }
+                else
+                {
+                    analogPinLow(pinNumber);
+                }
+            }
+        }
+    };
+
+    struct Color
+    {
+
+    public:
+        int red = 0;
+        int green = 0;
+        int blue = 0;
+        static int jsonSize()
+        {
+            return 64; // to be defined
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["r"] = red;
+            doc["g"] = green;
+            doc["b"] = blue;
+            return doc;
+        }
+
+        static Color fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return Color::fromJSONObj(doc);
+        }
+
+        static Color fromJSONObj(DynamicJsonDocument doc)
+        {
+            Color color;
+            color.red = doc["r"];
+            color.green = doc["g"];
+            color.blue = doc["b"];
+            return color;
+        }
+    };
+
     class Switch
     {
     private:
         int port = -1;
         bool state = false;
+        HardwareLayer *hardwareLayer;
 
         void applyHardware()
         {
-            if (state)
-            {
-                analogPinHigh(RELAY_PINS[port]);
-            }
-            else
-            {
-                analogPinLow(RELAY_PINS[port]);
-            }
+            hardwareLayer->setRelayTo(port, state);
         }
 
     public:
         Switch(){};
-        Switch(int p)
+        Switch(int p, HardwareLayer *hl)
         {
             port = p;
+            hardwareLayer = hl;
             pinMode(RELAY_PINS[port], OUTPUT);
         };
         bool enabled()
@@ -142,7 +230,7 @@ namespace Control
         void setColorAndBrightness(Color c, int percent)
         {
             state = c;
-            brightness = 255.0 * (((float)percent)/100.0);
+            brightness = 255.0 * (((float)percent) / 100.0);
             applyHardware();
         }
     };
@@ -171,20 +259,22 @@ namespace Control
         Switches switches = Switches();
         Dimmers dimmers = Dimmers();
         ColorLights colorLights = ColorLights();
+        HardwareLayer hardwareLayer = HardwareLayer();
 
     public:
-        Controller()
-        {
-            switches.list[0] = Switch(0);
-            switches.list[1] = Switch(1);
-            switches.list[2] = Switch(2);
+        Controller(){};
+        void begin(){
+            hardwareLayer.begin();
+            switches.list[0] = Switch(0, &hardwareLayer);
+            switches.list[1] = Switch(1, &hardwareLayer);
+            switches.list[2] = Switch(2, &hardwareLayer);
 
             dimmers.list[0] = Dimmer(0);
             dimmers.list[1] = Dimmer(1);
             dimmers.list[2] = Dimmer(2);
 
             colorLights.list[0] = ColorLight();
-        };
+        }
         void resetPorts()
         {
             switches.list[0].off();

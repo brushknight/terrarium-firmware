@@ -17,12 +17,14 @@
 // #include <AsyncElegantOTA.h>
 
 Data data;
+Control::Controller controller;
+// Control::Controller *controller;
 
 bool initialSetupMode = false;
 
 void taskFetchSensors(void *parameter)
 {
-  Measure::scan();
+  //Measure::scan();
 
   for (;;)
   {
@@ -36,7 +38,7 @@ void taskFetchSensors(void *parameter)
 
 void taskZoneControl(void *parameter)
 {
-  Control::Controller controller = Control::Controller();
+  // Control::Controller controller = Control::Controller();
   controller.resetPorts();
 
   Zone::Controller zoneControllerToSave = Zone::Controller();
@@ -98,6 +100,23 @@ void taskWatchNetworkStatus(void *parameter)
 
 void setupTask(void *parameter)
 {
+
+  // Serial.begin(115200);
+  // Wire.begin();
+
+  Serial.println("Controller starting");
+
+  Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
+  Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
+
+  Serial.println("Scanning for i2c devices");
+  Utils::scanForI2C();
+
+  controller.begin();
+  controller.resetPorts();
+
+  Serial.println("Initial reset performed");
+
   Status::setup();
   Eeprom::setup();
   Eeprom::resetEepromChecker();
@@ -203,7 +222,6 @@ void setupTask(void *parameter)
 
 void setup()
 {
-
   Serial.begin(115200);
   Serial.println("Controller starting");
 
@@ -211,6 +229,11 @@ void setup()
   // Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
 
   Wire.begin();
+  Measure::enable();
+  delay(5000);
+  Measure::scan();
+  delay(2000);
+  Measure::scan();
 
   // setup initial time (from RTC and will be adjusted later)
   RealTime::initRTC();
@@ -231,19 +254,5 @@ void setup()
 void loop()
 {
   delay(100000);
+  // Serial.println("Debug");
 }
-
-// void setup()
-// {
-//   Serial.begin(115200);
-//   RealTime::initRTC();
-//   RealTime::syncFromRTC();
-  
-// }
-
-// void loop()
-// {
-//   RealTime::printLocalTime();
-//   delay(1000);
-// }
-
