@@ -11,7 +11,6 @@ namespace Eeprom
 {
     void setup();
     bool isMemorySet();
-
     void clear();
     void clearZoneController();
     void clearZoneControllerFull();
