@@ -606,34 +606,27 @@ namespace Zone
 
             if (activeEvent.isCircadian())
             {
-                // get max brightness
-                // brightness from 0 to set or use transform
-                // get time window
-
-                int maxBrightness = activeEvent.brightness;
-                int minBrightness = 0;
+                int brightness = 0;
                 int kelvins = 0;
-                if (activeEvent.transform.isSet())
-                {
-                    maxBrightness = activeEvent.transform.to;
-                    minBrightness = activeEvent.transform.from;
-                }
 
                 int isRising = activeEvent.isRising(now);
                 if (isRising == 1)
                 {
                     kelvins = Transform::circadianKelvins(true, activeEvent.risingPercent(now));
+                    brightness = int(activeEvent.risingPercent(now) * 100);
                 }
                 else if (isRising == -1)
                 {
                     kelvins = Transform::circadianKelvins(false, activeEvent.fadingPercent(now));
+                    brightness = 100 - int(activeEvent.fadingPercent(now) * 100);
                 }
                 else
                 {
                     kelvins = kelvinNoon;
+                    brightness = 100;
                 }
 
-                status.brightness = maxBrightness;
+                status.brightness = brightness;
                 status.color = Color(kelvins);
 
             }
@@ -650,7 +643,6 @@ namespace Zone
                 status.brightness = brightness;
             }
             (*controller).setColorAndBrightness(ledPort, status.color, status.brightness);
-
             status.slug = slug;
 
             return status;

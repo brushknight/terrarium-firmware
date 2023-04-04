@@ -37,7 +37,8 @@
 #define RELAY_2_PIN 25
 
 // lights
-#define LEDPIN 23
+#define LEDPIN 32
+#define STATUS_PIN 23
 
 // buttons
 #define BUTTON_RESET_EEPROM 15

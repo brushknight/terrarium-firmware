@@ -101,9 +101,6 @@ void taskWatchNetworkStatus(void *parameter)
 void setupTask(void *parameter)
 {
 
-  // Serial.begin(115200);
-  // Wire.begin();
-
   Serial.println("Controller starting");
 
   Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
@@ -112,12 +109,15 @@ void setupTask(void *parameter)
   Serial.println("Scanning for i2c devices");
   Utils::scanForI2C();
 
+  Status::setup();
+  // Status::setBlue();
+
   controller.begin();
   controller.resetPorts();
 
   Serial.println("Initial reset performed");
 
-  Status::setup();
+
   Eeprom::setup();
   Eeprom::resetEepromChecker();
 

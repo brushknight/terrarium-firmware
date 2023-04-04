@@ -2,6 +2,7 @@
 
 namespace UtilsPure
 {
+    // rounds kelvins to known kelvin values from a known values
     int roundKelvins(int k)
     {
         for (int i = 0; i < kelvinValuesCount; i++)

@@ -87,39 +87,38 @@ namespace Measure
     class EnvironmentSensor
     {
     private:
-        int port = -1;
-        int type = -1;
+        SensorID id;
         float t = 0;
         float h = 0;
 
     public:
         EnvironmentSensor() {}
-        EnvironmentSensor(int p, int t)
+        EnvironmentSensor(SensorID givenID)
         {
-            port = p;
-            type = t;
+            id = givenID;
+
         }
         bool enabled()
         {
-            return port > -1;
+            return id.isSet();
         }
         int getType()
         {
-            return type;
+            return id.type;
         }
         bool read()
         {
-            if (type == SENSOR_TYPE_BME280)
+            if (id.type == SENSOR_TYPE_BME280)
             {
-                return readBME280(port, &t, &h);
+                return readBME280(id.port, &t, &h);
             }
-            else if (type == SENSOR_TYPE_DHT22)
+            else if (id.type == SENSOR_TYPE_DHT22)
             {
-                return readDHT22(port, &t, &h);
+                return readDHT22(id.port, &t, &h);
             }
-            else if (type == SENSOR_TYPE_DS18B20)
+            else if (id.type == SENSOR_TYPE_DS18B20)
             {
-                return readDS18B20(port, &t);
+                return readDS18B20(id.port, &t);
             }
 
             return false;
@@ -140,8 +139,8 @@ namespace Measure
         {
             DynamicJsonDocument doc(jsonSize());
 
-            doc["port"] = port;
-            doc["type"] = SensorID::typeToHuman(type);
+            doc["port"] = id.port;
+            doc["type"] = SensorID::typeToHuman(id.type);
             doc["humidity"] = h;
             doc["temperature"] = t;
 
@@ -154,7 +153,7 @@ namespace Measure
 
     public:
         BME280() {}
-        BME280(int p) : EnvironmentSensor(p, SENSOR_TYPE_BME280)
+        BME280(int p) : EnvironmentSensor(SensorID(p, SENSOR_TYPE_BME280))
         {
         }
     };
@@ -163,7 +162,7 @@ namespace Measure
     {
     public:
         DHT22() {}
-        DHT22(int p) : EnvironmentSensor(p, SENSOR_TYPE_DHT22)
+        DHT22(int p) : EnvironmentSensor(SensorID(p, SENSOR_TYPE_DHT22))
         {
         }
     };
@@ -172,7 +171,7 @@ namespace Measure
     {
     public:
         DS18B20() {}
-        DS18B20(int p) : EnvironmentSensor(p, SENSOR_TYPE_DS18B20)
+        DS18B20(int p) : EnvironmentSensor(SensorID(p, SENSOR_TYPE_DS18B20))
         {
         }
     };

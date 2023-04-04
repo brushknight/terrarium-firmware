@@ -53,12 +53,15 @@ namespace Event
             }
         }
         // split time windows in half and find how much time passed in it
+        // returns percent as float 0.00 -> 1.00
         float risingPercent(Time now)
         {
             int durationMinHalf = durationMin / 2;
             int passedMinutes = since.diff(now);
             return ((float)passedMinutes) / ((float)durationMinHalf);
         }
+
+        
         float fadingPercent(Time now)
         {
             int durationMinHalf = durationMin / 2;

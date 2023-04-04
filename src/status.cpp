@@ -154,14 +154,14 @@ namespace Status
     void turnLedOff()
     {
 
-        pixels->setPixelColor(0, pixels->Color(0, 0, 0));
+        pixels->setPixelColor(0, 0, 0, 0);
         pixels->show();
     }
 
     void turnLedOn(int r, int g, int b)
     {
 
-        pixels->setPixelColor(0, pixels->Color(r, g, b));
+        pixels->setPixelColor(0, r, g, b);
         pixels->show();
     }
 }

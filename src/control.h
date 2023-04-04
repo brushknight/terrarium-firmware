@@ -20,8 +20,9 @@ namespace Control
         PCF8574 pcf = PCF8574(0x20);
         bool isGPIOExpanderFound = false;
 
-        HardwareLayer(){}
-        void begin(){
+        HardwareLayer() {}
+        void begin()
+        {
             // Set pinMode to OUTPUT
             pcf.pinMode(0, OUTPUT);
             pcf.pinMode(1, OUTPUT);
@@ -148,49 +149,58 @@ namespace Control
         Color state;
         int brightness = 0; // max 255
         Adafruit_NeoPixel *pixels;
-        int pixelsCount = 30;
-        int pixelsOffset = 1;
-        int ledPin = LEDPIN;
+        int length;
+        int ledPin;
         void applyHardware()
         {
-            for (int i = pixelsOffset; i < pixelsCount + pixelsOffset; i++)
+            for (int i = 0; i < length; i++)
             {
-                pixels->setPixelColor(i, (state.red << 16) + (state.green << 8) + state.blue);
+                pixels->setPixelColor(i, state.red, state.green, state.blue);
             }
             pixels->setBrightness(brightness);
             pixels->show();
         }
 
     public:
-        // ColorLight(){};
-        ColorLight()
+        ColorLight(){};
+        ColorLight(int pin, int l)
         {
+            ledPin = pin;
+            length = l;
             int pixelFormat = NEO_GRB + NEO_KHZ800;
-            pixels = new Adafruit_NeoPixel(pixelsCount + pixelsOffset, ledPin, pixelFormat);
+            pixels = new Adafruit_NeoPixel(length, ledPin, pixelFormat);
             pixels->begin();
         };
-        // bool enabled()
-        // {
-        //     return port > -1;
-        // }
+        bool enabled()
+        {
+            return ledPin > -1;
+        }
         Color status()
         {
             return state;
         }
         void on()
         {
-            brightness = 0;
+            brightness = 255;
             applyHardware();
         }
         void off()
         {
-            brightness = 255;
+            brightness = 0;
             applyHardware();
         }
         void setColorAndBrightness(Color c, int percent)
         {
             state = c;
             brightness = 255.0 * (((float)percent) / 100.0);
+            if (brightness > 255)
+            {
+                brightness = 255;
+            }
+            if (brightness < 0)
+            {
+                brightness = 0;
+            }
             applyHardware();
         }
     };
@@ -210,7 +220,7 @@ namespace Control
     class ColorLights
     {
     public:
-        ColorLight list[3];
+        ColorLight list[1];
     };
 
     class Controller
@@ -223,7 +233,8 @@ namespace Control
 
     public:
         Controller(){};
-        void begin(){
+        void begin()
+        {
             hardwareLayer.begin();
             switches.list[0] = Switch(0, &hardwareLayer);
             switches.list[1] = Switch(1, &hardwareLayer);
@@ -233,7 +244,7 @@ namespace Control
             dimmers.list[1] = Dimmer(1);
             dimmers.list[2] = Dimmer(2);
 
-            colorLights.list[0] = ColorLight();
+            colorLights.list[0] = ColorLight(32, 30);
         }
         void resetPorts()
         {
@@ -270,7 +281,16 @@ namespace Control
         };
         bool setColorAndBrightness(int port, Color color, int percent)
         {
-            // Serial.printf("LED %d %d%% %d %d %d\n", port, percent, color.red, color.green, color.blue);
+            if (percent > 100)
+            {
+                percent = 100;
+            }
+
+            if (port < 0 || port > 1)
+            {
+                return false;
+            }
+
             colorLights.list[port].setColorAndBrightness(color, percent);
             return true;
         };
