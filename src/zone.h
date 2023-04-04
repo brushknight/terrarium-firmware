@@ -9,6 +9,7 @@
 #include <string>
 #include "ArduinoJson.h"
 #include "data_structures.h"
+#include "constants.h"
 
 namespace Zone
 {
@@ -20,7 +21,23 @@ namespace Zone
     const int maxColorLightZonesCount = 1;
     const int maxColorLightZonesEventsCount = 5;
 
-    class TemperatureZoneStatus
+    class ZoneStatus
+    {
+    public:
+        std::string slug = "";
+        std::string error = "";
+        int timestamp = 0;
+        void addError(std::string e)
+        {
+            error = e;
+        }
+        boolean isSet()
+        {
+            return slug != "";
+        }
+    };
+
+    class TemperatureZoneStatus : public ZoneStatus
     {
     public:
         bool isTargetSet = false;
@@ -29,18 +46,13 @@ namespace Zone
         float averageTemperature = 0;
         float targetTemperature = 0;
         float temperatureError = 0;
-        std::string slug = "";
         boolean heaterStatus = false;
-        int timestamp = 0;
-        std::string error = "";
+
         static int jsonSize()
         {
             return 196;
         }
-        void addError(std::string e)
-        {
-            error = e;
-        }
+
         void setCurrentTemp(float temp)
         {
             averageTemperature = temp;
@@ -55,10 +67,6 @@ namespace Zone
         {
             heaterStatus = heater;
             isActorSet = true;
-        }
-        boolean isSet()
-        {
-            return slug != "";
         }
         DynamicJsonDocument toJSON()
         {
@@ -91,7 +99,6 @@ namespace Zone
 
             return TemperatureZoneStatus::fromJSONObj(doc);
         }
-
         static TemperatureZoneStatus fromJSONObj(DynamicJsonDocument doc)
         {
             TemperatureZoneStatus temperatureZoneStatus;
@@ -105,18 +112,13 @@ namespace Zone
         }
     };
 
-    class DimmerZoneStatus
+    class DimmerZoneStatus : public ZoneStatus
     {
     public:
-        std::string slug = "";
         int brightness = 0;
         static int jsonSize()
         {
             return 96;
-        }
-        boolean isSet()
-        {
-            return slug != "";
         }
         DynamicJsonDocument toJSON()
         {
@@ -144,19 +146,14 @@ namespace Zone
         }
     };
 
-    class ColorLightZoneStatus
+    class ColorLightZoneStatus : public ZoneStatus
     {
     public:
-        std::string slug = "";
-        Control::Color color;
+        Color color;
         int brightness = 0;
         static int jsonSize()
         {
-            return 96 + Control::Color::jsonSize();
-        }
-        boolean isSet()
-        {
-            return slug != "";
+            return 96 + Color::jsonSize();
         }
         DynamicJsonDocument toJSON()
         {
@@ -178,7 +175,7 @@ namespace Zone
         {
             ColorLightZoneStatus zoneStatus;
 
-            zoneStatus.color = Control::Color::fromJSONObj(doc["color"]);
+            zoneStatus.color = Color::fromJSONObj(doc["color"]);
             zoneStatus.brightness = doc["brightness"];
             return zoneStatus;
         }
@@ -306,7 +303,7 @@ namespace Zone
             return enabled;
         }
 
-        TemperatureZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        TemperatureZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             // TODO return status
             //  find active event (latest in the window)
@@ -481,7 +478,7 @@ namespace Zone
             return enabled;
         }
 
-        DimmerZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        DimmerZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             status = DimmerZoneStatus();
 
@@ -494,6 +491,13 @@ namespace Zone
                     activeEvent = events[i];
                     Serial.printf("active event id: %d\n", i);
                 }
+            }
+
+            if (!activeEvent.isSet())
+            {
+                status.addError("ERROR: no active event found");
+                Serial.println("ERROR: no active event found");
+                return status;
             }
 
             (*controller).setDimmer(dimmerPort, activeEvent.brightness);
@@ -577,9 +581,9 @@ namespace Zone
             return enabled;
         }
 
-        ColorLightZoneStatus loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ColorLightZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
-            
+
             status = ColorLightZoneStatus();
 
             Event::LightEvent activeEvent;
@@ -593,16 +597,52 @@ namespace Zone
                 }
             }
 
-            int brightness = activeEvent.brightness;
-            if (activeEvent.transform.isSet())
+            if (!activeEvent.isSet())
             {
-                brightness = activeEvent.transformedValue(now);
+                status.addError("ERROR: no active event found");
+                Serial.println("ERROR: no active event found");
+                return status;
             }
 
-            (*controller).setColorAndBrightness(ledPort, activeEvent.color, brightness);
-            status.color = activeEvent.color;
-            status.brightness = brightness;
+            if (activeEvent.isCircadian())
+            {
+                int brightness = 0;
+                int kelvins = 0;
 
+                int isRising = activeEvent.isRising(now);
+                if (isRising == 1)
+                {
+                    kelvins = Transform::circadianKelvins(true, activeEvent.risingPercent(now));
+                    brightness = int(activeEvent.risingPercent(now) * 100);
+                }
+                else if (isRising == -1)
+                {
+                    kelvins = Transform::circadianKelvins(false, activeEvent.fadingPercent(now));
+                    brightness = 100 - int(activeEvent.fadingPercent(now) * 100);
+                }
+                else
+                {
+                    kelvins = kelvinNoon;
+                    brightness = 100;
+                }
+
+                status.brightness = brightness;
+                status.color = Color(kelvins);
+
+            }
+            else
+            {
+                // simple
+                int brightness = activeEvent.brightness;
+                if (activeEvent.transform.isSet())
+                {
+                    brightness = activeEvent.transformedValue(now);
+                }
+
+                status.color = activeEvent.color;
+                status.brightness = brightness;
+            }
+            (*controller).setColorAndBrightness(ledPort, status.color, status.brightness);
             status.slug = slug;
 
             return status;
@@ -628,7 +668,7 @@ namespace Zone
 
     public:
         Controller() {}
-        ZonesStatuses loopTick(Event::Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ZonesStatuses loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             ZonesStatuses statuses;
             // TODO return list of statuses

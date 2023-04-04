@@ -183,7 +183,7 @@ namespace Display
             lcd.printf("ID:%s", data.metadata.id.c_str());
 
             lcd.setCursor(15, 3);
-            lcd.print(Utils::hourMinuteToString(RealTime::getHour(), RealTime::getMinute()).c_str());
+            lcd.print(Time::hourMinuteToString(RealTime::getHour(), RealTime::getMinute()).c_str());
         }
 
         // Serial.println("display render");

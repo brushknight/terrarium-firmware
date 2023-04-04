@@ -296,7 +296,7 @@ namespace Eeprom
             xTaskCreatePinnedToCore(
                 saveZoneControllerTask,
                 "saveZoneControllerTask",
-                1024 * 24,
+                1024 * 32,
                 NULL,
                 3,
                 NULL,

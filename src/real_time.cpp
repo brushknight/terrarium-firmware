@@ -143,10 +143,10 @@ namespace RealTime
         minute = timeinfo.tm_min;
         second = timeinfo.tm_sec;
 
-        return Utils::hourMinuteToString(hour, minute);
+        return Time::hourMinuteToString(hour, minute);
     }
 
-    Event::Time getTimeObj()
+    Time getTimeObj()
     {
         time_t now;
         struct tm timeDetails;
@@ -154,7 +154,7 @@ namespace RealTime
         time(&now);
         localtime_r(&now, &timeDetails);
 
-        return Event::Time(timeDetails.tm_hour, timeDetails.tm_min);
+        return Time(timeDetails.tm_hour, timeDetails.tm_min);
     }
 
     int getHour()
