@@ -5,6 +5,7 @@
 #include "DHTStable.h"
 #include "utils.h"
 #include <Adafruit_BME280.h>
+#include <Adafruit_SHT31.h>
 #include <Adafruit_Sensor.h>
 #include "DallasTemperature.h"
 
@@ -13,13 +14,20 @@ namespace Measure
     const int SENSOR_TYPE_DHT22 = 22;
     const int SENSOR_TYPE_BME280 = 280;
     const int SENSOR_TYPE_DS18B20 = 1820;
+    const int SENSOR_TYPE_SHT31 = 31;
+
+    const int SENSOR_OFFSET_DHT22 = 0;
+    const int SENSOR_OFFSET_BME280 = 6;
+    const int SENSOR_OFFSET_DS18B20 = 12;
+    const int SENSOR_OFFSET_SHT31 = 18;
 
     bool readBME280(int port, float *t, float *h);
+    bool readSHT31(int port, float *t, float *h);
     bool readDHT22(int port, float *t, float *h);
     bool readDS18B20(int port, float *t);
 
     const int sensorPortCount = 6;
-    const int sensorTypesSupported = 3;
+    const int sensorTypesSupported = 4;
 
     class SensorID
     {
@@ -72,6 +80,10 @@ namespace Measure
             {
                 return "BME280";
             }
+            if (type == SENSOR_TYPE_SHT31)
+            {
+                return "SHT31";
+            }
             else if (type == SENSOR_TYPE_DHT22)
             {
                 return "DHT22";
@@ -120,6 +132,10 @@ namespace Measure
             {
                 return readDS18B20(id.port, &t);
             }
+            else if (type == SENSOR_TYPE_SHT31)
+            {
+                return readSHT31(port, &t, &h);
+            }
 
             return false;
         }
@@ -154,6 +170,16 @@ namespace Measure
     public:
         BME280() {}
         BME280(int p) : EnvironmentSensor(SensorID(p, SENSOR_TYPE_BME280))
+        {
+        }
+    };
+
+    class SHT31 : public EnvironmentSensor
+    {
+
+    public:
+        SHT31() {}
+        SHT31(int p) : EnvironmentSensor(p, SENSOR_TYPE_SHT31)
         {
         }
     };
@@ -194,32 +220,44 @@ namespace Measure
             {
                 return getDS18B20(sID.port);
             }
+            else if (sID.type == SENSOR_TYPE_SHT31)
+            {
+                return getSHT31(sID.port);
+            }
             Serial.println("ERROR: undefined sensor type");
             return EnvironmentSensor();
         };
         EnvironmentSensor getDHT22(int port)
         {
-            return list[port];
+            return list[port + SENSOR_OFFSET_DHT22];
         };
         EnvironmentSensor getBME280(int port)
         {
-            return list[port + 6];
+            return list[port + SENSOR_OFFSET_BME280];
         };
         EnvironmentSensor getDS18B20(int port)
         {
-            return list[port + 12];
+            return list[port + SENSOR_OFFSET_DS18B20];
+        };
+        EnvironmentSensor getSHT31(int port)
+        {
+            return list[port + SENSOR_OFFSET_SHT31];
         };
         bool readDHT22(int port)
         {
-            return list[port].read();
+            return list[port + SENSOR_OFFSET_DHT22].read();
         };
         bool readBME280(int port)
         {
-            return list[port + 6].read();
+            return list[port + SENSOR_OFFSET_BME280].read();
         };
         bool readDS18B20(int port)
         {
-            return list[port + 12].read();
+            return list[port + SENSOR_OFFSET_DS18B20].read();
+        };
+        bool readSHT31(int port)
+        {
+            return list[port + SENSOR_OFFSET_SHT31].read();
         };
         static int jsonSize()
         {
