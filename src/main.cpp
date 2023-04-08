@@ -25,10 +25,9 @@ bool initialSetupMode = false;
 void taskFetchSensors(void *parameter)
 {
   //Measure::scan();
-  Measure::enable();
   for (;;)
   {
-   
+
     Measure::readSensors();
 
     data.sharedSensors = *Measure::getSharedSensors();

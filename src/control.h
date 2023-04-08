@@ -244,7 +244,8 @@ namespace Control
             dimmers.list[1] = Dimmer(1);
             dimmers.list[2] = Dimmer(2);
 
-            colorLights.list[0] = ColorLight(32, 30);
+            // Only compatible with controller v1.9 and higher
+            // colorLights.list[0] = ColorLight(32, 30);
         }
         void resetPorts()
         {

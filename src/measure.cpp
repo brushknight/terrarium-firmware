@@ -13,7 +13,7 @@ namespace Measure
     // run in the loop and check each 5s
     bool readSensors()
     {
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < sensorPortCount; i++)
         {
             // debug
             // Serial.printf("DHT %d check\n", i);
@@ -44,6 +44,15 @@ namespace Measure
                 if (!sharedSensors.readDS18B20(i))
                 {
                     Serial.printf("DS18B20 port: %d failed\n", i);
+                }
+            }
+
+            if (sharedSensors.getSHT31(i).enabled())
+            {
+
+                if (!sharedSensors.readSHT31(i))
+                {
+                    Serial.printf("SHT31 port: %d failed\n", i);
                 }
             }
         }
@@ -102,6 +111,33 @@ namespace Measure
         return false;
     }
 
+    bool readSHT31(int port, float *t, float *h)
+    {
+        Adafruit_SHT31 sht31;
+
+        int bus = I2C_BUSES[port];
+
+        // Serial.printf("reading BME280 at port %d, multiplexer bus %d\n", port, bus);
+
+        Utils::TCA9548A(bus, false);
+        bool sensorStatus = sht31.begin(0x44);
+
+        if (sensorStatus)
+        {
+            // Serial.printf("BME280 at port %d, multiplexer bus %d\n", port, bus);
+
+            *t = sht31.readTemperature();
+            // float p = bme.readPressure() / 100.0F;
+            *h = sht31.readHumidity();
+
+            // Serial.printf("BME280 DEBUG: t:%.2f, h:%.2f\n", *t, *h);
+
+            return true;
+        }
+
+        return false;
+    }
+
     bool readDS18B20(int port, float *t)
     {
 
@@ -123,7 +159,7 @@ namespace Measure
 
         if (temperature == 85.0 || temperature == -127.0)
         {
-            Serial.printf("DS18B20 port %d error code %0.2f\n",port,  temperature);
+            Serial.printf("DS18B20 port %d error code %0.2f\n", port, temperature);
             return false;
         }
 
@@ -142,6 +178,22 @@ namespace Measure
         float h;
 
         bool success = readBME280(port, &t, &h);
+
+        if (success)
+        {
+            Serial.printf("t: %.2f C, h: %.2f%%\n", t, h);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool scanSHT31(int port)
+    {
+        float t;
+        float h;
+
+        bool success = readSHT31(port, &t, &h);
 
         if (success)
         {
@@ -183,7 +235,8 @@ namespace Measure
         return false;
     }
 
-    void enable(){
+    void enable()
+    {
         Serial.println("Enabling sensors");
         pinMode(SENSORS_ENABLE_PIN, OUTPUT);
         digitalWrite(SENSORS_ENABLE_PIN, HIGH);
@@ -192,19 +245,23 @@ namespace Measure
     bool scan()
     {
         Serial.println("Scan for sensors");
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < sensorPortCount; i++)
         {
-            if (scanDHT22(i))
-            {
-                sharedSensors.list[i] = DHT22(i);
-            }
             if (scanBME280(i))
             {
-                sharedSensors.list[i + 6] = BME280(i);
+                sharedSensors.list[i + SENSOR_OFFSET_BME280] = BME280(i);
+            }
+            if (scanSHT31(i))
+            {
+                sharedSensors.list[i + SENSOR_OFFSET_SHT31] = SHT31(i);
             }
             if (scanDS18B20(i))
             {
-                sharedSensors.list[i + 12] = DS18B20(i);
+                sharedSensors.list[i + SENSOR_OFFSET_DS18B20] = DS18B20(i);
+            }
+            if (scanDHT22(i))
+            {
+                sharedSensors.list[i + SENSOR_OFFSET_DHT22] = DHT22(i);
             }
         }
 
