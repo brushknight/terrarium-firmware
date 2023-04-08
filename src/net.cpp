@@ -66,6 +66,7 @@ namespace Net
         WiFi.setHostname(buffer);
 
         WiFi.setAutoReconnect(true);
+        esp_wifi_set_ps(WIFI_PS_NONE);
 
         Serial.println("Connection to wifi");
 

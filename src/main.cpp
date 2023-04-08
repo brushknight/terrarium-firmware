@@ -25,7 +25,7 @@ bool initialSetupMode = false;
 void taskFetchSensors(void *parameter)
 {
   //Measure::scan();
-
+  
   for (;;)
   {
     Measure::readSensors();
