@@ -132,6 +132,15 @@ namespace Status
     //     turnLedOn(254, 203, 0);
     // }
 
+    void setOrange()
+    {
+        turnLedOn(255, 106, 0);
+    }
+
+    void setGreen(){
+        turnLedOn(0, 255, 0);
+    }
+
     void setPurple()
     {
         turnLedOn(84, 22, 180);

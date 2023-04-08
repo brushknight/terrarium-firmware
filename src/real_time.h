@@ -17,6 +17,7 @@ namespace RealTime
     void syncFromRTC();
     void syncFromNTP();
     void syncFromNTPOnce();
+    void setTimestamp(int);
     bool saveTimeToRTC();
     bool isRtcSyncRequired();
     void initRTC();

@@ -53,10 +53,11 @@ public:
     std::string wifiSSID;
     std::string wifiPassword;
     std::string id;
+    std::string name;
 
     static int jsonSize()
     {
-        return 128;
+        return 1024;
     }
     DynamicJsonDocument toJSON()
     {
@@ -65,6 +66,7 @@ public:
         doc["wifiSSID"] = wifiSSID;
         doc["wifiPassword"] = wifiPassword;
         doc["id"] = id;
+        doc["name"] = name;
         return doc;
     }
     static SystemConfig fromJSON(std::string json)
@@ -77,6 +79,7 @@ public:
         config.wifiSSID = doc["wifiSSID"].as<std::string>();
         config.wifiPassword = doc["wifiPassword"].as<std::string>();
         config.id = doc["id"].as<std::string>();
+        config.name = doc["name"].as<std::string>();
 
         return config;
     }

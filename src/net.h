@@ -6,6 +6,7 @@
 #include "display.h"
 #include "eeprom_wrapper.h"
 // #include "status.h"
+#include <esp_wifi.h>
 
 namespace Net
 {

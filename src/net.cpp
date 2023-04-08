@@ -1,5 +1,15 @@
 #include "net.h"
 
+
+// - Force WiFi B/G
+// - Restart WiFi Lost Conn
+// - Force WiFi No Sleep
+// - Periodical send Gratuitous ARP
+// - Send With Max TX Power
+// - Extra WiFi scan loops: 2
+// - WiFi Sensitivity Margin: 3db
+
+
 namespace Net
 {
 
@@ -64,8 +74,8 @@ namespace Net
         char buffer[100];
         sprintf(buffer, "%s %s", "Terrarium controller", Eeprom::loadSystemConfig().id.c_str());
         WiFi.setHostname(buffer);
-
         WiFi.setAutoReconnect(true);
+        esp_wifi_set_ps(WIFI_PS_NONE);
 
         Serial.println("Connection to wifi");
 
@@ -87,8 +97,8 @@ namespace Net
 
         // Serial.println(wifiPassword.c_str());
 
-    //   Serial.println(wifiSSID.c_str());
-    //     Serial.println(wifiPassword.c_str());
+      Serial.println(wifiSSID.c_str());
+        Serial.println(wifiPassword.c_str());
 
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 

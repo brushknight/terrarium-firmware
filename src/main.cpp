@@ -25,9 +25,10 @@ bool initialSetupMode = false;
 void taskFetchSensors(void *parameter)
 {
   //Measure::scan();
-
+  Measure::enable();
   for (;;)
   {
+   
     Measure::readSensors();
 
     data.sharedSensors = *Measure::getSharedSensors();
@@ -100,7 +101,8 @@ void taskWatchNetworkStatus(void *parameter)
 
 void setupTask(void *parameter)
 {
-
+  Status::setup();
+  Status::setOrange();
   Serial.println("Controller starting");
 
   Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
@@ -109,14 +111,13 @@ void setupTask(void *parameter)
   Serial.println("Scanning for i2c devices");
   Utils::scanForI2C();
 
-  Status::setup();
+  
   // Status::setBlue();
 
   controller.begin();
   controller.resetPorts();
 
   Serial.println("Initial reset performed");
-
 
   Eeprom::setup();
   Eeprom::resetEepromChecker();
@@ -212,6 +213,7 @@ void setupTask(void *parameter)
     HttpServer::start(&data, false);
     data.mac = Utils::getMac();
     Serial.println("Controller started [OK]");
+    Status::setGreen();
   }
 
   for (;;)

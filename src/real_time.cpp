@@ -7,9 +7,7 @@ namespace RealTime
     const char *ntpServer1 = "10.0.0.51";
     const char *ntpServer2 = "pool.ntp.org";
     const char *ntpServer3 = "1.europe.pool.ntp.org";
-    const long gmtOffset_sec = 3600;                        // todo fix this to be +1
-    const int daylightOffset_sec = 3600;                    // fix this to accept DST
-    const char *timeZone = "CET-1CEST,M3.5.0/2,M10.5.0/ 3"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+    const char *timeZone = "CET-1CEST"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
 
     RTC_DS3231 rtc;
 
@@ -80,6 +78,14 @@ namespace RealTime
         tzset();
     }
 
+    void setTimestamp(uint32_t timestamp)
+    {
+        struct timeval tv;
+        tv.tv_sec = timestamp;
+        setenv("TZ", timeZone, 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+        tzset();
+    }
+
     void syncFromNTP()
     {
         Serial.println("RealTime: sync from NTP");
@@ -90,7 +96,6 @@ namespace RealTime
         {
             Serial.println("Failed to obtain time, retry");
             configTzTime(timeZone, ntpServer1, ntpServer2, ntpServer3);
-            // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
     }
@@ -105,7 +110,6 @@ namespace RealTime
         {
             Serial.println("Failed to obtain time, retry");
             configTzTime(timeZone, ntpServer1, ntpServer2, ntpServer3);
-            // configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
     }

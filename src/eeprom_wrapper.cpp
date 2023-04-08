@@ -3,21 +3,12 @@
 namespace Eeprom
 {
 
-    const int WIFI_SSID_INDEX = 1;
-    const int WIFI_SSID_LEN = 32;
-    const int WIFI_PASS_INDEX = WIFI_SSID_INDEX + WIFI_SSID_LEN;
-    const int WIFI_PASS_LEN = 32;
-    const int ID_INDEX = WIFI_PASS_INDEX + WIFI_PASS_LEN;
-    const int ID_INDEX_LEN = 10;
-    const int CONFIG_INDEX = ID_INDEX + ID_INDEX_LEN;
-
     // new indexes
     const int IS_SYSTEM_SET_INDEX = 0;
     const int SYSTEM_CONFIG_INDEX = 1;
     const int CONTROLLER_CONFIG_LENGTH = 2048;
 
     const int ZONE_CONTROLLER_SET_INDEX = SYSTEM_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH;
-
     const int ZONE_CONTROLLER_INDEX = ZONE_CONTROLLER_SET_INDEX + 1;
 
     const uint8_t externallAddress = 0x50;
@@ -26,10 +17,11 @@ namespace Eeprom
     bool isExternalEEPROM = false;
 
     Zone::Controller zoneController;
+    SystemConfig systemConfig;
+
     bool wasZoneControllerLoaded = false;
     bool isZoneControllerLoading = false;
     bool isZoneControllerSaving = false;
-    SystemConfig systemConfig;
     bool wasSystemConfigLoaded = false;
 
     void setup()
@@ -137,9 +129,14 @@ namespace Eeprom
 
     void clearSystemSettings()
     {
+        Serial.println("Clearing system settings");
         for (int i = 0; i < SYSTEM_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH; i++)
         {
             EEPROM.write(i, 0);
+            if (isExternalEEPROM)
+            {
+                externalEEPROM.write(i, 0);
+            }
         }
     }
 
@@ -155,7 +152,6 @@ namespace Eeprom
 
     bool isSystemConfigSetExternalEEPROM()
     {
-
         return externalEEPROM.read(IS_SYSTEM_SET_INDEX) == 1;
     }
 
@@ -167,29 +163,29 @@ namespace Eeprom
     void saveSystemConfig(SystemConfig systemConfig)
     {
         DynamicJsonDocument doc = systemConfig.toJSON();
-        // Lastly, you can print the resulting JSON to a String
         std::string json;
         serializeJson(doc, json);
-        Serial.println("Saving system config...");
+        Serial.println("[..] System config | saving");
         Serial.println(json.c_str());
+
+        clearSystemSettings();
 
         for (int i = 0; i < json.length(); ++i)
         {
             EEPROM.write(i + SYSTEM_CONFIG_INDEX, json[i]);
-        }
-        EEPROM.write(IS_SYSTEM_SET_INDEX, 1);
-
-        Serial.println("Saved into ESP32 EEPROM [OK]");
-
-        if (isExternalEEPROM)
-        {
-            for (int i = 0; i < json.length(); ++i)
+            if (isExternalEEPROM)
             {
                 externalEEPROM.write(i + SYSTEM_CONFIG_INDEX, json[i]);
             }
-            externalEEPROM.write(IS_SYSTEM_SET_INDEX, 1);
-            Serial.println("Saved into external EEPROM [OK]");
         }
+        EEPROM.write(IS_SYSTEM_SET_INDEX, 1);
+
+        if (isExternalEEPROM)
+        {
+            externalEEPROM.write(IS_SYSTEM_SET_INDEX, 1);
+        }
+
+        Serial.println("[OK] System config | saved");
     }
 
     SystemConfig loadSystemConfig()
@@ -206,6 +202,7 @@ namespace Eeprom
             wasSystemConfigLoaded = true;
             return systemConfig;
         }
+
         if (isSystemConfigSetESP32())
         {
             systemConfig = loadSystemConfigFromESP32();

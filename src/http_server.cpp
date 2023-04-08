@@ -29,8 +29,8 @@ extern "C" {
     #include "lwip/pbuf.h"
 }
 
-In order to avoid #error "include FreeRTOS.h" must appear in source files before "include semphr.h" 
-semphr.h which located in include/freertos/freertos/semphr.h:74:3, "freertos/FreeRTOS.h" 
+In order to avoid #error "include FreeRTOS.h" must appear in source files before "include semphr.h"
+semphr.h which located in include/freertos/freertos/semphr.h:74:3, "freertos/FreeRTOS.h"
 library has to be included. PlatformIO on ubuntu-latest
 
 
@@ -123,6 +123,45 @@ namespace HttpServer
 
     void onPostSettings(AsyncWebServerRequest *request)
     {
+
+        // int params = request->params();
+        // Serial.printf("Save settings, %d params", params);
+        // for (int i = 0; i < params; i++)
+        // {
+        //     AsyncWebParameter *p = request->getParam(i);
+        //     if (p->isFile())
+        //     {
+        //         Serial.printf("_FILE[%s]: %s, size: %u", p->name().c_str(), p->value().c_str(), p->size());
+        //     }
+        //     else if (p->isPost())
+        //     {
+        //         Serial.printf("_POST[%s]: %s", p->name().c_str(), p->value().c_str());
+        //     }
+        //     else
+        //     {
+        //         Serial.printf("_GET[%s]: %s", p->name().c_str(), p->value().c_str());
+        //     }
+        // }
+
+        // if (request->hasParam("body", true))
+        // {
+        //     AsyncWebParameter *p = request->getParam("body", true);
+        //     String json = p->value();
+        //     Serial.println(json);
+        // }
+        // else
+        // {
+        //     AsyncWebServerResponse *response = request->beginResponse(400, "application/json", "{'msg':'No body'}");
+        //     // handleCors(response);
+        //     request->send(response);
+        // }
+        // return;
+
+
+        // old settings code
+
+
+
         // ssid, pass, id
         SystemConfig config = Eeprom::loadSystemConfig();
 
@@ -133,18 +172,38 @@ namespace HttpServer
 
             if (p->name().compareTo(String("wifi_ssid")) == 0)
             {
-
-                config.wifiSSID = p->value().c_str();
+                if (p->value().c_str() != "")
+                {
+                    Serial.printf("wifi_ssid: %s\n", p->value().c_str());
+                    config.wifiSSID = p->value().c_str();
+                }
             }
 
             if (p->name().compareTo(String("wifi_pass")) == 0)
             {
-                config.wifiPassword = p->value().c_str();
+                if (p->value().c_str() != "")
+                {
+                    Serial.printf("wifi_pass: %s\n", p->value().c_str());
+                    config.wifiPassword = p->value().c_str();
+                }
             }
 
             if (p->name().compareTo(String("id")) == 0)
             {
-                config.id = p->value().c_str();
+                if (p->value().c_str() != "")
+                {
+                    Serial.printf("id: %s\n", p->value().c_str());
+                    config.id = p->value().c_str();
+                }
+            }
+
+            if (p->name().compareTo(String("name")) == 0)
+            {
+                if (p->value().c_str() != "")
+                {
+                    Serial.printf("name: %s\n", p->value().c_str());
+                    config.name = p->value().c_str();
+                }
             }
         }
 
@@ -157,6 +216,7 @@ namespace HttpServer
         vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
 
         ESP.restart();
+        
     }
 
     void onPostClimateConfig(AsyncWebServerRequest *request)
