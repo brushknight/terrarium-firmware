@@ -132,9 +132,9 @@ namespace Measure
             {
                 return readDS18B20(id.port, &t);
             }
-            else if (type == SENSOR_TYPE_SHT31)
+            else if (id.type == SENSOR_TYPE_SHT31)
             {
-                return readSHT31(port, &t, &h);
+                return readSHT31(id.port, &t, &h);
             }
 
             return false;
@@ -179,7 +179,7 @@ namespace Measure
 
     public:
         SHT31() {}
-        SHT31(int p) : EnvironmentSensor(p, SENSOR_TYPE_SHT31)
+        SHT31(int p) : EnvironmentSensor(SensorID(p, SENSOR_TYPE_SHT31))
         {
         }
     };
