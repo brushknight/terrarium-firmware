@@ -3,7 +3,8 @@
 
 #include <SPI.h>
 #include <WiFi.h>
-#include "display.h"
+// #include "display.h"
+#include "data.h"
 #include "eeprom_wrapper.h"
 // #include "status.h"
 #include <esp_wifi.h>

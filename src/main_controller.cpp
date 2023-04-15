@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <EEPROM.h>
-#include "display.h"
+// #include "display.h"
 #include "data.h"
 #include "real_time.h"
 #include "http_server.h"
@@ -17,7 +17,7 @@
 // #include <AsyncElegantOTA.h>
 
 Data data;
-Control::Controller controller;
+Control::Controller hardwareController;
 // Control::Controller *controller;
 
 bool initialSetupMode = false;
@@ -39,18 +39,19 @@ void taskFetchSensors(void *parameter)
 void taskZoneControl(void *parameter)
 {
   // Control::Controller controller = Control::Controller();
-  controller.resetPorts();
+  hardwareController.resetPorts();
 
   Zone::Controller zoneControllerToSave = Zone::Controller();
 
   Zone::Controller zoneController = Eeprom::loadZoneController();
+  // zoneController.begin();
 
   for (;;)
   {
     Time time = RealTime::getTimeObj();
     // debug info
     Serial.println(time.toString().c_str());
-    data.zones = zoneController.loopTick(time, Measure::getSharedSensors(), &controller);
+    data.zones = zoneController.loopTick(time, Measure::getSharedSensors(), &hardwareController);
 
     vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
   }
@@ -113,8 +114,8 @@ void setupTask(void *parameter)
   
   // Status::setBlue();
 
-  controller.begin();
-  controller.resetPorts();
+  hardwareController.begin();
+  hardwareController.resetPorts();
 
   Serial.println("Initial reset performed");
 

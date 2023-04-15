@@ -1,21 +1,21 @@
-#ifndef TERRARIUM_DISPLAY
-#define TERRARIUM_DISPLAY
+// #ifndef TERRARIUM_DISPLAY
+// #define TERRARIUM_DISPLAY
 
-#include <LiquidCrystal_I2C.h>
-#include <Arduino.h>
-#include "config.h"
-#include "data.h"
-#include "real_time.h"
-#include "data_structures.h"
+// #include <LiquidCrystal_I2C.h>
+// #include <Arduino.h>
+// #include "config.h"
+// #include "data.h"
+// #include "real_time.h"
+// #include "data_structures.h"
 
-namespace Display
-{
+// namespace Display
+// {
 
-     void setup();
-     void registerIcons();
-     void render(Data data);
-     // void renderClimateZone(DataClimateZone data, int offset);
-     void renderInitialSetup(InitialSetup data);
-     char *floatToString(double value);
-}
-#endif
+//      void setup();
+//      void registerIcons();
+//      void render(Data data);
+//      // void renderClimateZone(DataClimateZone data, int offset);
+//      void renderInitialSetup(InitialSetup data);
+//      char *floatToString(double value);
+// }
+// #endif

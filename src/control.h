@@ -203,6 +203,18 @@ namespace Control
             }
             applyHardware();
         }
+        void setPixel(int index, Color color)
+        {
+            pixels->setPixelColor(index, color.red, color.green, color.blue);
+        }
+        void setBrightness(int brightness)
+        {
+            pixels->setBrightness(brightness);
+        }
+        void show()
+        {
+            pixels->show();
+        }
     };
 
     class Switches
@@ -220,7 +232,7 @@ namespace Control
     class ColorLights
     {
     public:
-        ColorLight list[1];
+        ColorLight list[3];
     };
 
     class Controller
@@ -247,6 +259,14 @@ namespace Control
             // Only compatible with controller v1.9 and higher
             // colorLights.list[0] = ColorLight(32, 30);
         }
+
+        void beginLightDome()
+        {
+            colorLights.list[0] = ColorLight(32, 20);
+            colorLights.list[1] = ColorLight(25, 20);
+            colorLights.list[2] = ColorLight(33, 20);
+        }
+
         void resetPorts()
         {
             switches.list[0].off();
@@ -287,12 +307,45 @@ namespace Control
                 percent = 100;
             }
 
-            if (port < 0 || port > 1)
+            if (port < 0 || port > 2)
             {
                 return false;
             }
 
             colorLights.list[port].setColorAndBrightness(color, percent);
+            return true;
+        };
+        bool lightDomeStartupAnimation()
+        {
+
+            colorLights.list[0].setColorAndBrightness(Color(0, 0, 0), 100);
+            colorLights.list[1].setColorAndBrightness(Color(0, 0, 0), 100);
+            colorLights.list[2].setColorAndBrightness(Color(0, 0, 0), 100);
+
+            Color color = Color(0, 0, 255);
+
+            colorLights.list[1].setPixel(0, color);
+
+            for (int i = 0; i < 19; i++)
+            {
+                colorLights.list[0].setPixel(i, color);
+                colorLights.list[1].setPixel(i + 1, color);
+                colorLights.list[2].setPixel(i, color);
+                colorLights.list[0].show();
+                colorLights.list[1].show();
+                colorLights.list[2].show();
+                delay(100);
+            }
+            colorLights.list[0].setPixel(19, color);
+            colorLights.list[2].setPixel(19, color);
+            colorLights.list[0].show();
+            colorLights.list[2].show();
+            delay(100);
+
+            colorLights.list[0].setColorAndBrightness(Color(0, 0, 0), 100);
+            colorLights.list[1].setColorAndBrightness(Color(0, 0, 0), 100);
+            colorLights.list[2].setColorAndBrightness(Color(0, 0, 0), 100);
+
             return true;
         };
     };

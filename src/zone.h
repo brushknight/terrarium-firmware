@@ -10,6 +10,7 @@
 #include "ArduinoJson.h"
 #include "data_structures.h"
 #include "constants.h"
+#include "i2c.h"
 
 namespace Zone
 {
@@ -20,6 +21,44 @@ namespace Zone
     const int maxDimmerZonesEventsCount = 5;
     const int maxColorLightZonesCount = 1;
     const int maxColorLightZonesEventsCount = 5;
+
+    const int actuatorTypeOnBoard = 0;
+    const int actuatorTypeLightDome = 1;
+    const int actuatorTypeDimmer = 2;
+
+    class Actuator
+    {
+    public:
+        int type = -1;       // on board, light_dome, dimmer, rain...
+        uint16_t i2cID = 0; // i2c ID
+        static int jsonSize()
+        {
+            return 32; // to be defined
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["type"] = type;
+            doc["i2c_id"] = i2cID;
+            return doc;
+        }
+
+        static Actuator fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return Actuator::fromJSONObj(doc);
+        }
+
+        static Actuator fromJSONObj(DynamicJsonDocument doc)
+        {
+            Actuator actuator;
+            actuator.type = doc["type"];
+            actuator.i2cID = doc["i2c_id"];
+            return actuator;
+        }
+    };
 
     class ZoneStatus
     {
@@ -517,7 +556,8 @@ namespace Zone
     public:
         std::string slug = "";
         Event::LightEvent events[maxDimmerZonesEventsCount];
-        int ledPort = -1;
+        // int ledPort = -1;
+        Actuator actuator;
         ColorLightZoneStatus status;
 
         ColorLightZone()
@@ -533,7 +573,7 @@ namespace Zone
 
         static int jsonSize()
         {
-            return 128 + ColorLightZoneStatus::jsonSize() + Event::LightEvent::jsonSize() * maxDimmerZonesEventsCount;
+            return 128 + ColorLightZoneStatus::jsonSize() + Event::LightEvent::jsonSize() * maxDimmerZonesEventsCount + Actuator::jsonSize();
         }
 
         DynamicJsonDocument toJSON()
@@ -545,7 +585,7 @@ namespace Zone
             {
                 doc["events"][i] = events[i].toJSON();
             }
-            doc["led_port"] = ledPort;
+            doc["actuator"] = actuator.toJSON();
             return doc;
         }
 
@@ -561,12 +601,12 @@ namespace Zone
         {
             ColorLightZone zone;
             zone.slug = doc["slug"].as<std::string>();
-            zone.ledPort = doc["led_port"];
             zone.enabled = doc["enabled"];
             for (int i = 0; i < maxColorLightZonesEventsCount; i++)
             {
                 zone.events[i] = Event::LightEvent::fromJSONObj(doc["events"][i]);
             }
+            zone.actuator = Actuator::fromJSONObj(doc["actuator"]);
 
             return zone;
         }
@@ -628,7 +668,6 @@ namespace Zone
 
                 status.brightness = brightness;
                 status.color = Color(kelvins);
-
             }
             else
             {
@@ -642,7 +681,20 @@ namespace Zone
                 status.color = activeEvent.color;
                 status.brightness = brightness;
             }
-            (*controller).setColorAndBrightness(ledPort, status.color, status.brightness);
+
+            switch (actuator.type)
+            {
+            case actuatorTypeOnBoard:
+                (*controller).setColorAndBrightness(0, status.color, status.brightness);
+                break;
+            case actuatorTypeLightDome:
+                // todo add address
+                // uint16_t var2 = (uint16_t) ~((unsigned int) var1);
+                I2C::write(actuator.i2cID,  I2C::Message(status.brightness, status.color));
+                // (*controller).setColorAndBrightness(0, status.color, status.brightness);
+                break;
+            }
+
             status.slug = slug;
 
             return status;
@@ -668,6 +720,10 @@ namespace Zone
 
     public:
         Controller() {}
+        void begin()
+        {
+            ESP_ERROR_CHECK(I2C::i2c_master_init());
+        }
         ZonesStatuses loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             ZonesStatuses statuses;
