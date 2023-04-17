@@ -4,7 +4,7 @@
 #include <string>
 #include "ArduinoJson.h"
 
-//#define EXTERNAL_EEPROM true
+// #define EXTERNAL_EEPROM true
 
 #define CLIMATE_LOOP_INTERVAL_SEC 5
 #define LIGHT_LOOP_INTERVAL_SEC 5
@@ -16,20 +16,20 @@
 #define SENSORS_ENABLE_PIN 32
 
 // DHT22 sensors pins
-#define ONE_WIRE_0 int(16) 
-#define ONE_WIRE_1 int(17) 
-#define ONE_WIRE_2 int(18) 
-#define ONE_WIRE_3 int(19) 
-#define ONE_WIRE_4 int(27) 
-#define ONE_WIRE_5 int(26) 
+#define ONE_WIRE_0 int(16)
+#define ONE_WIRE_1 int(17)
+#define ONE_WIRE_2 int(18)
+#define ONE_WIRE_3 int(19)
+#define ONE_WIRE_4 int(27)
+#define ONE_WIRE_5 int(26)
 
 // I2c Busses ports
-#define I2C_BUS_0 int(3) 
-#define I2C_BUS_1 int(0) 
-#define I2C_BUS_2 int(1) 
-#define I2C_BUS_3 int(2) 
-#define I2C_BUS_4 int(4) 
-#define I2C_BUS_5 int(5) 
+#define I2C_BUS_0 int(3)
+#define I2C_BUS_1 int(0)
+#define I2C_BUS_2 int(1)
+#define I2C_BUS_3 int(2)
+#define I2C_BUS_4 int(4)
+#define I2C_BUS_5 int(5)
 
 // relay pins
 #define RELAY_0_PIN 5
@@ -53,7 +53,9 @@ public:
     std::string wifiSSID;
     std::string wifiPassword;
     std::string id;
-    std::string name;
+    std::string animalName;
+    std::string timeZone;
+    bool ntpEnabled;
 
     static int jsonSize()
     {
@@ -63,23 +65,43 @@ public:
     {
         DynamicJsonDocument doc(jsonSize());
 
-        doc["wifiSSID"] = wifiSSID;
-        doc["wifiPassword"] = wifiPassword;
+        doc["wifi_ssid"] = wifiSSID;
+        doc["wifi_password"] = wifiPassword;
         doc["id"] = id;
-        doc["name"] = name;
+        doc["animal_name"] = animalName;
+        doc["time_zone"] = timeZone;
+        doc["ntp_enabled"] = ntpEnabled;
         return doc;
     }
     static SystemConfig fromJSON(std::string json)
     {
-        SystemConfig config;
-
         DynamicJsonDocument doc(jsonSize());
         deserializeJson(doc, json);
 
-        config.wifiSSID = doc["wifiSSID"].as<std::string>();
-        config.wifiPassword = doc["wifiPassword"].as<std::string>();
-        config.id = doc["id"].as<std::string>();
-        config.name = doc["name"].as<std::string>();
+        return SystemConfig::fromJSONObj(doc);
+    }
+    static SystemConfig fromJSONObj(DynamicJsonDocument jsonObj)
+    {
+        SystemConfig config;
+
+        if (jsonObj.containsKey("wifiSSID"))
+        {
+            // legacy compatibility
+            config.wifiSSID = jsonObj["wifiSSID"].as<std::string>();
+            config.wifiPassword = jsonObj["wifiPassword"].as<std::string>();
+            config.id = jsonObj["id"].as<std::string>();
+            config.animalName = jsonObj["name"].as<std::string>();
+        }
+        else
+        {
+            // new structure
+            config.wifiSSID = jsonObj["wifi_ssid"].as<std::string>();
+            config.wifiPassword = jsonObj["wifi_password"].as<std::string>();
+            config.id = jsonObj["id"].as<std::string>();
+            config.animalName = jsonObj["animal_name"].as<std::string>();
+            config.timeZone = jsonObj["time_zone"].as<std::string>();
+            config.ntpEnabled = jsonObj["ntp_enabled"];
+        }
 
         return config;
     }

@@ -4,17 +4,22 @@ namespace RealTime
 {
 
     // todo - make it custom ntp - optional
-    const char *ntpServer1 = "10.0.0.51";
-    const char *ntpServer2 = "pool.ntp.org";
-    const char *ntpServer3 = "1.europe.pool.ntp.org";
-    const char *timeZone = "CET-1CEST"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+    const char *ntpServer1 = "0.europe.pool.ntp.org"; //"10.0.0.51";
+    const char *ntpServer2 = "1.europe.pool.ntp.org";
+    const char *ntpServer3 = "2.europe.pool.ntp.org";
+    // const char *timeZone = "CET-1CEST"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+
+    std::string timeZone = "CET-1CEST"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+    bool ntpEnabled = false;
 
     RTC_DS3231 rtc;
 
     bool rtcBeginFailed = false;
 
-    void initRTC()
+    void initRTC(std::string tz, bool ntp)
     {
+        timeZone = tz;
+        ntpEnabled = ntp;
         rtcBeginFailed = !rtc.begin();
     }
 
@@ -74,42 +79,60 @@ namespace RealTime
         Serial.printf("TIMESTAMP from RTC %d\n", tv.tv_sec);
 
         settimeofday(&tv, NULL);
-        setenv("TZ", timeZone, 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+        setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
         tzset();
     }
 
-    void setTimestamp(uint32_t timestamp)
+    void setTimestamp(uint32_t timestamp, std::string tz)
     {
         struct timeval tv;
         tv.tv_sec = timestamp;
-        setenv("TZ", timeZone, 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+        timeZone = tz;
+        setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
         tzset();
+
+        DateTime dt = DateTime(timestamp);
+        rtc.adjust(dt);
     }
 
     void syncFromNTP()
     {
+        if (!ntpEnabled)
+        {
+            ESP_LOGW(TAG, "ntp is disabled for this controller");
+            return;
+        }
+
         Serial.println("RealTime: sync from NTP");
         Net::connect();
         struct tm timeinfo;
         int attempts = 0;
         while (!getLocalTime(&timeinfo))
         {
-            Serial.println("Failed to obtain time, retry");
-            configTzTime(timeZone, ntpServer1, ntpServer2, ntpServer3);
+            ESP_LOGE(TAG, "Failed to obtain time, retry");
+            configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
     }
 
     void syncFromNTPOnce()
     {
-        Serial.println("RealTime: sync from NTP Once");
+
+        if (!ntpEnabled)
+        {
+            ESP_LOGW(TAG, "ntp is disabled for this controller");
+            return;
+        }
+
+        ESP_LOGD(TAG, "RealTime: sync from NTP Once");
+
         Net::connect();
         struct tm timeinfo;
         int attempts = 0;
         if (!getLocalTime(&timeinfo))
         {
-            Serial.println("Failed to obtain time, retry");
-            configTzTime(timeZone, ntpServer1, ntpServer2, ntpServer3);
+            ESP_LOGE(TAG, "Failed to obtain time, retry");
+            configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
     }

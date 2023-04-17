@@ -64,58 +64,69 @@
             <label>WiFi Passphrase:</label>
             <input maxlength="100" name="wifi_pass" type="password" id="SettingsForm_wifiPass"><br>
             <label>Controller ID</label>
-            <input maxlength="30" name="id"  id="SettingsForm_id"><br>
+            <input maxlength="30" name="id" id="SettingsForm_id"><br>
             <label>Animal name</label>
-            <input maxlength="30" name="name" id="SettingsForm_name"><br>
+            <input maxlength="30" name="animal_name" id="SettingsForm_animalName"><br>
+            <label>Time Zone</label>
+            <select name="time_zone" id="TimeZone">
+                <option value="CET-1CEST">Madrid</option>
+            </select>
+            <label for="NTPEnabled">Enabled NTP?</label>
+            <input type="checkbox" id="NTPEnabled" checked/>
+
             <input type="submit" value="Save">
         </p>
     </form>
-    <!-- <form action="/api/reset" method="post">
-        <p>
-        <h3>Reset controller</h3>
-        <label>Password:</label>
-        <input maxlength="30" name="reset_pass"><br>
-        <input type="submit" value="RESET">
-        </p>
-    </form>
-    </form>
-    <form action="/api/reset-climate" method="post">
-        <p>
-        <h3>Reset controller</h3>
-        <label>Password:</label>
-        <input maxlength="30" name="reset_pass"><br>
-        <input type="submit" value="RESET Climate">
-        </p>
-    </form>
-    </form>
-    <form action="/api/reset-system" method="post">
-        <p>
-        <h3>Reset controller</h3>
-        <label>Password:</label>
-        <input maxlength="30" name="reset_pass"><br>
-        <input type="submit" value="RESET Controller">
-        </p>
-    </form> -->
+
     <script>
 
         let form = document.getElementById('SettingsForm');
-        console.log(form);
 
-        form.addEventListener("submit", (e) => {
+        function submitForm() {
+            var data = {};
+            data['timestamp'] = Math.floor(Date.now() / 1000);
+            data['id'] = document.getElementById('SettingsForm_id').value;
+            data['animal_name'] = document.getElementById('SettingsForm_animalName').value;
+            data['wifi_ssid'] = document.getElementById('SettingsForm_wifiSSID').value;
+            data['wifi_password'] = document.getElementById('SettingsForm_wifiPass').value;
+            data['time_zone'] = document.getElementById('TimeZone').value;
+            data['ntp_enabled'] = document.getElementById('NTPEnabled').checked;
+
+            var dataAsJSON = JSON.stringify(data);
+
+            sendData({'json': dataAsJSON}, '/api/settings');
+        }
+
+        function sendData(data, url) {
+            console.log('Sending data');
+
+            const XHR = new XMLHttpRequest();
+
+            const urlEncodedDataPairs = [];
+
+            for (const [name, value] of Object.entries(data)) {
+                urlEncodedDataPairs.push(`${encodeURIComponent(name)}=${encodeURIComponent(value)}`);
+            }
+
+            const urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
+
+            XHR.addEventListener('load', (event) => {
+            });
+
+            XHR.addEventListener('error', (event) => {
+            });
+
+            XHR.open('POST', url);
+
+            XHR.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            XHR.send(urlEncodedData);
+        }
+
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
-
-            var data = {}
-            data["timestamp"] = Math.floor(Date.now() / 1000)
-            data["id"] = document.getElementById("SettingsForm_id").value;
-            data["name"] = document.getElementById("SettingsForm_name").value;
-            data["wifi_ssid"] = document.getElementById("SettingsForm_wifiSSID").value;
-            data["wifi_pass"] = document.getElementById("SettingsForm_wifiPass").value;
-
-            // handle submit
-            console.log("test")
-            console.log("form", data)
+            submitForm();
         });
-
 
     </script>
 </body>

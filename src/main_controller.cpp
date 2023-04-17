@@ -119,7 +119,7 @@ void setupTask(void *parameter)
 
   Serial.println("Initial reset performed");
 
-  Eeprom::setup();
+  
   Eeprom::resetEepromChecker();
 
   // Display::setup();
@@ -237,8 +237,12 @@ void setup()
   delay(2000);
   Measure::scan();
 
+  Eeprom::setup();
+  SystemConfig systemConfig = Eeprom::loadSystemConfig();
+  systemConfig.timeZone;
+
   // setup initial time (from RTC and will be adjusted later)
-  RealTime::initRTC();
+  RealTime::initRTC(systemConfig.timeZone, systemConfig.ntpEnabled);
   RealTime::syncFromRTC();
   RealTime::printLocalTime();
   delay(5000);

@@ -15,7 +15,10 @@
 
 namespace HttpServer
 {
-    AsyncWebServer * getServer();
+
+    static const char *TAG = "http-server";
+
+    AsyncWebServer *getServer();
     void start(Data *givenData, bool isSetupMode);
     void notFound(AsyncWebServerRequest *request);
     void onFormSettings(AsyncWebServerRequest *request);

@@ -75,7 +75,7 @@ namespace I2C
         }
         static Message fromJSON(std::string json)
         {
-            ESP_LOGI(TAG, "Message JSON string recived %s", json);
+            ESP_LOGD(TAG, "Message JSON string recived %s", json);
             DynamicJsonDocument doc(jsonSize());
             deserializeJson(doc, json);
 

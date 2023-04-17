@@ -71,7 +71,7 @@ namespace I2C
 
     esp_err_t i2c_master_send(uint16_t i2cID, uint8_t message[], int len)
     {
-        ESP_LOGI(TAG, "Sending Message = %s", message);
+        ESP_LOGD(TAG, "Sending Message = %s", message);
 
         esp_err_t ret;
         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -107,7 +107,7 @@ namespace I2C
         else
         {
             char *received_data2 = (char *)received_data;
-            ESP_LOGI(TAG, "Raw data recived %d bytes, %s", bytesRead, received_data);
+            ESP_LOGD(TAG, "Raw data recived %d bytes, %s", bytesRead, received_data);
 
             // if (received_data2[0] != "{")
             // {

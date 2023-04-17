@@ -12,15 +12,18 @@
 
 namespace RealTime
 {
+
+    static const char *TAG = "real-time";
+
     void setup();
     bool isWiFiRequired();
     void syncFromRTC();
     void syncFromNTP();
     void syncFromNTPOnce();
-    void setTimestamp(int);
+    void setTimestamp(uint32_t timestamp, std::string tz);
     bool saveTimeToRTC();
     bool isRtcSyncRequired();
-    void initRTC();
+    void initRTC(std::string tz, bool ntp);
     std::string getTime();
     Time getTimeObj();
     int getHour();
