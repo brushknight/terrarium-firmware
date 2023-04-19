@@ -50,5 +50,6 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp"
-    }
+    },
+    "liveServer.settings.port": 5502
 }
