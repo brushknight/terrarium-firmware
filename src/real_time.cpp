@@ -36,12 +36,15 @@ namespace RealTime
 
     void setup()
     {
+
+        ESP_LOGI(TAG, "[..] Enabling RTC chip");
+
         Serial.println("RealTime: setup started");
 
         if (rtcBeginFailed)
         {
+            ESP_LOGE(TAG, "[FAIL] Couldn't find RTC chip");
             // Status::setFetchingTimeStatus(Status::WARNING);
-            Serial.println("Couldn't find RTC, check wiring!");
             // Serial.flush();
             // syncFromNTP();
             // // abort(); -> only if NTP time failed
@@ -51,7 +54,8 @@ namespace RealTime
             return;
         }
 
-        Serial.println("RealTime: RTC enalbed");
+        ESP_LOGI(TAG, "[OK] Enabling RTC chip");
+        ESP_LOGI(TAG, "[..] Sync time from RTC");
 
         syncFromRTC();
 
@@ -59,15 +63,14 @@ namespace RealTime
 
         if (isRtcSyncRequired())
         {
-            Serial.println("RealTime: RTC time expired");
+            ESP_LOGD(TAG, "RTC time expired");
             syncFromNTP();
-            // validate time here
             saveTimeToRTC();
         }
 
         printLocalTime();
 
-        Utils::log("RealTime: setup finished");
+        ESP_LOGI(TAG, "[OK] Sync time from RTC");
     }
 
     void syncFromRTC()
@@ -76,7 +79,7 @@ namespace RealTime
         struct timeval tv;
         tv.tv_sec = rtcDateTime.unixtime();
 
-        Serial.printf("TIMESTAMP from RTC %d\n", tv.tv_sec);
+        ESP_LOGD(TAG, "Timestamp from RTC: %d", tv.tv_sec);
 
         settimeofday(&tv, NULL);
         setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
@@ -99,20 +102,22 @@ namespace RealTime
     {
         if (!ntpEnabled)
         {
-            ESP_LOGW(TAG, "ntp is disabled for this controller");
+            ESP_LOGW(TAG, "NTP is disabled");
             return;
         }
 
+        ESP_LOGD(TAG, "[..] Sync from NTP");
         Serial.println("RealTime: sync from NTP");
         Net::connect();
         struct tm timeinfo;
         int attempts = 0;
         while (!getLocalTime(&timeinfo))
         {
-            ESP_LOGE(TAG, "Failed to obtain time, retry");
+            ESP_LOGE(TAG, "Failed to obtain time, retrying");
             configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
+        ESP_LOGD(TAG, "[OK] Sync from NTP");
     }
 
     void syncFromNTPOnce()
@@ -120,26 +125,27 @@ namespace RealTime
 
         if (!ntpEnabled)
         {
-            ESP_LOGW(TAG, "ntp is disabled for this controller");
+            ESP_LOGW(TAG, "NTP is disabled");
             return;
         }
 
-        ESP_LOGD(TAG, "RealTime: sync from NTP Once");
+        ESP_LOGD(TAG, "[..] Sync from NTP Once");
 
         Net::connect();
         struct tm timeinfo;
         int attempts = 0;
         if (!getLocalTime(&timeinfo))
         {
-            ESP_LOGE(TAG, "Failed to obtain time, retry");
+            ESP_LOGE(TAG, "Failed to obtain time, retrying");
             configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
             attempts++;
         }
+        ESP_LOGD(TAG, "[OK] Sync from NTP Once");
     }
 
     bool saveTimeToRTC()
     {
-        Serial.println("RealTime: saving time into RTC");
+        ESP_LOGD(TAG, "[..] Saving time into RTC");
 
         time_t now;
         struct tm timeDetails;
@@ -148,6 +154,8 @@ namespace RealTime
         localtime_r(&now, &timeDetails);
 
         rtc.adjust(mktime(&timeDetails));
+
+        ESP_LOGD(TAG, "[OK] Saving time into RTC");
 
         return true;
     }
@@ -161,8 +169,7 @@ namespace RealTime
         struct tm timeinfo;
         if (!getLocalTime(&timeinfo))
         {
-            Serial.println("getHour() Failed to obtain time");
-
+            ESP_LOGE(TAG, "getHour() Failed to obtain time");
             return 0;
         }
 
@@ -201,7 +208,7 @@ namespace RealTime
         struct tm timeinfo;
         if (!getLocalTime(&timeinfo))
         {
-            Serial.println("getSecond() Failed to obtain time");
+            ESP_LOGE(TAG, "getSecond() Failed to obtain time");
             // abort();
             return 0;
         }
@@ -220,7 +227,10 @@ namespace RealTime
         time(&now);
         localtime_r(&now, &timeDetails);
 
-        Serial.println(&timeDetails, "TIME > %A, %B %d %Y %H:%M:%S");
+        // check it this format works
+        ESP_LOGI(TAG, "TIME > %A, %B %d %Y %H:%M:%S", &timeDetails);
+
+        // Serial.println(&timeDetails, "TIME > %A, %B %d %Y %H:%M:%S");
     }
 
     int getBatteryPercent()

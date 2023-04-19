@@ -9,7 +9,9 @@
 
 namespace Utils
 {
-    void log(const char str[]);
+
+    static const char *TAG = "utils";
+
     void scanForI2C();
     void TCA9548A(uint8_t bus, bool verbose);
     bool checkScheduleTimeWindow(std::string now, std::string since, std::string until);

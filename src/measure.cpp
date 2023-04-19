@@ -243,14 +243,15 @@ namespace Measure
 
     void enable()
     {
-        Serial.println("Enabling sensors");
+        ESP_LOGI(TAG, "[..] Enabling sensors");
         pinMode(SENSORS_ENABLE_PIN, OUTPUT);
         digitalWrite(SENSORS_ENABLE_PIN, HIGH);
+        ESP_LOGI(TAG, "[OK] Enabling sensors");
     }
 
     bool scan()
     {
-        Serial.println("Scan for sensors");
+        ESP_LOGI(TAG, "[..] Looking for sensors");
         for (int i = 0; i < sensorPortCount; i++)
         {
             if (scanBME280(i))
@@ -271,6 +272,7 @@ namespace Measure
             }
         }
 
+        ESP_LOGI(TAG, "[OK] Looking for sensors");
         return true;
     }
 

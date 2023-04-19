@@ -1,6 +1,6 @@
 #include "net.h"
 
-
+// Possible connectivity improvements
 // - Force WiFi B/G
 // - Restart WiFi Lost Conn
 // - Force WiFi No Sleep
@@ -9,9 +9,10 @@
 // - Extra WiFi scan loops: 2
 // - WiFi Sensitivity Margin: 3db
 
-
 namespace Net
 {
+
+    const int secondsToWaitForWifiCheck = 5;
 
     bool isConnectingStarted = false;
 
@@ -29,15 +30,15 @@ namespace Net
         // IPAddress subnet = IPAddress(255, 255, 255, 0);
         // WiFi.softAPConfig(local_ip, gateway, subnet);
         // Connect to Wi - Fi network with SSID and password
-        Serial.print("Setting AP (Access Point)…");
+        ESP_LOGI(TAG, "[..] Setting up initial AP (Access Point)");
         // Remove the password parameter, if you want the AP (Access Point) to be open
         const char *ssid = "Terrarium Controller ";
         const char *pass = "1234567890";
         WiFi.softAP(ssid, pass);
 
         IPAddress finalIp = WiFi.softAPIP();
-        Serial.print("AP IP address: ");
-        Serial.println(finalIp);
+        ESP_LOGI(TAG, "[OK] Setting up initial AP (Access Point)");
+        ESP_LOGI(TAG, "IP Address: %s", finalIp.toString());
         return std::string(ssid);
     }
 
@@ -51,8 +52,11 @@ namespace Net
     void connect()
     {
 
+        ESP_LOGI(TAG, "[..] Connecting to wifi");
+
         if (WiFi.isConnected())
         {
+            ESP_LOGI(TAG, "[OK] Connecting to wifi | IP: %s", WiFi.localIP().toString());
             return;
         }
 
@@ -64,8 +68,8 @@ namespace Net
                 {
                     return;
                 }
-                Serial.println("Another thread is connecting, waiting.");
-                delay(1000 * 5); // each 5s
+                ESP_LOGI(TAG, "[..] Connecting to wifi | Another thread is connecting, waiting %d seconds", secondsToWaitForWifiCheck);
+                delay(1000 * secondsToWaitForWifiCheck);
             }
         }
 
@@ -73,13 +77,12 @@ namespace Net
 
         char buffer[100];
         sprintf(buffer, "%s %s", "Terrarium controller", Eeprom::loadSystemConfig().id.c_str());
+
+        ESP_LOGD(TAG, "Hostname: %s", buffer);
+
         WiFi.setHostname(buffer);
         WiFi.setAutoReconnect(true);
         esp_wifi_set_ps(WIFI_PS_NONE);
-
-        Serial.println("Connection to wifi");
-
-        // Status::setConnectingToWiFiStatus(Status::WORKING);
 
         WiFi.mode(WIFI_STA);
         delay(5);
@@ -90,15 +93,10 @@ namespace Net
 
         int attempts = 0;
 
-  
-
         std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
         std::string wifiPassword = Eeprom::loadSystemConfig().wifiPassword;
 
-        // Serial.println(wifiPassword.c_str());
-
-      Serial.println(wifiSSID.c_str());
-        Serial.println(wifiPassword.c_str());
+        ESP_LOGD(TAG, "SSID: %s, Passphrase: %s", wifiSSID, wifiPassword);
 
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 
@@ -111,20 +109,15 @@ namespace Net
             {
                 Serial.println(statusToString(WiFi.status()));
             }
-            if(attempts > 30){
-                Serial.println("Wifi: 30s no connection, retrying to connect");
+            if (attempts > 30)
+            {
+                ESP_LOGI(TAG, "[..] Connecting to wifi | 30 seconds no connection, reconecting");
                 attempts = 0;
                 WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
             }
         }
 
-        // you're connected now, so print out the data:
-        Serial.println("You're connected to the network");
-        Serial.printf("Your IP is: %s\n", WiFi.localIP().toString());
-        Serial.println(WiFi.localIP().toString());
-        Serial.println(WiFi.getHostname());
-
-        // Status::setConnectingToWiFiStatus(Status::IDLE);
+        ESP_LOGI(TAG, "[OK] Connecting to wifi | IP: %s", WiFi.localIP().toString());
     }
 
     char *statusToString(int code)

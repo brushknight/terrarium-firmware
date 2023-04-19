@@ -11,6 +11,8 @@
 
 namespace Net
 {
+    static const char *TAG = "wifi";
+
     bool isConnected();
     std::string setupAP();
     void connect();

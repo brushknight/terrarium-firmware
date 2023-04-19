@@ -227,7 +227,7 @@ namespace Measure
             {
                 return getSHT31(sID.port);
             }
-            Serial.println("ERROR: undefined sensor type");
+            ESP_LOGE(TAG, "ERROR: undefined sensor type");
             return EnvironmentSensor();
         };
         EnvironmentSensor getDHT22(int port)

@@ -14,6 +14,9 @@
 
 namespace Zone
 {
+
+    static const char *TAG = "zone";
+
     const int maxTemperatureZonesCount = 3;
     const int maxTemperatureZonesSensorsCount = 3;
     const int maxTemperatureZonesEventsCount = 5;
@@ -29,7 +32,7 @@ namespace Zone
     class Actuator
     {
     public:
-        int type = -1;       // on board, light_dome, dimmer, rain...
+        int type = -1;      // on board, light_dome, dimmer, rain...
         uint16_t i2cID = 0; // i2c ID
         static int jsonSize()
         {
@@ -356,7 +359,7 @@ namespace Zone
                 if (events[i].isActive(now))
                 {
                     activeEvent = events[i];
-                    Serial.printf("active event id: %d\n", i);
+                    ESP_LOGD(TAG, "active event id: %d", i);
                 }
             }
 
@@ -366,13 +369,13 @@ namespace Zone
             {
                 if (sensorIDs[i].isSet())
                 {
-                    Serial.printf("sensor %d status %d, temp %.2f\n", i, (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
+                    ESP_LOGD(TAG, "sensor %d status %d, temp %.2f", i, (*sharedSensors).get(sensorIDs[i]).enabled(), (*sharedSensors).get(sensorIDs[i]).temperature());
 
                     float t = (*sharedSensors).get(sensorIDs[i]).temperature();
 
                     if (t < 0)
                     {
-                        status.addError("ERROR: temperature is subzero");
+                        ESP_LOGE(TAG, "temperature is subzero, %.2f", t);
                     }
 
                     if (t > 0)
@@ -391,7 +394,7 @@ namespace Zone
                 sprintf(errTempDiff, "ERROR: temperature difference across sensors (%0.2f) is higher than it should be (%0.2f)", status.temperatureError, maxTempError);
 
                 status.addError(std::string(errTempDiff));
-                Serial.println(errTempDiff);
+                ESP_LOGW(TAG, "%s", errTempDiff);
             }
 
             status.slug = slug;
@@ -399,7 +402,7 @@ namespace Zone
             if (tm.count() == 0)
             {
                 status.addError("ERROR: no temperature sensros found");
-                Serial.println("ERROR: no temperature sensros found");
+                ESP_LOGE(TAG, "No temperature sensros found");
                 (*controller).turnSwitchOff(heaterPort);
                 status.setHeater(false);
                 return status;
@@ -411,7 +414,7 @@ namespace Zone
             if (!activeEvent.isSet())
             {
                 status.addError("ERROR: no active event found");
-                Serial.println("ERROR: no active event found");
+                ESP_LOGE(TAG, "No active event found");
                 return status;
             }
 
@@ -425,7 +428,7 @@ namespace Zone
                 status.setTarget(activeEvent.transformedValue(now));
             }
 
-            Serial.printf("Average temperature %.2f, target  %.2f\n", status.averageTemperature, status.targetTemperature);
+            ESP_LOGD(TAG, "Average temperature %.2f, target  %.2f", status.averageTemperature, status.targetTemperature);
 
             if (heaterPort > -1)
             {
@@ -528,14 +531,14 @@ namespace Zone
                 if (events[i].isActive(now))
                 {
                     activeEvent = events[i];
-                    Serial.printf("active event id: %d\n", i);
+                    ESP_LOGD(TAG, "active event id: %d", i);
                 }
             }
 
             if (!activeEvent.isSet())
             {
                 status.addError("ERROR: no active event found");
-                Serial.println("ERROR: no active event found");
+                ESP_LOGE(TAG, "No active event found");
                 return status;
             }
 
@@ -633,14 +636,14 @@ namespace Zone
                 if (events[i].isActive(now))
                 {
                     activeEvent = events[i];
-                    Serial.printf("color light zone active event id: %d\n", i);
+                    ESP_LOGD(TAG, "Color light zone active event id: %d\n", i);
                 }
             }
 
             if (!activeEvent.isSet())
             {
                 status.addError("ERROR: no active event found");
-                Serial.println("ERROR: no active event found");
+                ESP_LOGE(TAG, "No active event found");
                 return status;
             }
 
@@ -690,7 +693,7 @@ namespace Zone
             case actuatorTypeLightDome:
                 // todo add address
                 // uint16_t var2 = (uint16_t) ~((unsigned int) var1);
-                I2C::write(actuator.i2cID,  I2C::Message(status.brightness, status.color));
+                I2C::write(actuator.i2cID, I2C::Message(status.brightness, status.color));
                 // (*controller).setColorAndBrightness(0, status.color, status.brightness);
                 break;
             }
@@ -822,24 +825,13 @@ namespace Zone
         static Controller fromJSON(std::string json)
         {
             DynamicJsonDocument doc = DynamicJsonDocument(jsonSize());
-            Serial.println(jsonSize());
-            Serial.println(json.length());
-            Serial.println(doc.capacity());
             deserializeJson(doc, json);
-
-            Serial.println("slug");
-            Serial.println(doc["temperature_zones"][0]["slug"].as<std::string>().c_str());
-
             return Controller::fromJSONObj(doc);
         }
 
         static Controller fromJSONObj(DynamicJsonDocument doc)
         {
             Controller controller;
-
-            Serial.println(doc.capacity());
-            Serial.println("slug");
-            Serial.println(doc["temperature_zones"][0]["slug"].as<std::string>().c_str());
 
             for (int i = 0; i < maxTemperatureZonesCount; i++)
             {
@@ -856,16 +848,8 @@ namespace Zone
                 controller.colorLightZones[i] = ColorLightZone::fromJSONObj(doc["color_light_zones"][i]);
             }
 
-            Serial.println("Controller fromJSONObj()");
-            Serial.println(controller.temperatureZones[0].slug.c_str());
-
             return controller;
         }
-
-        // save to eeprom
-        // load from eeprom
-
-        // report of all zones, how to do? (to display and for api)
     };
 }
 
