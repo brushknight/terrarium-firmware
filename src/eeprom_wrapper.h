@@ -9,6 +9,8 @@
 
 namespace Eeprom
 {
+    static const char *TAG = "eeprom";
+
     void setup();
     bool isMemorySet();
     void clear();

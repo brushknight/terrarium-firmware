@@ -4,12 +4,12 @@ namespace Control
 {
     void analogPinHigh(int pin)
     {
-        Serial.printf("GPIO %d HIGH\n", pin);
+        ESP_LOGD(TAG, "GPIO %d HIGH", pin);
         digitalWrite(pin, HIGH);
     }
     void analogPinLow(int pin)
     {
-        Serial.printf("GPIO %d LOW\n", pin);
+        ESP_LOGD(TAG, "GPIO %d LOW", pin);
         digitalWrite(pin, LOW);
     }
 }

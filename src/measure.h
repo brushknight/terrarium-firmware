@@ -11,6 +11,9 @@
 
 namespace Measure
 {
+
+    static const char *TAG = "measure";
+
     const int SENSOR_TYPE_DHT22 = 22;
     const int SENSOR_TYPE_BME280 = 280;
     const int SENSOR_TYPE_DS18B20 = 1820;

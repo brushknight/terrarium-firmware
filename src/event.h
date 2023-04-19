@@ -193,7 +193,6 @@ namespace Event
             doc["duration_sec"] = durationSec;
             doc["temperature"] = temperature;
             doc["transform"] = transform.toJSON();
-            // Serial.printf("DEBUG - to JSON temp: %0.2f\n",doc["temperature"]);
             return doc;
         }
 
@@ -212,7 +211,6 @@ namespace Event
             event.since = Time::fromString(doc["since"].as<std::string>());
             event.until = Time::fromString(doc["until"].as<std::string>());
             event.durationSec = doc["duration_sec"];
-            // Serial.printf("DEBUG - from JSON temp: %0.2f\n",doc["temperature"]);
             event.temperature = doc["temperature"];
             event.transform = Transform::Transform::fromJSONObj(doc["transform"]);
             event.durationMin = event.since.diff(event.until);

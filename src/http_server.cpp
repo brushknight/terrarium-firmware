@@ -130,13 +130,13 @@ namespace HttpServer
         {
             AsyncWebParameter *p = request->getParam(i);
 
-            ESP_LOGI(TAG, "resieved param = %s -> %s", p->name(), p->value().c_str());
+            // ESP_LOGI(TAG, "resieved param = %s -> %s", p->name(), p->value().c_str());
 
             if (p->name().compareTo(String("json")) == 0)
             {
 
-                Serial.println("POST: raw config");
-                Serial.println(p->value().c_str());
+                // Serial.println("POST: raw config");
+                // Serial.println(p->value().c_str());
 
                 DynamicJsonDocument doc(SystemConfig::jsonSize());
                 deserializeJson(doc, p->value().c_str());
@@ -144,7 +144,7 @@ namespace HttpServer
                 config = SystemConfig::fromJSONObj(doc);
 
                 uint32_t timestamp = doc["timestamp"];
-                ESP_LOGI(TAG, "timestamp %d", timestamp);
+                // ESP_LOGI(TAG, "timestamp %d", timestamp);
 
                 RealTime::setTimestamp(timestamp, config.timeZone);
 
@@ -173,8 +173,8 @@ namespace HttpServer
             if (p->name().compareTo(String("json_config")) == 0)
             {
 
-                Serial.println("POST: raw config");
-                Serial.println(p->value().c_str());
+                // Serial.println("POST: raw config");
+                // Serial.println(p->value().c_str());
                 config = Zone::Controller::fromJSON(p->value().c_str());
                 Eeprom::saveZoneController(config);
 
@@ -255,16 +255,17 @@ namespace HttpServer
 
         server.onNotFound(notFound);
 
-        Serial.println("Starting server");
+        ESP_LOGI(TAG, "[..] Starting server");
 
         if (isSetupMode)
         {
-            Serial.println("Setup mode");
+            ESP_LOGI(TAG, "Initial setup mode");
+
         }
 
         AsyncElegantOTA.begin(&server);
 
         server.begin();
-        Serial.println("Server started [OK]");
+        ESP_LOGI(TAG, "[OK] Starting server");
     }
 }

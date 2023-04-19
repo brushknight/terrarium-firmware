@@ -10,6 +10,8 @@
 namespace Control
 {
 
+    static const char *TAG = "control";
+
     void analogPinHigh(int pin);
     void analogPinLow(int pin);
 
@@ -29,15 +31,15 @@ namespace Control
             pcf.pinMode(2, OUTPUT);
             pcf.pinMode(3, OUTPUT);
 
-            Serial.println("Init pcf8574");
+            ESP_LOGD(TAG, "Init pcf8574");
             if (pcf.begin())
             {
-                Serial.println("pcf8574 connected");
+                ESP_LOGD(TAG, "pcf8574 connected");
                 isGPIOExpanderFound = true;
             }
             else
             {
-                Serial.println("no pcf8574 found"); // means this is old pcb
+                ESP_LOGE(TAG, "no pcf8574 found"); // means this is old pcb
             }
         }
         void setExpanderPort(int port, bool value)

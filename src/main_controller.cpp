@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <EEPROM.h>
-// #include "display.h"
 #include "data.h"
 #include "real_time.h"
 #include "http_server.h"
@@ -11,16 +10,14 @@
 #include "zone.h"
 #include "data_structures.h"
 #include <Adafruit_BME280.h>
-
 #include <sys/time.h>
-
-// #include <AsyncElegantOTA.h>
 
 Data data;
 Control::Controller hardwareController;
-// Control::Controller *controller;
 
 bool initialSetupMode = false;
+
+static const char *TAG = "main";
 
 void taskFetchSensors(void *parameter)
 {
@@ -49,8 +46,7 @@ void taskZoneControl(void *parameter)
   for (;;)
   {
     Time time = RealTime::getTimeObj();
-    // debug info
-    Serial.println(time.toString().c_str());
+    ESP_LOGD(TAG, "zone control tick: %s", time.toString().c_str());
     data.zones = zoneController.loopTick(time, Measure::getSharedSensors(), &hardwareController);
 
     vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
@@ -63,18 +59,18 @@ void taskCheckRtcBattery(void *parameter)
   {
     data.RtcBatteryPercent = RealTime::getBatteryPercent();
     data.RtcBatteryMilliVolt = RealTime::getBatteryVoltage();
+    ESP_LOGD(TAG, "RTC battery: %dmV %d%%", data.RtcBatteryMilliVolt, data.RtcBatteryPercent);
+
     vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
   }
 }
 
 void taskResetEepromChecker(void *parameter)
 {
-
   for (;;)
   {
     if (Eeprom::resetEepromChecker())
     {
-      Serial.println("EEPROM reset");
       ESP.restart();
     }
     vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
@@ -103,27 +99,17 @@ void setupTask(void *parameter)
 {
   Status::setup();
   Status::setOrange();
-  Serial.println("Controller starting");
 
-  Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
-  Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
+  ESP_LOGD(TAG, "Max alloc heap: %d", ESP.getMaxAllocHeap());
+  ESP_LOGD(TAG, "Max alloc psram: %d", ESP.getMaxAllocPsram());
 
-  Serial.println("Scanning for i2c devices");
   Utils::scanForI2C();
-
-  
-  // Status::setBlue();
 
   hardwareController.begin();
   hardwareController.resetPorts();
 
-  Serial.println("Initial reset performed");
-
+  ESP_LOGD(TAG, "Hardware reset performed");
   
-  Eeprom::resetEepromChecker();
-
-  // Display::setup();
-
   SystemConfig systemConfig = Eeprom::loadSystemConfig();
   data = Data();
 
@@ -131,11 +117,9 @@ void setupTask(void *parameter)
 
   if (initialSetupMode)
   {
-    Serial.println("Scanning for i2c devices");
-    Utils::scanForI2C();
+    // Utils::scanForI2C();
     Net::setupAP();
-    Serial.println(data.initialSetup.apName.c_str());
-    Serial.println(data.initialSetup.ipAddr.c_str());
+    ESP_LOGI(TAG, "Initial AP: %s, ip  to connect: %s", data.initialSetup.apName.c_str(), data.initialSetup.ipAddr.c_str());
 
     HttpServer::start(&data, true);
     Status::setPurple();
@@ -212,9 +196,11 @@ void setupTask(void *parameter)
     Net::setWiFiName(&data);
     HttpServer::start(&data, false);
     data.mac = Utils::getMac();
-    Serial.println("Controller started [OK]");
+    ESP_LOGD(TAG, "MAC: %s", data.mac);
     Status::setGreen();
   }
+
+  ESP_LOGI(TAG, "[OK] Booting");
 
   for (;;)
   {
@@ -224,11 +210,8 @@ void setupTask(void *parameter)
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.println("Controller starting");
-
-  // Serial.printf("Max alloc heap: %d\n", ESP.getMaxAllocHeap());
-  // Serial.printf("Max alloc psram: %d\n", ESP.getMaxAllocPsram());
+  Serial.begin(115200); // to be removed?
+  ESP_LOGI(TAG, "[..] Booting");
 
   Wire.begin();
   Measure::enable();
@@ -260,5 +243,4 @@ void setup()
 void loop()
 {
   delay(100000);
-  // Serial.println("Debug");
 }

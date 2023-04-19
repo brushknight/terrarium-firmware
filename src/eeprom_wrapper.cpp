@@ -31,12 +31,12 @@ namespace Eeprom
         if (externalEEPROM.begin(externallAddress))
         {
             isExternalEEPROM = true;
-            Serial.printf("EEPROM detected\n");
-            Serial.printf("Mem size in bytes: %d\n", externalEEPROM.length());
+            // transform into kb
+            ESP_LOGD(TAG, "External EEPROM detected, mem size in bytes: %d", externalEEPROM.length());
         }
         else
         {
-            Serial.printf("EEPROM not detected\n");
+            ESP_LOGW(TAG, "External EEPROM not detected");
         }
     }
 
@@ -48,7 +48,6 @@ namespace Eeprom
         for (int i = 0; i < 3; i++)
         {
             resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
-            // Serial.printf("Reset button %f\n", resetButtonState);
             if (resetButtonState == 1)
             {
                 Status::setWarning();
@@ -68,7 +67,6 @@ namespace Eeprom
         for (int i = 0; i < 3; i++)
         {
             resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
-            // Serial.printf("Reset button %f\n", resetButtonState);
             if (resetButtonState == 1)
             {
                 Status::setError();
@@ -99,15 +97,18 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            Serial.println("Clearing external EEPROM");
-            for (int i = 0; i < externalEEPROM.length(); i++)
+            ESP_LOGI(TAG, "[..] Full clearing external EEPROM ");
+            int eepromLength = externalEEPROM.length();
+            for (int i = 0; i < eepromLength; i++)
             {
                 externalEEPROM.write(i, 0);
                 if (i % 1000 == 0)
                 {
-                    Serial.println(i);
+                    int percent = i / eepromLength;
+                    ESP_LOGI(TAG, "Cleaned %d%%", percent);
                 }
             }
+            ESP_LOGI(TAG, "[OK] Full clearing external EEPROM");
         }
     }
 
@@ -115,29 +116,39 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            Serial.println("Clearing external EEPROM");
-            for (int i = 0; i < Zone::Controller::jsonSize(); i++)
+            ESP_LOGI(TAG, "[..] Patrial clearing external EEPROM ");
+            int cellsToClean = Zone::Controller::jsonSize();
+            for (int i = 0; i < cellsToClean; i++)
             {
                 externalEEPROM.write(i, 0);
                 if (i % 1000 == 0)
                 {
-                    Serial.println(i);
+                    int percent = i / cellsToClean;
+                    ESP_LOGI(TAG, "Cleaned %d%%", percent);
                 }
             }
+            ESP_LOGI(TAG, "[OK] Patrial clearing external EEPROM ");
         }
     }
 
     void clearSystemSettings()
     {
-        Serial.println("Clearing system settings");
-        for (int i = 0; i < SYSTEM_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH; i++)
+        ESP_LOGI(TAG, "[..] Clearing system settings from both EEPROMs ");
+        int cellsToClean = SYSTEM_CONFIG_INDEX + CONTROLLER_CONFIG_LENGTH;
+        for (int i = 0; i < cellsToClean; i++)
         {
             EEPROM.write(i, 0);
             if (isExternalEEPROM)
             {
                 externalEEPROM.write(i, 0);
             }
+            if (i % 10 == 0)
+            {
+                int percent = i / cellsToClean;
+                ESP_LOGI(TAG, "Cleaned %d%%", percent);
+            }
         }
+        ESP_LOGI(TAG, "[OK] Clearing system settings from both EEPROMs ");
     }
 
     bool isMemorySet()
@@ -165,8 +176,8 @@ namespace Eeprom
         DynamicJsonDocument doc = systemConfig.toJSON();
         std::string json;
         serializeJson(doc, json);
-        Serial.println("[..] System config | saving");
-        Serial.println(json.c_str());
+        ESP_LOGI(TAG, "[..] Saving system config");
+        ESP_LOGD(TAG, "%s", json.c_str());
 
         clearSystemSettings();
 
@@ -185,7 +196,7 @@ namespace Eeprom
             externalEEPROM.write(IS_SYSTEM_SET_INDEX, 1);
         }
 
-        Serial.println("[OK] System config | saved");
+        ESP_LOGI(TAG, "[OK] Saving system config");
     }
 
     SystemConfig loadSystemConfig()
@@ -216,7 +227,7 @@ namespace Eeprom
     {
         SystemConfig config;
 
-        Serial.println("Loading system config from ESP32 EEPROM...");
+        ESP_LOGI(TAG, "[..] Loading system config from ESP32 EEPROM");
 
         char raw[CONTROLLER_CONFIG_LENGTH];
 
@@ -224,12 +235,15 @@ namespace Eeprom
         {
             raw[i] = char(EEPROM.read(i + SYSTEM_CONFIG_INDEX));
         }
-        Serial.println(raw);
+
+        ESP_LOGD(TAG, "Raw config: %s", raw);
 
         std::string json = std::string(raw);
 
-        Serial.println(json.c_str());
         config = SystemConfig::fromJSON(json);
+
+        ESP_LOGI(TAG, "[OK] Loading system config from ESP32 EEPROM");
+
 
         return config;
     }
@@ -238,20 +252,19 @@ namespace Eeprom
     {
         SystemConfig config;
 
-        Serial.println("Loading system config from external EEPROM...");
+        ESP_LOGI(TAG, "[..] Loading system config from external EEPROM");
         char raw[CONTROLLER_CONFIG_LENGTH];
 
         for (int i = 0; i < CONTROLLER_CONFIG_LENGTH; ++i)
         {
             raw[i] = char(externalEEPROM.read(i + SYSTEM_CONFIG_INDEX));
         }
-        // Serial.println(raw);
+        ESP_LOGD(TAG, "Raw config: %s", raw);
 
         std::string json = std::string(raw);
 
-        Serial.println(json.c_str());
         config = SystemConfig::fromJSON(json);
-        Serial.println("Loaded system config from external EEPROM [OK]");
+        ESP_LOGI(TAG, "[OK] Loading system config from external EEPROM");
         return config;
     }
 
@@ -260,26 +273,23 @@ namespace Eeprom
         isZoneControllerSaving = true;
         // Serial.println("Cleaning zone controller to eeprom before saving");
         // clearZoneController();
-        Serial.println("saving zone controller to eeprom");
-        Serial.println(zoneController.getTemperatureZone(0).slug.c_str());
+        ESP_LOGI(TAG, "[..] Saving zone controller into external EEPROM");
         DynamicJsonDocument doc = zoneController.toJSON();
-        // Lastly, you can print the resulting JSON to a String
         std::string json;
         serializeJson(doc, json);
-        Serial.println("Saving...");
-        Serial.println(json.c_str());
+        ESP_LOGD(TAG, "%s", json.c_str());
 
         for (int i = 0; i < json.length(); ++i)
         {
             externalEEPROM.write(i + ZONE_CONTROLLER_INDEX, json[i]);
-            // Serial.println(json[i]);
         }
 
         externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
         isZoneControllerSaving = false;
-        Serial.println("Saving [OK]");
-        Serial.println("Restarting in 3s");
+        ESP_LOGI(TAG, "[OK] Saving zone controller into external EEPROM");
+        ESP_LOGI(TAG, "Restarting in 3 seconds");
         vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+        ESP_LOGI(TAG, "Restarting now");
         ESP.restart();
     }
 
@@ -287,9 +297,7 @@ namespace Eeprom
     {
         if (isExternalEEPROM)
         {
-            Serial.println("setting config to pointer");
             zoneController = config;
-            Serial.println("creating task to save into eeprom");
             xTaskCreatePinnedToCore(
                 saveZoneControllerTask,
                 "saveZoneControllerTask",
@@ -301,7 +309,7 @@ namespace Eeprom
         }
         else
         {
-            Serial.println("External eeprom: No storage found");
+            ESP_LOGW(TAG, "External EEPROM is empty");
         }
     }
 
@@ -311,7 +319,7 @@ namespace Eeprom
         {
             for (int i = 0; i < 60; i++)
             {
-                Serial.println("Loading zone controller - waiting");
+                ESP_LOGI(TAG, "[..] Loading zone controller - waiting for another thread");
                 vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
 
                 if (!isZoneControllerSaving)
@@ -321,7 +329,6 @@ namespace Eeprom
             }
         }
 
-        Serial.println(isZoneControllerLoading);
         if (isZoneControllerLoading)
         {
             for (int i = 0; i < 60; i++)
@@ -335,7 +342,8 @@ namespace Eeprom
             }
         }
 
-        Serial.println("Loading zone controller");
+        ESP_LOGD(TAG, "[..] Loading zone controller");
+
 
         if (wasZoneControllerLoaded)
         {
@@ -345,7 +353,7 @@ namespace Eeprom
         if (isExternalEEPROM && isZoneControllerSetExternalEEPROM())
         {
             isZoneControllerLoading = true;
-            Serial.println("Loading zone controller from external eeprom");
+            ESP_LOGI(TAG, "[..] Loading zone controller from external EEPROM");
 
             int zoneControllerSize = Zone::Controller::jsonSize();
 
@@ -354,24 +362,21 @@ namespace Eeprom
             for (int i = 0; i < zoneControllerSize; ++i)
             {
                 raw[i] = char(externalEEPROM.read(i + ZONE_CONTROLLER_INDEX));
-                // Serial.println(raw[i]);
             }
 
-            Serial.println("Loaded raw");
-            Serial.println(raw);
+            ESP_LOGD(TAG, "%s", raw);
 
             std::string json = std::string(raw);
 
-            // Serial.println(json.c_str());
             zoneController = Zone::Controller::fromJSON(json);
             wasZoneControllerLoaded = true;
             isZoneControllerLoading = false;
-            Serial.println("Loaded zone controller from external eeprom [OK]");
+            ESP_LOGI(TAG, "[OK] Loading zone controller from external EEPROM");
         }
         else
         {
             // load empty config
-            Serial.println("No storage found, loading initial zone controller");
+            ESP_LOGI(TAG, "[KO] No storage found, loading default zone controller");
 
             zoneController = Zone::Controller();
         }
