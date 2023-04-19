@@ -26,17 +26,18 @@ namespace Eeprom
 
     void setup()
     {
+        ESP_LOGD(TAG, "[..] starting EEPROM");
         EEPROM.begin(4000);
 
         if (externalEEPROM.begin(externallAddress))
         {
             isExternalEEPROM = true;
             // transform into kb
-            ESP_LOGD(TAG, "External EEPROM detected, mem size in bytes: %d", externalEEPROM.length());
+            ESP_LOGD(TAG, "[OK] External EEPROM detected, mem size in bytes: %d", externalEEPROM.length());
         }
         else
         {
-            ESP_LOGW(TAG, "External EEPROM not detected");
+            ESP_LOGW(TAG, "[FAIL] External EEPROM not detected");
         }
     }
 

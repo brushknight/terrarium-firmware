@@ -31,15 +31,15 @@ namespace Control
             pcf.pinMode(2, OUTPUT);
             pcf.pinMode(3, OUTPUT);
 
-            ESP_LOGD(TAG, "Init pcf8574");
+            ESP_LOGD(TAG, "[..] Starting PCF8574 (IO expander)");
             if (pcf.begin())
             {
-                ESP_LOGD(TAG, "pcf8574 connected");
+                ESP_LOGD(TAG, "[OK] Starting PCF8574 (IO expander)");
                 isGPIOExpanderFound = true;
             }
             else
             {
-                ESP_LOGE(TAG, "no pcf8574 found"); // means this is old pcb
+                ESP_LOGD(TAG, "[FAIL] PCF8574 (IO expander) not found");
             }
         }
         void setExpanderPort(int port, bool value)
