@@ -63,6 +63,8 @@
             <input maxlength="100" name="wifi_ssid" id="SettingsForm_wifiSSID"><br>
             <label>WiFi Passphrase:</label>
             <input maxlength="100" name="wifi_pass" type="password" id="SettingsForm_wifiPass"><br>
+            <label for="WifiMode">Generate custom WiFi Access point with given data? (This is needed to use controller without WiFi)</label>
+            <input type="checkbox" id="WifiMode"/><br>
             <label>Controller ID</label>
             <input maxlength="30" name="id" id="SettingsForm_id"><br>
             <label>Animal name</label>
@@ -91,6 +93,7 @@
             data['wifi_password'] = document.getElementById('SettingsForm_wifiPass').value;
             data['time_zone'] = document.getElementById('TimeZone').value;
             data['ntp_enabled'] = document.getElementById('NTPEnabled').checked;
+            data['wifi_mode'] = document.getElementById('WifiMode').checked;
 
             var dataAsJSON = JSON.stringify(data);
 

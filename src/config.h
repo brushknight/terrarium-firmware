@@ -52,6 +52,7 @@ class SystemConfig
 public:
     std::string wifiSSID;
     std::string wifiPassword;
+    bool wifiMode; // false - connect to given ssid, true - spawn ssid with given data
     std::string id;
     std::string animalName;
     std::string timeZone;
@@ -67,6 +68,7 @@ public:
 
         doc["wifi_ssid"] = wifiSSID;
         doc["wifi_password"] = wifiPassword;
+        doc["wifi_mode"] = wifiMode;
         doc["id"] = id;
         doc["animal_name"] = animalName;
         doc["time_zone"] = timeZone;
@@ -101,6 +103,7 @@ public:
             config.animalName = jsonObj["animal_name"].as<std::string>();
             config.timeZone = jsonObj["time_zone"].as<std::string>();
             config.ntpEnabled = jsonObj["ntp_enabled"];
+            config.wifiMode = jsonObj["wifi_mode"];
         }
 
         return config;
