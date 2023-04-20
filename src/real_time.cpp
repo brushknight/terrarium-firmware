@@ -39,8 +39,6 @@ namespace RealTime
 
         ESP_LOGI(TAG, "[..] Enabling RTC chip");
 
-        Serial.println("RealTime: setup started");
-
         if (rtcBeginFailed)
         {
             ESP_LOGE(TAG, "[FAIL] Couldn't find RTC chip");
@@ -107,8 +105,6 @@ namespace RealTime
         }
 
         ESP_LOGD(TAG, "[..] Sync from NTP");
-        Serial.println("RealTime: sync from NTP");
-        Net::connect();
         struct tm timeinfo;
         int attempts = 0;
         while (!getLocalTime(&timeinfo))
@@ -131,7 +127,6 @@ namespace RealTime
 
         ESP_LOGD(TAG, "[..] Sync from NTP Once");
 
-        Net::connect();
         struct tm timeinfo;
         int attempts = 0;
         if (!getLocalTime(&timeinfo))

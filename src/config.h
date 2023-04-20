@@ -3,6 +3,7 @@
 
 #include <string>
 #include "ArduinoJson.h"
+#include "utils.h"
 
 // #define EXTERNAL_EEPROM true
 
@@ -52,11 +53,19 @@ class SystemConfig
 public:
     std::string wifiSSID;
     std::string wifiPassword;
-    bool wifiMode; // false - connect to given ssid, true - spawn ssid with given data
+    bool wifiAPMode; // false - connect to given ssid, true - spawn ssid with given data
     std::string id;
     std::string animalName;
     std::string timeZone;
     bool ntpEnabled;
+
+    SystemConfig(){
+        // defaults for wifi
+        wifiSSID = "Terrarium Controller" + Utils::getMac();
+        wifiPassword = "Chameleon";
+        wifiAPMode = true;
+        ntpEnabled = false;
+    }
 
     static int jsonSize()
     {
@@ -68,7 +77,7 @@ public:
 
         doc["wifi_ssid"] = wifiSSID;
         doc["wifi_password"] = wifiPassword;
-        doc["wifi_mode"] = wifiMode;
+        doc["wifi_ap_mode"] = wifiAPMode;
         doc["id"] = id;
         doc["animal_name"] = animalName;
         doc["time_zone"] = timeZone;
@@ -103,7 +112,7 @@ public:
             config.animalName = jsonObj["animal_name"].as<std::string>();
             config.timeZone = jsonObj["time_zone"].as<std::string>();
             config.ntpEnabled = jsonObj["ntp_enabled"];
-            config.wifiMode = jsonObj["wifi_mode"];
+            config.wifiAPMode = jsonObj["wifi_ap_mode"];
         }
 
         return config;

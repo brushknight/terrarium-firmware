@@ -14,10 +14,12 @@ namespace Net
     static const char *TAG = "wifi";
 
     bool isConnected();
-    std::string setupAP();
-    void connect();
     char *statusToString(int code);
     void setWiFiName(Data *givenData);
+
+
+    void startInStandAloneMode();
+    void startInNormalMode();
 
 }
 

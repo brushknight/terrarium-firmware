@@ -3,7 +3,7 @@
 
 <head>
     <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-    <meta name="viewport" content="width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Terrarium controller - Config</title>
     <style>
         body {
@@ -16,7 +16,7 @@
 
 <body>
 
-    <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="1405.000000pt" height="582.000000pt"
+    <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100%" 
         viewBox="0 0 1405.000000 582.000000" preserveAspectRatio="xMidYMid meet">
         <metadata> Created by potrace 1.16, written by Peter Selinger 2001-2019 </metadata>
         <g transform="translate(0.000000,582.000000) scale(0.100000,-0.100000)" fill="#455bff" stroke="none">
@@ -58,26 +58,36 @@
     </svg>
     <h3>Configure controller</h3>
     <form action="/api/settings" method="post" id="SettingsForm">
-        <p>
-            <label>Wifi SSID:</label>
-            <input maxlength="100" name="wifi_ssid" id="SettingsForm_wifiSSID"><br>
-            <label>WiFi Passphrase:</label>
+        <div>
+            <h3>WiFi settings</h3>
+            <label>SSID</label>
+            <input maxlength="64" name="wifi_ssid" id="SettingsForm_wifiSSID"><br>
+            <label>Passphrase</label>
             <input maxlength="100" name="wifi_pass" type="password" id="SettingsForm_wifiPass"><br>
-            <label for="WifiMode">Generate custom WiFi Access point with given data? (This is needed to use controller without WiFi)</label>
-            <input type="checkbox" id="WifiMode"/><br>
-            <label>Controller ID</label>
+            <input type="checkbox" id="WifiAPMode" />
+            <label for="WifiAPMode">Generate custom WiFi Access point with given data? (This is needed to use controller
+                without WiFi)</label>
+
+        </div>
+
+        <div>
+            <h3>Time settings</h3>
+            <select name="time_zone" id="TimeZone">
+                <option value="CET-1CEST">Madrid</option>
+            </select></br>
+            <label for="NTPEnabled">Enabled NTP?</label>
+            <input type="checkbox" id="NTPEnabled" checked />
+        </div>
+
+        <div>
+            <h3>Controller</h3>
+            <label>ID</label>
             <input maxlength="30" name="id" id="SettingsForm_id"><br>
             <label>Animal name</label>
             <input maxlength="30" name="animal_name" id="SettingsForm_animalName"><br>
-            <label>Time Zone</label>
-            <select name="time_zone" id="TimeZone">
-                <option value="CET-1CEST">Madrid</option>
-            </select>
-            <label for="NTPEnabled">Enabled NTP?</label>
-            <input type="checkbox" id="NTPEnabled" checked/>
+        </div>
 
-            <input type="submit" value="Save">
-        </p>
+        <input type="submit" value="Save">
     </form>
 
     <script>
@@ -93,11 +103,11 @@
             data['wifi_password'] = document.getElementById('SettingsForm_wifiPass').value;
             data['time_zone'] = document.getElementById('TimeZone').value;
             data['ntp_enabled'] = document.getElementById('NTPEnabled').checked;
-            data['wifi_mode'] = document.getElementById('WifiMode').checked;
+            data['wifi_ap_mode'] = document.getElementById('WifiAPMode').checked;
 
             var dataAsJSON = JSON.stringify(data);
 
-            sendData({'json': dataAsJSON}, '/api/settings');
+            sendData({ 'json': dataAsJSON }, '/api/settings');
         }
 
         function sendData(data, url) {

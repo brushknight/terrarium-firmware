@@ -21,7 +21,7 @@ static const char *TAG = "main";
 
 void taskFetchSensors(void *parameter)
 {
-  //Measure::scan();
+  // Measure::scan();
   for (;;)
   {
 
@@ -81,8 +81,11 @@ void taskSyncRTCfromNTP(void *parameter)
 {
   for (;;)
   {
-    RealTime::syncFromNTPOnce();
-    vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
+    if (Net::isConnected())
+    {
+      RealTime::syncFromNTPOnce();
+      vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
+    }
   }
 }
 
@@ -93,6 +96,79 @@ void taskWatchNetworkStatus(void *parameter)
     data.WiFiStatus = Net::isConnected();
     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
   }
+}
+
+void startWiFi(bool wifiAPMode)
+{
+  if (wifiAPMode)
+  {
+    // stand alone mode
+    Net::startInStandAloneMode();
+    Status::setPurple();
+  }
+  else
+  {
+    // normal wifi client mode
+    Net::startInNormalMode();
+    Net::setWiFiName(&data);
+  }
+}
+
+void startTasks()
+{
+  xTaskCreatePinnedToCore(
+      taskCheckRtcBattery,
+      "taskCheckRtcBattery",
+      1024,
+      NULL,
+      1,
+      NULL,
+      1);
+
+  xTaskCreatePinnedToCore(
+      taskResetEepromChecker,
+      "taskResetEepromChecker",
+      1024 * 2,
+      NULL,
+      1,
+      NULL,
+      1);
+
+  xTaskCreatePinnedToCore(
+      taskSyncRTCfromNTP,
+      "taskSyncRTCfromNTP",
+      1024 * 4,
+      NULL,
+      1,
+      NULL,
+      1);
+
+  xTaskCreatePinnedToCore(
+      taskWatchNetworkStatus,
+      "taskWatchNetworkStatus",
+      1024,
+      NULL,
+      2,
+      NULL,
+      0);
+
+  xTaskCreatePinnedToCore(
+      taskFetchSensors,
+      "taskFetchSensors",
+      4096,
+      NULL,
+      2,
+      NULL,
+      1);
+
+  xTaskCreatePinnedToCore(
+      taskZoneControl,
+      "taskZoneControl",
+      1024 * 32,
+      NULL,
+      2,
+      NULL,
+      1);
 }
 
 void setupTask(void *parameter)
@@ -108,95 +184,51 @@ void setupTask(void *parameter)
   hardwareController.begin();
   hardwareController.resetPorts();
 
-  ESP_LOGD(TAG, "Hardware reset performed");
-  
+  ESP_LOGD(TAG, "Hardware startup reset performed");
+
   SystemConfig systemConfig = Eeprom::loadSystemConfig();
   data = Data();
 
   initialSetupMode = !Eeprom::isMemorySet();
 
-  if (initialSetupMode)
-  {
-    // Utils::scanForI2C();
-    Net::setupAP();
-    ESP_LOGI(TAG, "Initial AP: %s, ip  to connect: %s", data.initialSetup.apName.c_str(), data.initialSetup.ipAddr.c_str());
+  bool wasWiFiStarted = false;
 
-    HttpServer::start(&data, true);
+  // check if wifi required and start it
+  if (RealTime::isWiFiRequired() || systemConfig.wifiAPMode)
+  {
+    startWiFi(systemConfig.wifiAPMode);
+    wasWiFiStarted = true;
+  }
+
+  // sync time from NTP if requires
+  if (RealTime::isRtcSyncRequired())
+  {
+    RealTime::syncFromNTP();
+    RealTime::saveTimeToRTC();
+  }
+
+  Eeprom::loadZoneController();
+
+  data.metadata.id = Eeprom::loadSystemConfig().id;
+
+  startTasks();
+
+  if (!wasWiFiStarted)
+  {
+    startWiFi(systemConfig.wifiAPMode);
+    wasWiFiStarted = true;
+  }
+
+  Net::setWiFiName(&data);
+  HttpServer::start(&data, false);
+  data.mac = Utils::getMac();
+
+  if (systemConfig.wifiAPMode)
+  {
     Status::setPurple();
   }
   else
   {
-    if (RealTime::isWiFiRequired())
-    {
-      Net::connect();
-      Net::setWiFiName(&data);
-      RealTime::syncFromNTP();
-      RealTime::saveTimeToRTC();
-    }
-
-    Eeprom::loadZoneController();
-
-    data.metadata.id = Eeprom::loadSystemConfig().id;
-
-    xTaskCreatePinnedToCore(
-        taskCheckRtcBattery,
-        "taskCheckRtcBattery",
-        1024,
-        NULL,
-        1,
-        NULL,
-        1);
-
-    xTaskCreatePinnedToCore(
-        taskResetEepromChecker,
-        "taskResetEepromChecker",
-        1024 * 2,
-        NULL,
-        1,
-        NULL,
-        1);
-
-    xTaskCreatePinnedToCore(
-        taskSyncRTCfromNTP,
-        "taskSyncRTCfromNTP",
-        1024 * 4,
-        NULL,
-        1,
-        NULL,
-        1);
-
-    xTaskCreatePinnedToCore(
-        taskWatchNetworkStatus,
-        "taskWatchNetworkStatus",
-        1024,
-        NULL,
-        2,
-        NULL,
-        0);
-
-    xTaskCreatePinnedToCore(
-        taskFetchSensors,
-        "taskFetchSensors",
-        4096,
-        NULL,
-        2,
-        NULL,
-        1);
-
-    xTaskCreatePinnedToCore(
-        taskZoneControl,
-        "taskZoneControl",
-        1024 * 32,
-        NULL,
-        2,
-        NULL,
-        1);
-
-    Net::connect();
-    Net::setWiFiName(&data);
-    HttpServer::start(&data, false);
-    data.mac = Utils::getMac();
-    ESP_LOGD(TAG, "MAC: %s", data.mac);
     Status::setGreen();
   }
 

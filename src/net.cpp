@@ -21,27 +21,6 @@ namespace Net
         return WiFi.isConnected();
     }
 
-    std::string setupAP()
-    {
-        // WiFi.mode(WIFI_AP);
-
-        // IPAddress local_ip = {10, 0, 0, 1};
-        // IPAddress gateway = {10, 0, 0, 2};
-        // IPAddress subnet = IPAddress(255, 255, 255, 0);
-        // WiFi.softAPConfig(local_ip, gateway, subnet);
-        // Connect to Wi - Fi network with SSID and password
-        ESP_LOGI(TAG, "[..] Setting up initial AP (Access Point)");
-        // Remove the password parameter, if you want the AP (Access Point) to be open
-        const char *ssid = "Terrarium Controller ";
-        const char *pass = "1234567890";
-        WiFi.softAP(ssid, pass);
-
-        IPAddress finalIp = WiFi.softAPIP();
-        ESP_LOGI(TAG, "[OK] Setting up initial AP (Access Point)");
-        ESP_LOGI(TAG, "IP Address: %s", finalIp.toString());
-        return std::string(ssid);
-    }
-
     void setWiFiName(Data *givenData)
     {
         std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
@@ -49,7 +28,25 @@ namespace Net
         (*givenData).metadata.wifiName = wifiSSID.c_str();
     }
 
-    void connect()
+    void startInStandAloneMode()
+    {
+        ESP_LOGI(TAG, "[..] Starting access point");
+
+        SystemConfig config = Eeprom::loadSystemConfig();
+        // if wifiPassword is too short < 8, start without password to not break env
+        std::string wifiPassphrase = config.wifiPassword;
+        if (wifiPassphrase.length() < 8)
+        {
+            wifiPassphrase = "";
+        }
+        WiFi.softAP(config.wifiSSID.c_str(), wifiPassphrase.c_str());
+
+        IPAddress finalIp = WiFi.softAPIP();
+        ESP_LOGI(TAG, "IP Address: %s", finalIp.toString());
+        ESP_LOGI(TAG, "[OK] Starting access point");
+    }
+
+    void startInNormalMode()
     {
 
         ESP_LOGI(TAG, "[..] Connecting to wifi");

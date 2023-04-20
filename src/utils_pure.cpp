@@ -1,4 +1,5 @@
 #include "utils_pure.h"
+#include <string>
 
 namespace UtilsPure
 {
