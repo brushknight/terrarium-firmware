@@ -1,0 +1,26 @@
+.pets-list__title-wrapper {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0 10px;
+}
+.pets-list__pet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 70px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  background-color: #f6f6d4;
+}
+.pets-list__image-wrapper {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  background-color: #639403;
+}
+.pets-list__name-wrapper {
+  flex-grow: 1;
+  padding: 0 0 0 10px;
+  text-align: left;
+}
