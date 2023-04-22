@@ -2,14 +2,15 @@
 
 namespace Control
 {
+    // refactor this to accept 0-255 
     void analogPinHigh(int pin)
     {
         ESP_LOGD(TAG, "GPIO %d to HIGH", pin);
-        digitalWrite(pin, HIGH);
+        analogWrite(pin, 255);
     }
     void analogPinLow(int pin)
     {
         ESP_LOGD(TAG, "GPIO %d to LOW", pin);
-        digitalWrite(pin, LOW);
+        analogWrite(pin, 0);
     }
 }

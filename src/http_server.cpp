@@ -90,6 +90,7 @@ namespace HttpServer
 
     void onFormSettings(AsyncWebServerRequest *request)
     {
+        ESP_LOGD(TAG, "From requested");
         request->send_P(200, "text/html", SETTINGS_FORM);
     }
 
@@ -113,11 +114,16 @@ namespace HttpServer
 
     void onGetClimateConfig(AsyncWebServerRequest *request)
     {
-        Zone::Controller config = Eeprom::loadZoneController();
-        DynamicJsonDocument json = config.toJSON();
+        Zone::Controller *config = Eeprom::loadZoneController();
+        ESP_LOGD(TAG, "Got config from EEPROM");
+        DynamicJsonDocument json = config->toJSON();
+        ESP_LOGD(TAG, "Converted to json");
 
         std::string requestBody;
         serializeJson(json, requestBody);
+
+        ESP_LOGD(TAG, "Serialized to string");
+        ESP_LOGD(TAG, "%s", requestBody.c_str());
 
         request->send(200, "application/json", requestBody.c_str());
     }
@@ -170,13 +176,19 @@ namespace HttpServer
         {
             AsyncWebParameter *p = request->getParam(i);
 
+            ESP_LOGD(TAG, "%s : %s", p->name().c_str(), p->value().c_str());
+
             if (p->name().compareTo(String("json_config")) == 0)
             {
 
+                std::string json = p->value().c_str();
+
+                ESP_LOGD(TAG, "%s", json.c_str());
                 // Serial.println("POST: raw config");
                 // Serial.println(p->value().c_str());
-                config = Zone::Controller::fromJSON(p->value().c_str());
-                Eeprom::saveZoneController(config);
+                Eeprom::updateZoneControllerFromJson(&json);
+                // config = Zone::Controller::fromJSON(p->value().c_str());
+                Eeprom::saveZoneController();
 
                 request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
             }
@@ -260,7 +272,6 @@ namespace HttpServer
         if (isSetupMode)
         {
             ESP_LOGI(TAG, "Initial setup mode");
-
         }
 
         AsyncElegantOTA.begin(&server);

@@ -11,6 +11,7 @@
 #include "data_structures.h"
 #include "constants.h"
 #include "i2c.h"
+#include "QuickPID.h"
 
 namespace Zone
 {
@@ -273,6 +274,16 @@ namespace Zone
         int heaterPort = -1;
         TemperatureZoneStatus status;
 
+        // PID stuff
+        bool isPID = false;
+        float PID_Target;
+        float PID_Current;
+        float PID_Decision;
+        float PID_Kp = 2;
+        float PID_Ki = 2;
+        float PID_Kd = 2;
+        QuickPID PID;
+
         TemperatureZone()
         {
             // stub for empty array creation
@@ -282,6 +293,17 @@ namespace Zone
         {
             enabled = true;
             slug = s;
+        }
+
+        void begin()
+        {
+            // pid
+            isPID = true;
+            PID = QuickPID(&PID_Current, &PID_Decision, &PID_Target);
+            PID.SetTunings(PID_Kp, PID_Ki, PID_Kd);
+            PID.SetOutputLimits(0, 1);
+            PID.SetMode(PID.Control::automatic);
+            ESP_LOGD(TAG, "PID settings Kd %.2f Kp %.2f Kd %.2f", PID.GetKp(), PID.GetKi(), PID.GetKd());
         }
 
         static int jsonSize()
@@ -317,7 +339,7 @@ namespace Zone
 
         static TemperatureZone fromJSONObj(DynamicJsonDocument doc)
         {
-            TemperatureZone temperatureZone;
+            TemperatureZone temperatureZone = TemperatureZone();
             temperatureZone.slug = doc["slug"].as<std::string>();
             // temperatureZone.status = TemperatureZoneStatus::fromJSONObj(doc["status"]); // should not be saved
             //  temperatureZone.status = TemperatureZoneStatus();
@@ -333,6 +355,29 @@ namespace Zone
             }
 
             return temperatureZone;
+        }
+
+        void updateFromJSONObj(DynamicJsonDocument doc)
+        {
+            slug = doc["slug"].as<std::string>();
+
+            // temperatureZone.status = TemperatureZoneStatus::fromJSONObj(doc["status"]); // should not be saved
+            //  temperatureZone.status = TemperatureZoneStatus();
+            heaterPort = doc["heater_port"];
+            enabled = doc["enabled"];
+
+            for (int i = 0; i < maxTemperatureZonesSensorsCount; i++)
+            {
+                sensorIDs[i] = Measure::SensorID::fromJSONObj(doc["sensor_ids"][i]);
+            }
+            for (int i = 0; i < maxTemperatureZonesEventsCount; i++)
+            {
+                events[i] = Event::TemperatureEvent::fromJSONObj(doc["events"][i]);
+            }
+
+            ESP_LOGD(TAG, "slug: %s", slug);
+            ESP_LOGD(TAG, "heater_port: %d", heaterPort);
+            ESP_LOGD(TAG, "enabled: %d", enabled);
         }
 
         void reset()
@@ -432,15 +477,37 @@ namespace Zone
 
             if (heaterPort > -1)
             {
-                if (status.averageTemperature < status.targetTemperature)
+
+                if (isPID)
                 {
-                    (*controller).turnSwitchOn(heaterPort);
-                    status.setHeater(true);
+                    PID_Current = status.averageTemperature;
+                    PID_Target = status.targetTemperature;
+                    PID.Compute();
+                    ESP_LOGD(TAG, "PID settings Kd %.2f Kp %.2f Kd %.2f ", PID.GetKp(), PID.GetKi(), PID.GetKd());
+                    ESP_LOGD(TAG, "PID output: %.2f", PID_Decision);
+                    if (PID_Decision > 0)
+                    {
+                        (*controller).turnSwitchOn(heaterPort);
+                        status.setHeater(true);
+                    }
+                    else
+                    {
+                        (*controller).turnSwitchOff(heaterPort);
+                        status.setHeater(false);
+                    }
                 }
                 else
                 {
-                    (*controller).turnSwitchOff(heaterPort);
-                    status.setHeater(false);
+                    if (status.averageTemperature < status.targetTemperature)
+                    {
+                        (*controller).turnSwitchOn(heaterPort);
+                        status.setHeater(true);
+                    }
+                    else
+                    {
+                        (*controller).turnSwitchOff(heaterPort);
+                        status.setHeater(false);
+                    }
                 }
             }
 
@@ -712,30 +779,42 @@ namespace Zone
         ColorLightZone colorLightZones[maxColorLightZonesCount];
         bool paused = false;
 
-        void pause()
-        {
-            paused = true;
-        }
-        void resume()
-        {
-            paused = false;
-        }
-
     public:
         Controller() {}
         void begin()
         {
-            ESP_ERROR_CHECK(I2C::i2c_master_init());
+            // ESP_ERROR_CHECK(I2C::i2c_master_init());
+
+            for (int i = 0; i < maxTemperatureZonesCount; i++)
+            {
+                if (temperatureZones[i].isEnabled())
+                {
+                    temperatureZones[i].begin();
+                }
+            }
+        }
+        void pause()
+        {
+            // make it wait for iteratium to finish
+            ESP_LOGD(TAG, "pause");
+            paused = true;
+        }
+        void resume()
+        {
+            ESP_LOGD(TAG, "resume");
+            paused = false;
         }
         ZonesStatuses loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
         {
             ZonesStatuses statuses;
             // TODO return list of statuses
+            ESP_LOGD(TAG, "paused: %d", paused);
             if (!paused)
             {
                 // loop over all zones
                 for (int i = 0; i < maxTemperatureZonesCount; i++)
                 {
+                    ESP_LOGD(TAG, "temperature zone: %d is %d", i, temperatureZones[i].isEnabled());
                     if (temperatureZones[i].isEnabled())
                     {
                         statuses.temperatureZones[i] = temperatureZones[i].loopTick(now, sharedSensors, controller);
@@ -819,6 +898,9 @@ namespace Zone
             {
                 doc["color_light_zones"][i] = colorLightZones[i].toJSON();
             }
+
+            ESP_LOGD(TAG, "%s", doc);
+
             return doc;
         }
 
@@ -849,6 +931,39 @@ namespace Zone
             }
 
             return controller;
+        }
+
+        void updateFromJSON(std::string *json)
+        {
+            pause();
+            ESP_LOGD(TAG, "updating from JSON: %s", json->c_str());
+            DynamicJsonDocument doc = DynamicJsonDocument(jsonSize());
+            deserializeJson(doc, *json);
+            updateFromJSONObj(&doc);
+            resume();
+            // unset doc 
+            doc.clear();
+        }
+
+        void updateFromJSONObj(DynamicJsonDocument *doc)
+        {
+            ESP_LOGD(TAG, "[..] Updating from json");
+            ESP_LOGD(TAG, "%s", (*doc)["temperature_zones"][0]["slug"]);
+            for (int i = 0; i < maxTemperatureZonesCount; i++)
+            {
+                temperatureZones[i].updateFromJSONObj((*doc)["temperature_zones"][i]); // = TemperatureZone::fromJSONObj(doc["temperature_zones"][i]);
+            }
+
+            for (int i = 0; i < maxDimmerZonesCount; i++)
+            {
+                dimmerZones[i] = DimmerZone::fromJSONObj((*doc)["dimmer_zones"][i]);
+            }
+
+            for (int i = 0; i < maxColorLightZonesCount; i++)
+            {
+                colorLightZones[i] = ColorLightZone::fromJSONObj((*doc)["color_light_zones"][i]);
+            }
+            ESP_LOGD(TAG, "[OK] Updating from json");
         }
     };
 }

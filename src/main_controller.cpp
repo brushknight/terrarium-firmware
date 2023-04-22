@@ -29,7 +29,7 @@ void taskFetchSensors(void *parameter)
 
     data.sharedSensors = *Measure::getSharedSensors();
 
-    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+    vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -38,18 +38,16 @@ void taskZoneControl(void *parameter)
   // Control::Controller controller = Control::Controller();
   hardwareController.resetPorts();
 
-  Zone::Controller zoneControllerToSave = Zone::Controller();
-
-  Zone::Controller zoneController = Eeprom::loadZoneController();
-  // zoneController.begin();
+  Zone::Controller *zoneController = Eeprom::loadZoneController();
+  Eeprom::loadZoneController()->begin();
 
   for (;;)
   {
     Time time = RealTime::getTimeObj();
     ESP_LOGD(TAG, "zone control tick: %s", time.toString().c_str());
-    data.zones = zoneController.loopTick(time, Measure::getSharedSensors(), &hardwareController);
+    data.zones = zoneController->loopTick(time, Measure::getSharedSensors(), &hardwareController);
 
-    vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
+    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -119,7 +117,7 @@ void startTasks()
   xTaskCreatePinnedToCore(
       taskCheckRtcBattery,
       "taskCheckRtcBattery",
-      1024,
+      1024 * 2,
       NULL,
       1,
       NULL,
@@ -164,7 +162,7 @@ void startTasks()
   xTaskCreatePinnedToCore(
       taskZoneControl,
       "taskZoneControl",
-      1024 * 32,
+      1024 * 48,
       NULL,
       2,
       NULL,
@@ -265,7 +263,7 @@ void setup()
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
-      1024 * 34,
+      1024 * 52,
       NULL,
       100,
       NULL,

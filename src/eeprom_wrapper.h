@@ -18,8 +18,9 @@ namespace Eeprom
     void clearZoneControllerFull();
     void clearSystemSettings();
     void saveSystemConfig(SystemConfig config);
-    void saveZoneController(Zone::Controller config);
-    Zone::Controller loadZoneController();
+    void updateZoneControllerFromJson(std::string *json);
+    void saveZoneController();
+    Zone::Controller *loadZoneController();
     SystemConfig loadSystemConfig();
     SystemConfig loadSystemConfigFromESP32();
     SystemConfig loadSystemConfigFromExternalEEPROM();
