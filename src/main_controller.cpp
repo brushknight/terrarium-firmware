@@ -263,7 +263,7 @@ void setup()
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
-      1024 * 52,
+      1024 * 48,
       NULL,
       100,
       NULL,

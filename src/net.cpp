@@ -93,7 +93,7 @@ namespace Net
         std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
         std::string wifiPassword = Eeprom::loadSystemConfig().wifiPassword;
 
-        ESP_LOGD(TAG, "SSID: %s, Passphrase: %s", wifiSSID, wifiPassword);
+        ESP_LOGD(TAG, "SSID: %s, Passphrase: %s", wifiSSID.c_str(), wifiPassword.c_str());
 
         WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
 
@@ -104,6 +104,7 @@ namespace Net
 
             if (attempts % 10 == 0)
             {
+                ESP_LOGI(TAG, "WiFi: %s", WiFi.status());
                 Serial.println(statusToString(WiFi.status()));
             }
             if (attempts > 30)

@@ -176,21 +176,37 @@ namespace HttpServer
         {
             AsyncWebParameter *p = request->getParam(i);
 
-            ESP_LOGD(TAG, "%s : %s", p->name().c_str(), p->value().c_str());
+            ESP_LOGE(TAG, "%p", p);
 
-            if (p->name().compareTo(String("json_config")) == 0)
+            if (p == NULL)
             {
+                ESP_LOGE(TAG, "data is NULL");
+            }
+            else
+            {
+                ESP_LOGD(TAG, "%s : %s", p->name().c_str());
 
-                std::string json = p->value().c_str();
+                if (p->name().compareTo(String("json_config")) == 0)
+                {
 
-                ESP_LOGD(TAG, "%s", json.c_str());
-                // Serial.println("POST: raw config");
-                // Serial.println(p->value().c_str());
-                Eeprom::updateZoneControllerFromJson(&json);
-                // config = Zone::Controller::fromJSON(p->value().c_str());
-                Eeprom::saveZoneController();
+                    if (p == NULL)
+                    {
+                        ESP_LOGE(TAG, "data is NULL");
+                    }
+                    else
+                    {
+                        std::string json = p->value().c_str();
 
-                request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
+                        ESP_LOGD(TAG, "%s", json.c_str());
+                        // Serial.println("POST: raw config");
+                        // Serial.println(p->value().c_str());
+                        Eeprom::updateZoneControllerFromJson(&json);
+                        // config = Zone::Controller::fromJSON(p->value().c_str());
+                        Eeprom::saveZoneController();
+
+                        request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
+                    }
+                }
             }
         }
 
