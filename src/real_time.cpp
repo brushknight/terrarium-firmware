@@ -2,14 +2,13 @@
 
 namespace RealTime
 {
-
     // todo - make it custom ntp - optional
-    const char *ntpServer1 = "0.europe.pool.ntp.org"; //"10.0.0.51";
+    const char *ntpServer1 = "0.europe.pool.ntp.org"; 
     const char *ntpServer2 = "1.europe.pool.ntp.org";
     const char *ntpServer3 = "2.europe.pool.ntp.org";
     // const char *timeZone = "CET-1CEST"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
 
-    std::string timeZone = "CET-1CEST"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+    std::string timeZone = "CET-1CEST,M3.5.0/2,M10.5.0/ 3"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
     bool ntpEnabled = false;
 
     RTC_DS3231 rtc;
@@ -223,9 +222,8 @@ namespace RealTime
         localtime_r(&now, &timeDetails);
 
         // check it this format works
-        ESP_LOGI(TAG, "TIME > %A, %B %d %Y %H:%M:%S", &timeDetails);
 
-        // Serial.println(&timeDetails, "TIME > %A, %B %d %Y %H:%M:%S");
+        Serial.println(&timeDetails, "TIME > %A, %B %d %Y %H:%M:%S");
     }
 
     int getBatteryPercent()

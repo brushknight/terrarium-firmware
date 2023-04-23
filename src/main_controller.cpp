@@ -1,311 +1,296 @@
 #include <Arduino.h>
-#include <EEPROM.h>
-#include "data.h"
+// #include <EEPROM.h>
+// #include "data.h"
 #include "real_time.h"
-#include "http_server.h"
-#include "eeprom_wrapper.h"
-#include "status.h"
-#include "measure.h"
-#include "control.h"
-#include "zone.h"
-#include "data_structures.h"
-#include <Adafruit_BME280.h>
-#include <sys/time.h>
-
-Data data;
-Control::Controller hardwareController;
-Zone::Controller zoneController = Zone::Controller();
-SystemConfig systemConfig;
-Measure::EnvironmentSensors environmentSensors = Measure::EnvironmentSensors();
-
-bool initialSetupMode = false;
+// #include "http_server.h"
+// #include "eeprom_wrapper.h"
+// #include "status.h"
+// #include "measure.h"
+// #include "control.h"
+// #include "zone.h"
+// #include "data_structures.h"
+// #include <Adafruit_BME280.h>
+// #include <sys/time.h>
 
 static const char *TAG = "main";
 
-// void taskFetchSensors(void *parameter)
+
+// Data data;
+// Control::Controller hardwareController;
+// Zone::Controller zoneController = Zone::Controller();
+// SystemConfig systemConfig;
+// Measure::EnvironmentSensors environmentSensors = Measure::EnvironmentSensors();
+
+// bool initialSetupMode = false;
+
+
+// void saveClimateConfig(void *parameter)
 // {
 
-//   // read sensors once
-//   environmentSensors.readSensors();
+//   for (;;)
+//   {
+//     if (zoneController.toBePersisted())
+//     {
+//       zoneController.pause();
+//       Eeprom::saveZoneControllerJSON(&zoneController);
+//       zoneController.persisted();
+//       zoneController.resume();
+//     }
 
-//   // // Measure::scan();
-//   // for (;;)
-//   // {
-
-//   //   environmentSensors.readSensors();
-
-//   //   data.sharedSensors = environmentSensors;
-
-//   //   vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
-//   // }
+//     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+//   }
 // }
 
-void saveClimateConfig(void *parameter)
-{
+// void taskZoneControl(void *parameter)
+// {
+//   // Control::Controller controller = Control::Controller();
+//   hardwareController.resetPorts();
 
-  for (;;)
-  {
-    if (zoneController.toBePersisted())
-    {
-      zoneController.pause();
-      Eeprom::saveZoneControllerJSON(&zoneController);
-      zoneController.persisted();
-      zoneController.resume();
-    }
+//   // Zone::Controller *zoneController = Eeprom::loadZoneController();
+//   // Eeprom::loadZoneController()->begin();
 
-    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
-  }
-}
+//   zoneController.begin();
 
-void taskZoneControl(void *parameter)
-{
-  // Control::Controller controller = Control::Controller();
-  hardwareController.resetPorts();
+//   for (;;)
+//   {
+//     Time time = RealTime::getTimeObj();
+//     ESP_LOGD(TAG, "zone control tick: %s", time.toString().c_str());
+//     data.zones = zoneController.loopTick(time, &environmentSensors, &hardwareController);
 
-  // Zone::Controller *zoneController = Eeprom::loadZoneController();
-  // Eeprom::loadZoneController()->begin();
+//     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+//   }
+// }
 
-  zoneController.begin();
+// void taskCheckRtcBattery(void *parameter)
+// {
+//   for (;;)
+//   {
+//     data.RtcBatteryPercent = RealTime::getBatteryPercent();
+//     data.RtcBatteryMilliVolt = RealTime::getBatteryVoltage();
+//     ESP_LOGD(TAG, "RTC battery: %dmV %d%%", data.RtcBatteryMilliVolt, data.RtcBatteryPercent);
 
-  for (;;)
-  {
-    Time time = RealTime::getTimeObj();
-    ESP_LOGD(TAG, "zone control tick: %s", time.toString().c_str());
-    data.zones = zoneController.loopTick(time, &environmentSensors, &hardwareController);
+//     vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
+//   }
+// }
 
-    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
-  }
-}
+// void taskResetEepromChecker(void *parameter)
+// {
+//   for (;;)
+//   {
+//     if (Eeprom::resetEepromChecker())
+//     {
+//       ESP.restart();
+//     }
+//     vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+//   }
+// }
 
-void taskCheckRtcBattery(void *parameter)
-{
-  for (;;)
-  {
-    data.RtcBatteryPercent = RealTime::getBatteryPercent();
-    data.RtcBatteryMilliVolt = RealTime::getBatteryVoltage();
-    ESP_LOGD(TAG, "RTC battery: %dmV %d%%", data.RtcBatteryMilliVolt, data.RtcBatteryPercent);
+// void taskSyncRTCfromNTP(void *parameter)
+// {
+//   for (;;)
+//   {
+//     if (Net::isConnected())
+//     {
+//       RealTime::syncFromNTPOnce();
+//       vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
+//     }
+//   }
+// }
 
-    vTaskDelay(BATTERY_CHECK_INTERVAL_SEC * 1000 / portTICK_PERIOD_MS);
-  }
-}
+// void taskWatchNetworkStatus(void *parameter)
+// {
+//   for (;;)
+//   {
+//     data.WiFiStatus = Net::isConnected();
+//     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+//   }
+// }
 
-void taskResetEepromChecker(void *parameter)
-{
-  for (;;)
-  {
-    if (Eeprom::resetEepromChecker())
-    {
-      ESP.restart();
-    }
-    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-  }
-}
+// void startWiFi(bool wifiAPMode)
+// {
+//   if (wifiAPMode)
+//   {
+//     // stand alone mode
+//     Net::startInStandAloneMode();
+//     Status::setPurple();
+//   }
+//   else
+//   {
+//     // normal wifi client mode
+//     Net::startInNormalMode();
+//     Net::setWiFiName(&data);
+//   }
+// }
 
-void taskSyncRTCfromNTP(void *parameter)
-{
-  for (;;)
-  {
-    if (Net::isConnected())
-    {
-      RealTime::syncFromNTPOnce();
-      vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
-    }
-  }
-}
+// void startTasks()
+// {
+//   xTaskCreatePinnedToCore(
+//       taskCheckRtcBattery,
+//       "taskCheckRtcBattery",
+//       1024 * 2,
+//       NULL,
+//       1,
+//       NULL,
+//       1);
 
-void taskWatchNetworkStatus(void *parameter)
-{
-  for (;;)
-  {
-    data.WiFiStatus = Net::isConnected();
-    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
-  }
-}
+//   xTaskCreatePinnedToCore(
+//       taskResetEepromChecker,
+//       "taskResetEepromChecker",
+//       1024 * 2,
+//       NULL,
+//       1,
+//       NULL,
+//       1);
 
-void startWiFi(bool wifiAPMode)
-{
-  if (wifiAPMode)
-  {
-    // stand alone mode
-    Net::startInStandAloneMode();
-    Status::setPurple();
-  }
-  else
-  {
-    // normal wifi client mode
-    Net::startInNormalMode();
-    Net::setWiFiName(&data);
-  }
-}
+//   xTaskCreatePinnedToCore(
+//       taskSyncRTCfromNTP,
+//       "taskSyncRTCfromNTP",
+//       1024 * 4,
+//       NULL,
+//       1,
+//       NULL,
+//       1);
 
-void startTasks()
-{
-  xTaskCreatePinnedToCore(
-      taskCheckRtcBattery,
-      "taskCheckRtcBattery",
-      1024 * 2,
-      NULL,
-      1,
-      NULL,
-      1);
+//   xTaskCreatePinnedToCore(
+//       taskWatchNetworkStatus,
+//       "taskWatchNetworkStatus",
+//       1024,
+//       NULL,
+//       2,
+//       NULL,
+//       0);
 
-  xTaskCreatePinnedToCore(
-      taskResetEepromChecker,
-      "taskResetEepromChecker",
-      1024 * 2,
-      NULL,
-      1,
-      NULL,
-      1);
+//   // xTaskCreatePinnedToCore(
+//   //     taskFetchSensors,
+//   //     "taskFetchSensors",
+//   //     4096,
+//   //     NULL,
+//   //     2,
+//   //     NULL,
+//   //     1);
 
-  xTaskCreatePinnedToCore(
-      taskSyncRTCfromNTP,
-      "taskSyncRTCfromNTP",
-      1024 * 4,
-      NULL,
-      1,
-      NULL,
-      1);
+//   xTaskCreatePinnedToCore(
+//       taskZoneControl,
+//       "taskZoneControl",
+//       1024 * 32,
+//       NULL,
+//       2,
+//       NULL,
+//       1);
+// }
 
-  xTaskCreatePinnedToCore(
-      taskWatchNetworkStatus,
-      "taskWatchNetworkStatus",
-      1024,
-      NULL,
-      2,
-      NULL,
-      0);
+// void setupTask(void *parameter)
+// {
+//   Status::setup();
+//   Status::setOrange();
 
-  // xTaskCreatePinnedToCore(
-  //     taskFetchSensors,
-  //     "taskFetchSensors",
-  //     4096,
-  //     NULL,
-  //     2,
-  //     NULL,
-  //     1);
+//   ESP_LOGD(TAG, "Max alloc heap: %d", ESP.getMaxAllocHeap());
+//   ESP_LOGD(TAG, "Max alloc psram: %d", ESP.getMaxAllocPsram());
 
-  xTaskCreatePinnedToCore(
-      taskZoneControl,
-      "taskZoneControl",
-      1024 * 32,
-      NULL,
-      2,
-      NULL,
-      1);
-}
+//   Utils::scanForI2C();
 
-void setupTask(void *parameter)
-{
-  Status::setup();
-  Status::setOrange();
+//   hardwareController.begin();
+//   hardwareController.resetPorts();
 
-  ESP_LOGD(TAG, "Max alloc heap: %d", ESP.getMaxAllocHeap());
-  ESP_LOGD(TAG, "Max alloc psram: %d", ESP.getMaxAllocPsram());
+//   ESP_LOGD(TAG, "Hardware startup reset performed");
 
-  Utils::scanForI2C();
+//   data = Data();
 
-  hardwareController.begin();
-  hardwareController.resetPorts();
+//   initialSetupMode = !Eeprom::isMemorySet();
 
-  ESP_LOGD(TAG, "Hardware startup reset performed");
+//   bool wasWiFiStarted = false;
 
-  data = Data();
+//   // check if wifi required and start it
+//   if (RealTime::isWiFiRequired() || systemConfig.wifiAPMode)
+//   {
+//     startWiFi(systemConfig.wifiAPMode);
+//     wasWiFiStarted = true;
+//   }
 
-  initialSetupMode = !Eeprom::isMemorySet();
+//   // sync time from NTP if requires
+//   if (RealTime::isRtcSyncRequired())
+//   {
+//     RealTime::syncFromNTP();
+//     RealTime::saveTimeToRTC();
+//   }
 
-  bool wasWiFiStarted = false;
+//   std::string zoneControllerJSON = Eeprom::loadZoneControllerJSON();
 
-  // check if wifi required and start it
-  if (RealTime::isWiFiRequired() || systemConfig.wifiAPMode)
-  {
-    startWiFi(systemConfig.wifiAPMode);
-    wasWiFiStarted = true;
-  }
+//   zoneController.initFromJSON(&zoneControllerJSON);
+//   ESP_LOGD(TAG, "%s", zoneController.getTemperatureZone(0).slug.c_str());
 
-  // sync time from NTP if requires
-  if (RealTime::isRtcSyncRequired())
-  {
-    RealTime::syncFromNTP();
-    RealTime::saveTimeToRTC();
-  }
+//   data.metadata.id = Eeprom::loadSystemConfig().id;
 
-  std::string zoneControllerJSON = Eeprom::loadZoneControllerJSON();
+//   environmentSensors.readSensors();
 
-  zoneController.initFromJSON(&zoneControllerJSON);
-  ESP_LOGD(TAG, "%s", zoneController.getTemperatureZone(0).slug.c_str());
+//   startTasks();
 
-  data.metadata.id = Eeprom::loadSystemConfig().id;
+//   if (!wasWiFiStarted)
+//   {
+//     startWiFi(systemConfig.wifiAPMode);
+//     wasWiFiStarted = true;
+//   }
 
-  environmentSensors.readSensors();
+//   Net::setWiFiName(&data);
+//   HttpServer::start(&data, &zoneController, &environmentSensors, false);
+//   data.mac = Utils::getMac();
 
-  startTasks();
+//   if (systemConfig.wifiAPMode)
+//   {
+//     Status::setPurple();
+//   }
+//   else
+//   {
+//     Status::setGreen();
+//   }
 
-  if (!wasWiFiStarted)
-  {
-    startWiFi(systemConfig.wifiAPMode);
-    wasWiFiStarted = true;
-  }
+//   ESP_LOGI(TAG, "[OK] Booting");
 
-  Net::setWiFiName(&data);
-  HttpServer::start(&data, &zoneController, &environmentSensors, false);
-  data.mac = Utils::getMac();
-
-  if (systemConfig.wifiAPMode)
-  {
-    Status::setPurple();
-  }
-  else
-  {
-    Status::setGreen();
-  }
-
-  ESP_LOGI(TAG, "[OK] Booting");
-
-  for (;;)
-  {
-    vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
-  }
-}
+//   for (;;)
+//   {
+//     vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
+//   }
+// }
 
 void setup()
 {
   Serial.begin(115200); // to be removed?
   ESP_LOGI(TAG, "[..] Booting");
 
-  Wire.begin();
-  Measure::enable();
-  delay(5000);
-  environmentSensors.scan();
-  delay(2000);
-  environmentSensors.scan();
+  // Wire.begin();
+  // Measure::enable();
+  // delay(5000);
+  // environmentSensors.scan();
+  // delay(2000);
+  // environmentSensors.scan();
 
-  Eeprom::setup();
-  systemConfig = Eeprom::loadSystemConfig();
+  // Eeprom::setup();
+  // systemConfig = Eeprom::loadSystemConfig();
 
   // setup initial time (from RTC and will be adjusted later)
-  RealTime::initRTC(systemConfig.timeZone, systemConfig.ntpEnabled);
+  // RealTime::initRTC(systemConfig.timeZone, systemConfig.ntpEnabled);
+  RealTime::initRTC("CET-1CEST,M3.5.0/2,M10.5.0/ 3", false);
   RealTime::syncFromRTC();
   RealTime::printLocalTime();
   delay(5000);
 
-  xTaskCreatePinnedToCore(
-      setupTask,
-      "setupTask",
-      1024 * 32,
-      NULL,
-      100,
-      NULL,
-      0);
+  // xTaskCreatePinnedToCore(
+  //     setupTask,
+  //     "setupTask",
+  //     1024 * 38,
+  //     NULL,
+  //     100,
+  //     NULL,
+  //     0);
 
-  xTaskCreatePinnedToCore(
-      saveClimateConfig,
-      "saveClimateConfig",
-      1024 * 32,
-      NULL,
-      100,
-      NULL,
-      0);
+  // xTaskCreatePinnedToCore(
+  //     saveClimateConfig,
+  //     "saveClimateConfig",
+  //     1024 * 32,
+  //     NULL,
+  //     100,
+  //     NULL,
+  //     0);
 }
 
 void loop()

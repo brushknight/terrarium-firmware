@@ -73,7 +73,7 @@
         <div>
             <h3>Time settings</h3>
             <select name="time_zone" id="TimeZone">
-                <option value="CET-1CEST">Madrid</option>
+                <option value="CET-1CEST,M3.5.0/2,M10.5.0/ 3">Madrid</option>
             </select></br>
             <label for="NTPEnabled">Enabled NTP?</label>
             <input type="checkbox" id="NTPEnabled" checked />
@@ -124,9 +124,11 @@
             const urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
 
             XHR.addEventListener('load', (event) => {
+                console.log('OK')
             });
 
             XHR.addEventListener('error', (event) => {
+                console.log('FAILED')
             });
 
             XHR.open('POST', url);
