@@ -14,22 +14,46 @@
 
 Data data;
 Control::Controller hardwareController;
+Zone::Controller zoneController = Zone::Controller();
+SystemConfig systemConfig;
+Measure::EnvironmentSensors environmentSensors = Measure::EnvironmentSensors();
 
 bool initialSetupMode = false;
 
 static const char *TAG = "main";
 
-void taskFetchSensors(void *parameter)
+// void taskFetchSensors(void *parameter)
+// {
+
+//   // read sensors once
+//   environmentSensors.readSensors();
+
+//   // // Measure::scan();
+//   // for (;;)
+//   // {
+
+//   //   environmentSensors.readSensors();
+
+//   //   data.sharedSensors = environmentSensors;
+
+//   //   vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
+//   // }
+// }
+
+void saveClimateConfig(void *parameter)
 {
-  // Measure::scan();
+
   for (;;)
   {
+    if (zoneController.toBePersisted())
+    {
+      zoneController.pause();
+      Eeprom::saveZoneControllerJSON(&zoneController);
+      zoneController.persisted();
+      zoneController.resume();
+    }
 
-    Measure::readSensors();
-
-    data.sharedSensors = *Measure::getSharedSensors();
-
-    vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
+    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -38,14 +62,16 @@ void taskZoneControl(void *parameter)
   // Control::Controller controller = Control::Controller();
   hardwareController.resetPorts();
 
-  Zone::Controller *zoneController = Eeprom::loadZoneController();
-  Eeprom::loadZoneController()->begin();
+  // Zone::Controller *zoneController = Eeprom::loadZoneController();
+  // Eeprom::loadZoneController()->begin();
+
+  zoneController.begin();
 
   for (;;)
   {
     Time time = RealTime::getTimeObj();
     ESP_LOGD(TAG, "zone control tick: %s", time.toString().c_str());
-    data.zones = zoneController->loopTick(time, Measure::getSharedSensors(), &hardwareController);
+    data.zones = zoneController.loopTick(time, &environmentSensors, &hardwareController);
 
     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
   }
@@ -150,19 +176,19 @@ void startTasks()
       NULL,
       0);
 
-  xTaskCreatePinnedToCore(
-      taskFetchSensors,
-      "taskFetchSensors",
-      4096,
-      NULL,
-      2,
-      NULL,
-      1);
+  // xTaskCreatePinnedToCore(
+  //     taskFetchSensors,
+  //     "taskFetchSensors",
+  //     4096,
+  //     NULL,
+  //     2,
+  //     NULL,
+  //     1);
 
   xTaskCreatePinnedToCore(
       taskZoneControl,
       "taskZoneControl",
-      1024 * 48,
+      1024 * 32,
       NULL,
       2,
       NULL,
@@ -184,7 +210,6 @@ void setupTask(void *parameter)
 
   ESP_LOGD(TAG, "Hardware startup reset performed");
 
-  SystemConfig systemConfig = Eeprom::loadSystemConfig();
   data = Data();
 
   initialSetupMode = !Eeprom::isMemorySet();
@@ -205,9 +230,14 @@ void setupTask(void *parameter)
     RealTime::saveTimeToRTC();
   }
 
-  Eeprom::loadZoneController();
+  std::string zoneControllerJSON = Eeprom::loadZoneControllerJSON();
+
+  zoneController.initFromJSON(&zoneControllerJSON);
+  ESP_LOGD(TAG, "%s", zoneController.getTemperatureZone(0).slug.c_str());
 
   data.metadata.id = Eeprom::loadSystemConfig().id;
+
+  environmentSensors.readSensors();
 
   startTasks();
 
@@ -218,7 +248,7 @@ void setupTask(void *parameter)
   }
 
   Net::setWiFiName(&data);
-  HttpServer::start(&data, false);
+  HttpServer::start(&data, &zoneController, &environmentSensors, false);
   data.mac = Utils::getMac();
 
   if (systemConfig.wifiAPMode)
@@ -246,13 +276,12 @@ void setup()
   Wire.begin();
   Measure::enable();
   delay(5000);
-  Measure::scan();
+  environmentSensors.scan();
   delay(2000);
-  Measure::scan();
+  environmentSensors.scan();
 
   Eeprom::setup();
-  SystemConfig systemConfig = Eeprom::loadSystemConfig();
-  systemConfig.timeZone;
+  systemConfig = Eeprom::loadSystemConfig();
 
   // setup initial time (from RTC and will be adjusted later)
   RealTime::initRTC(systemConfig.timeZone, systemConfig.ntpEnabled);
@@ -263,7 +292,16 @@ void setup()
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
-      1024 * 48,
+      1024 * 32,
+      NULL,
+      100,
+      NULL,
+      0);
+
+  xTaskCreatePinnedToCore(
+      saveClimateConfig,
+      "saveClimateConfig",
+      1024 * 32,
       NULL,
       100,
       NULL,

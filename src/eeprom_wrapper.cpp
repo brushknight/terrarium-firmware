@@ -16,7 +16,7 @@ namespace Eeprom
 
     bool isExternalEEPROM = false;
 
-    Zone::Controller zoneController, *zoneControllerReference;
+    // Zone::Controller zoneController, *zoneControllerReference;
     SystemConfig systemConfig;
 
     bool wasZoneControllerLoaded = false;
@@ -26,8 +26,8 @@ namespace Eeprom
 
     void setup()
     {
-        zoneController =  Zone::Controller();
-        zoneControllerReference = &zoneController;
+        // zoneController = Zone::Controller();
+        // zoneControllerReference = &zoneController;
 
         ESP_LOGD(TAG, "[..] starting EEPROM");
         EEPROM.begin(4000);
@@ -271,106 +271,169 @@ namespace Eeprom
         return config;
     }
 
-    void saveZoneControllerTask(void *parameter)
+    void saveZoneControllerJSON(Zone::Controller *zoneController)
     {
-        ESP_LOGI(TAG, "[..] [task] Saving zone controller into external EEPROM");
-        zoneController.pause();
-        isZoneControllerSaving = true;
-        // Serial.println("Cleaning zone controller to eeprom before saving");
-        // clearZoneController();
-        DynamicJsonDocument doc = zoneController.toJSON();
+        ESP_LOGI(TAG, "[..] Saving zone controller into external EEPROM");
+        
+        DynamicJsonDocument doc = zoneController->toJSON();
         std::string json;
         serializeJson(doc, json);
-        ESP_LOGD(TAG, "%s", json.c_str());
-
         int cellsToUpdate = json.length();
+        ESP_LOGD(TAG, "length %d, %s", cellsToUpdate, json.c_str());
 
         for (int i = 0; i < cellsToUpdate; ++i)
         {
             externalEEPROM.write(i + ZONE_CONTROLLER_INDEX, json[i]);
             if (i % 100 == 0)
             {
-                ESP_LOGI(TAG, "[..] [task] Saved %d%%", i / cellsToUpdate);
+                ESP_LOGI(TAG, "[..] Saved %d %d%%", i, i / cellsToUpdate);
             }
         }
 
         externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
-        isZoneControllerSaving = false;
-        zoneController.resume();
-        ESP_LOGI(TAG, "[OK] [task] Saving zone controller into external EEPROM");
-        ESP_LOGI(TAG, "[task] Restarting in 3 seconds");
-        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
-        ESP_LOGI(TAG, "[task] Restarting now");
-        ESP.restart();
+
+        ESP_LOGI(TAG, "[OK] Saving zone controller into external EEPROM");
     }
 
-    void updateZoneControllerFromJson(std::string *json){
-        ESP_LOGW(TAG, "[..] Update zone config from JSON");
-        zoneController.updateFromJSON(json);
-        ESP_LOGW(TAG, "[OK] Update zone config from JSONM");
-    }
+    // void saveZoneControllerTask(void *parameter)
+    // {
+    //     ESP_LOGI(TAG, "[..] [task] Saving zone controller into external EEPROM");
+    //     zoneController.pause();
+    //     isZoneControllerSaving = true;
+    //     // Serial.println("Cleaning zone controller to eeprom before saving");
+    //     // clearZoneController();
+    //     DynamicJsonDocument doc = zoneController.toJSON();
+    //     std::string json;
+    //     serializeJson(doc, json);
+    //     ESP_LOGD(TAG, "%s", json.c_str());
 
-    void saveZoneController()
+    //     int cellsToUpdate = json.length();
+
+    //     for (int i = 0; i < cellsToUpdate; ++i)
+    //     {
+    //         externalEEPROM.write(i + ZONE_CONTROLLER_INDEX, json[i]);
+    //         if (i % 100 == 0)
+    //         {
+    //             ESP_LOGI(TAG, "[..] [task] Saved %d%%", i / cellsToUpdate);
+    //         }
+    //     }
+
+    //     externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
+    //     isZoneControllerSaving = false;
+    //     zoneController.resume();
+    //     ESP_LOGI(TAG, "[OK] [task] Saving zone controller into external EEPROM");
+    //     ESP_LOGI(TAG, "[task] Restarting in 3 seconds");
+    //     vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+    //     ESP_LOGI(TAG, "[task] Restarting now");
+    //     ESP.restart();
+    // }
+
+    // void updateZoneControllerFromJson(std::string *json)
+    // {
+    //     ESP_LOGW(TAG, "[..] Update zone config from JSON");
+    //     zoneController.updateFromJSON(json);
+    //     ESP_LOGW(TAG, "[OK] Update zone config from JSONM");
+    // }
+
+    // void saveZoneController()
+    // {
+
+    //     if (isExternalEEPROM)
+    //     {
+    //         ESP_LOGW(TAG, "[..] Saving zone config into EEPROM");
+    //         // zoneController = config;
+    //         xTaskCreatePinnedToCore(
+    //             saveZoneControllerTask,
+    //             "saveZoneControllerTask",
+    //             1024 * 24,
+    //             NULL,
+    //             3,
+    //             NULL,
+    //             0);
+    //     }
+    //     else
+    //     {
+    //         ESP_LOGW(TAG, "External EEPROM not found");
+    //     }
+    // }
+
+    // Zone::Controller *loadZoneController()
+    // {
+    //     if (isZoneControllerSaving)
+    //     {
+    //         for (int i = 0; i < 60; i++)
+    //         {
+    //             ESP_LOGI(TAG, "[..] Loading zone controller - waiting for another thread");
+    //             vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+
+    //             if (!isZoneControllerSaving)
+    //             {
+    //                 continue; // jump to loading step
+    //             }
+    //         }
+    //     }
+
+    //     if (isZoneControllerLoading)
+    //     {
+    //         for (int i = 0; i < 60; i++)
+    //         {
+    //             ESP_LOGD(TAG, "[..] Loading zone controller ... waiting for another thread");
+    //             vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+    //             if (wasZoneControllerLoaded)
+    //             {
+    //                 return zoneControllerReference;
+    //             }
+    //             // reboot?
+    //         }
+    //     }
+
+    //     ESP_LOGD(TAG, "[..] Loading zone controller");
+
+    //     if (wasZoneControllerLoaded)
+    //     {
+    //         ESP_LOGI(TAG, "[OK] Zone controller was already loaded");
+    //         return zoneControllerReference;
+    //     }
+
+    //     isZoneControllerLoading = true;
+
+    //     if (isExternalEEPROM && isZoneControllerSetExternalEEPROM())
+    //     {
+    //         ESP_LOGI(TAG, "[..] Loading zone controller from external EEPROM");
+
+    //         int zoneControllerSize = Zone::Controller::jsonSize();
+
+    //         char raw[zoneControllerSize];
+
+    //         for (int i = 0; i < zoneControllerSize; ++i)
+    //         {
+    //             raw[i] = char(externalEEPROM.read(i + ZONE_CONTROLLER_INDEX));
+    //         }
+
+    //         ESP_LOGD(TAG, "%s", raw);
+
+    //         std::string json = std::string(raw);
+
+    //         zoneController = Zone::Controller::fromJSON(json);
+
+    //         ESP_LOGI(TAG, "[OK] Loading zone controller from external EEPROM");
+    //     }
+    //     else
+    //     {
+    //         // load empty config
+    //         ESP_LOGI(TAG, "[KO] No storage found, loading default zone controller");
+
+    //         zoneController = Zone::Controller();
+    //     }
+    //     wasZoneControllerLoaded = true;
+    //     isZoneControllerLoading = false;
+    //     return zoneControllerReference;
+    // }
+
+    // refactoring
+    std::string loadZoneControllerJSON()
     {
-        
-        if (isExternalEEPROM)
-        {
-            ESP_LOGW(TAG, "[..] Saving zone config into EEPROM");
-            // zoneController = config;
-            xTaskCreatePinnedToCore(
-                saveZoneControllerTask,
-                "saveZoneControllerTask",
-                1024 * 64,
-                NULL,
-                3,
-                NULL,
-                0);
-        }
-        else
-        {
-            ESP_LOGW(TAG, "External EEPROM not found");
-        }
-    }
-
-    Zone::Controller *loadZoneController()
-    {
-        if (isZoneControllerSaving)
-        {
-            for (int i = 0; i < 60; i++)
-            {
-                ESP_LOGI(TAG, "[..] Loading zone controller - waiting for another thread");
-                vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-
-                if (!isZoneControllerSaving)
-                {
-                    continue; // jump to loading step
-                }
-            }
-        }
-
-        if (isZoneControllerLoading)
-        {
-            for (int i = 0; i < 60; i++)
-            {
-                ESP_LOGD(TAG, "[..] Loading zone controller ... waiting for another thread");
-                vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-                if (wasZoneControllerLoaded)
-                {
-                    return zoneControllerReference;
-                }
-                // reboot?
-            }
-        }
-
-        ESP_LOGD(TAG, "[..] Loading zone controller");
-
-        if (wasZoneControllerLoaded)
-        {
-            ESP_LOGI(TAG, "[OK] Zone controller was already loaded");
-            return zoneControllerReference;
-        }
-
-        isZoneControllerLoading = true;
+        std::string json = "{}";
 
         if (isExternalEEPROM && isZoneControllerSetExternalEEPROM())
         {
@@ -387,21 +450,11 @@ namespace Eeprom
 
             ESP_LOGD(TAG, "%s", raw);
 
-            std::string json = std::string(raw);
-
-            zoneController = Zone::Controller::fromJSON(json);
+            json = std::string(raw);
 
             ESP_LOGI(TAG, "[OK] Loading zone controller from external EEPROM");
         }
-        else
-        {
-            // load empty config
-            ESP_LOGI(TAG, "[KO] No storage found, loading default zone controller");
 
-            zoneController = Zone::Controller();
-        }
-        wasZoneControllerLoaded = true;
-        isZoneControllerLoading = false;
-        return zoneControllerReference;
+        return json;
     }
 }

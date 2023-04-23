@@ -29,6 +29,11 @@ namespace Measure
     bool readDHT22(int port, float *t, float *h);
     bool readDS18B20(int port, float *t);
 
+    bool scanBME280(int port);
+    bool scanSHT31(int port);
+    bool scanDHT22(int port);
+    bool scanDS18B20(int port);
+
     const int sensorPortCount = 6;
     const int sensorTypesSupported = 4;
 
@@ -111,7 +116,6 @@ namespace Measure
         EnvironmentSensor(SensorID givenID)
         {
             id = givenID;
-
         }
         bool enabled()
         {
@@ -262,6 +266,91 @@ namespace Measure
         {
             return list[port + SENSOR_OFFSET_SHT31].read();
         };
+        bool scan()
+        {
+            ESP_LOGI(TAG, "[..] Looking for sensors");
+            for (int i = 0; i < sensorPortCount; i++)
+            {
+                if (scanBME280(i))
+                {
+                    list[i + SENSOR_OFFSET_BME280] = BME280(i);
+                }
+                if (scanSHT31(i))
+                {
+                    list[i + SENSOR_OFFSET_SHT31] = SHT31(i);
+                }
+                if (scanDS18B20(i))
+                {
+                    list[i + SENSOR_OFFSET_DS18B20] = DS18B20(i);
+                }
+                if (scanDHT22(i))
+                {
+                    list[i + SENSOR_OFFSET_DHT22] = DHT22(i);
+                }
+            }
+
+            ESP_LOGI(TAG, "[OK] Looking for sensors");
+            return true;
+        }
+        bool readSensors()
+        {
+            for (int i = 0; i < sensorPortCount; i++)
+            {
+                ESP_LOGD(TAG, "[..] DHT22 port: %d", i);
+                if (getDHT22(i).enabled())
+                {
+                    if (!readDHT22(i))
+                    {
+                        ESP_LOGE(TAG, "[FAIL] DHT22 port: %d", i);
+                    }
+                    else
+                    {
+                        ESP_LOGD(TAG, "[OK] DHT22 port: %d", i);
+                    }
+                }
+
+                ESP_LOGD(TAG, "[..] BME280 port: %d", i);
+                if (getBME280(i).enabled())
+                {
+                    if (!readBME280(i))
+                    {
+                        ESP_LOGE(TAG, "[FAIL] BME280 port: %d", i);
+                    }
+                    else
+                    {
+                        ESP_LOGD(TAG, "[OK] BME280 port: %d", i);
+                    }
+                }
+
+                ESP_LOGD(TAG, "[..] DS18B20 port: %d", i);
+                if (getDS18B20(i).enabled())
+                {
+                    if (!readDS18B20(i))
+                    {
+                        ESP_LOGE(TAG, "[FAIL] DS18B20 port: %d", i);
+                    }
+                    else
+                    {
+                        ESP_LOGD(TAG, "[OK] DS18B20 port: %d", i);
+                    }
+                }
+
+                ESP_LOGD(TAG, "[..] SHT31 port: %d", i);
+                if (getSHT31(i).enabled())
+                {
+                    if (!readSHT31(i))
+                    {
+                        ESP_LOGE(TAG, "[FAIL] SHT31 port: %d", i);
+                    }
+                    else
+                    {
+                        ESP_LOGD(TAG, "[OK] SHT31 port: %d", i);
+                    }
+                }
+            }
+            return true;
+        }
+
         static int jsonSize()
         {
             return 64 + EnvironmentSensor::jsonSize() * sensorPortCount * sensorTypesSupported;
@@ -283,10 +372,7 @@ namespace Measure
         }
     };
 
-    bool scan();
     void enable();
-    bool readSensors();
-    EnvironmentSensors *getSharedSensors();
 }
 
 #endif

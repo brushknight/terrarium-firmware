@@ -18,9 +18,10 @@ namespace Eeprom
     void clearZoneControllerFull();
     void clearSystemSettings();
     void saveSystemConfig(SystemConfig config);
-    void updateZoneControllerFromJson(std::string *json);
+    // void updateZoneControllerFromJson(std::string *json);
     void saveZoneController();
-    Zone::Controller *loadZoneController();
+    void saveZoneControllerJSON(Zone::Controller *zoneController);
+    // Zone::Controller *loadZoneController();
     SystemConfig loadSystemConfig();
     SystemConfig loadSystemConfigFromESP32();
     SystemConfig loadSystemConfigFromExternalEEPROM();
@@ -29,6 +30,9 @@ namespace Eeprom
     bool isZoneControllerSetExternalEEPROM();
     void saveZoneControllerTask(void *parameter);
     bool resetEepromChecker();
+
+    // refactoring
+    std::string loadZoneControllerJSON();
 }
 
 #endif

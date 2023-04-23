@@ -44,6 +44,10 @@ namespace HttpServer
     AsyncWebServer server(80);
 
     Data *data;
+    Zone::Controller *zoneController;
+    Measure::EnvironmentSensors *environmentSensors;
+
+    bool wasClimateControllerSaved = false;
 
     AsyncWebServer *getServer()
     {
@@ -114,9 +118,10 @@ namespace HttpServer
 
     void onGetClimateConfig(AsyncWebServerRequest *request)
     {
-        Zone::Controller *config = Eeprom::loadZoneController();
-        ESP_LOGD(TAG, "Got config from EEPROM");
-        DynamicJsonDocument json = config->toJSON();
+        // Zone::Controller *config = Eeprom::loadZoneController();
+        ESP_LOGD(TAG, "[..] Climate confor requested");
+        zoneController->pause();
+        DynamicJsonDocument json = zoneController->toJSON();
         ESP_LOGD(TAG, "Converted to json");
 
         std::string requestBody;
@@ -126,6 +131,9 @@ namespace HttpServer
         ESP_LOGD(TAG, "%s", requestBody.c_str());
 
         request->send(200, "application/json", requestBody.c_str());
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        zoneController->resume();
+        ESP_LOGD(TAG, "[OK] Climate confor requested");
     }
 
     void onPostSettings(AsyncWebServerRequest *request)
@@ -169,14 +177,15 @@ namespace HttpServer
 
     void onPostClimateConfig(AsyncWebServerRequest *request)
     {
-
-        Zone::Controller config;
+        ESP_LOGD(TAG, "incoming request");
         int params = request->params();
+        zoneController->pause();
+
         for (int i = 0; i < params; i++)
         {
             AsyncWebParameter *p = request->getParam(i);
 
-            ESP_LOGE(TAG, "%p", p);
+            ESP_LOGE(TAG, "%p, %d", p, p->size());
 
             if (p == NULL)
             {
@@ -184,7 +193,15 @@ namespace HttpServer
             }
             else
             {
-                ESP_LOGD(TAG, "%s : %s", p->name().c_str());
+
+                const String param = p->name();
+
+                if (param == NULL)
+                {
+                    ESP_LOGE(TAG, "data is NULL");
+                }
+
+                ESP_LOGD(TAG, "%s", p->name().c_str());
 
                 if (p->name().compareTo(String("json_config")) == 0)
                 {
@@ -200,16 +217,17 @@ namespace HttpServer
                         ESP_LOGD(TAG, "%s", json.c_str());
                         // Serial.println("POST: raw config");
                         // Serial.println(p->value().c_str());
-                        Eeprom::updateZoneControllerFromJson(&json);
+                        zoneController->updateFromJSON(&json);
+                        // Eeprom::updateZoneControllerFromJson(&json);
                         // config = Zone::Controller::fromJSON(p->value().c_str());
-                        Eeprom::saveZoneController();
-
+                        // Eeprom::saveZoneController();
                         request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
                     }
                 }
             }
         }
-
+        zoneController->resume();
+        // this is probably wrong
         request->send(502, "text/plain", "Internal server error");
     }
 
@@ -217,7 +235,7 @@ namespace HttpServer
     {
         DynamicJsonDocument doc(1024 * 2 + Measure::EnvironmentSensors::jsonSize());
 
-        doc["sensors"] = (*data).sharedSensors.toJSON();
+        doc["sensors"] = environmentSensors->toJSON();
 
         std::string requestBody;
         serializeJson(doc, requestBody);
@@ -263,9 +281,11 @@ namespace HttpServer
         request->send(200, "application/json", requestBody.c_str());
     }
 
-    void start(Data *givenData, bool isSetupMode)
+    void start(Data *givenData, Zone::Controller *givenZoneController, Measure::EnvironmentSensors *givenEnvironmentSensors, bool isSetupMode)
     {
         data = givenData;
+        zoneController = givenZoneController;
+        environmentSensors = givenEnvironmentSensors;
 
         server.on("/", HTTP_GET, onFormSettings);
         server.on("/settings", HTTP_GET, onFormSettings);
