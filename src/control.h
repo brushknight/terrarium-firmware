@@ -320,33 +320,78 @@ namespace Control
         bool lightDomeStartupAnimation()
         {
 
-            colorLights.list[0].setColorAndBrightness(Color(0, 0, 0), 100);
-            colorLights.list[1].setColorAndBrightness(Color(0, 0, 0), 100);
-            colorLights.list[2].setColorAndBrightness(Color(0, 0, 0), 100);
+            Color black = Color(0, 0, 0);
+            colorLights.list[0].setColorAndBrightness(black, 20);
+            colorLights.list[1].setColorAndBrightness(black, 20);
+            colorLights.list[2].setColorAndBrightness(black, 20);
 
-            Color color = Color(0, 0, 255);
+            Color color = Color(84, 22, 180); // make purple
 
+            colorLights.list[0].setPixel(0, color);
             colorLights.list[1].setPixel(0, color);
+            colorLights.list[2].setPixel(0, color);
+            colorLights.list[0].show();
+            colorLights.list[1].show();
+            colorLights.list[2].show();
+            delay(25);
 
-            for (int i = 0; i < 19; i++)
+            for (int i = 1; i < 20; i++)
             {
                 colorLights.list[0].setPixel(i, color);
-                colorLights.list[1].setPixel(i + 1, color);
+                colorLights.list[1].setPixel(i, color);
                 colorLights.list[2].setPixel(i, color);
+                colorLights.list[0].setPixel(i - 1, black);
+                colorLights.list[1].setPixel(i - 1, black);
+                colorLights.list[2].setPixel(i - 1, black);
                 colorLights.list[0].show();
                 colorLights.list[1].show();
                 colorLights.list[2].show();
-                delay(100);
+                delay(25);
             }
-            colorLights.list[0].setPixel(19, color);
-            colorLights.list[2].setPixel(19, color);
+            for (int i = 18; i >= 0; i--)
+            {
+                colorLights.list[0].setPixel(i, color);
+                colorLights.list[1].setPixel(i, color);
+                colorLights.list[2].setPixel(i, color);
+                colorLights.list[0].setPixel(i + 1, black);
+                colorLights.list[1].setPixel(i + 1, black);
+                colorLights.list[2].setPixel(i + 1, black);
+                colorLights.list[0].show();
+                colorLights.list[1].show();
+                colorLights.list[2].show();
+                delay(25);
+            }
+            colorLights.list[0].setPixel(0, black);
+            colorLights.list[1].setPixel(0, black);
+            colorLights.list[2].setPixel(0, black);
             colorLights.list[0].show();
+            colorLights.list[1].show();
             colorLights.list[2].show();
-            delay(100);
+            delay(25);
+            colorLights.list[0].setColorAndBrightness(black, 20);
+            colorLights.list[1].setColorAndBrightness(black, 20);
+            colorLights.list[2].setColorAndBrightness(black, 20);
+            delay(1000);
 
-            colorLights.list[0].setColorAndBrightness(Color(0, 0, 0), 100);
-            colorLights.list[1].setColorAndBrightness(Color(0, 0, 0), 100);
-            colorLights.list[2].setColorAndBrightness(Color(0, 0, 0), 100);
+            for (int i = 0; i < kelvinValuesCount; i++)
+            {
+                colorLights.list[0].setColorAndBrightness(Color(kelvinValues[i]), 100);
+                colorLights.list[1].setColorAndBrightness(Color(kelvinValues[i]), 100);
+                colorLights.list[2].setColorAndBrightness(Color(kelvinValues[i]), 100);
+                colorLights.list[0].show();
+                colorLights.list[1].show();
+                colorLights.list[2].show();
+                delay(25);
+            }
+
+            // colorLights.list[0].setColorAndBrightness(Color(1000), 100);
+            // colorLights.list[1].setColorAndBrightness(Color(1000), 100);
+            // colorLights.list[2].setColorAndBrightness(Color(1000), 100);
+
+            colorLights.list[0].setColorAndBrightness(black, 20);
+            colorLights.list[1].setColorAndBrightness(black, 20);
+            colorLights.list[2].setColorAndBrightness(black, 20);
+            delay(5000);
 
             return true;
         };

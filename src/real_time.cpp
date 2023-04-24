@@ -81,6 +81,8 @@ namespace RealTime
         settimeofday(&tv, NULL);
         setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
         tzset();
+
+        Serial.println(getTime().c_str());
     }
 
     void setTimestamp(uint32_t timestamp, std::string tz)
