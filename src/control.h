@@ -243,16 +243,18 @@ namespace Control
         Switches switches = Switches();
         Dimmers dimmers = Dimmers();
         ColorLights colorLights = ColorLights();
-        HardwareLayer hardwareLayer = HardwareLayer();
+        HardwareLayer *hardwareLayer;
 
     public:
-        Controller(){};
+        Controller(HardwareLayer *hl){
+            hardwareLayer = hl;
+        };
         void begin()
         {
-            hardwareLayer.begin();
-            switches.list[0] = Switch(0, &hardwareLayer);
-            switches.list[1] = Switch(1, &hardwareLayer);
-            switches.list[2] = Switch(2, &hardwareLayer);
+            hardwareLayer->begin();
+            switches.list[0] = Switch(0, hardwareLayer);
+            switches.list[1] = Switch(1, hardwareLayer);
+            switches.list[2] = Switch(2, hardwareLayer);
 
             dimmers.list[0] = Dimmer(0);
             dimmers.list[1] = Dimmer(1);

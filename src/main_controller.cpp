@@ -1,40 +1,40 @@
 #include <Arduino.h>
-// #include <EEPROM.h>
 // #include "data.h"
-#include "real_time.h"
+// #include "real_time.h"
 // #include "http_server.h"
 // #include "eeprom_wrapper.h"
 // #include "status.h"
 // #include "measure.h"
 // #include "control.h"
 // #include "zone.h"
+// #include "net.h"
 // #include "data_structures.h"
-// #include <Adafruit_BME280.h>
-// #include <sys/time.h>
+
+#define __BSD_VISIBLE 1
+
+#include <sys/time.h>
 
 static const char *TAG = "main";
 
-
 // Data data;
-// Control::Controller hardwareController;
-// Zone::Controller zoneController = Zone::Controller();
+// Control::Controller *hardwareController;
+// Zone::Controller *zoneController;
 // SystemConfig systemConfig;
-// Measure::EnvironmentSensors environmentSensors = Measure::EnvironmentSensors();
+// Measure::EnvironmentSensors *environmentSensors;
 
 // bool initialSetupMode = false;
-
 
 // void saveClimateConfig(void *parameter)
 // {
 
 //   for (;;)
 //   {
-//     if (zoneController.toBePersisted())
+//     if (zoneController->toBePersisted())
 //     {
-//       zoneController.pause();
-//       Eeprom::saveZoneControllerJSON(&zoneController);
-//       zoneController.persisted();
-//       zoneController.resume();
+//       zoneController->pause();
+//       Eeprom::saveZoneControllerJSON(zoneController);
+//       zoneController->persisted();
+//       zoneController->resume();
 //     }
 
 //     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
@@ -43,19 +43,14 @@ static const char *TAG = "main";
 
 // void taskZoneControl(void *parameter)
 // {
-//   // Control::Controller controller = Control::Controller();
-//   hardwareController.resetPorts();
-
-//   // Zone::Controller *zoneController = Eeprom::loadZoneController();
-//   // Eeprom::loadZoneController()->begin();
-
-//   zoneController.begin();
+//   hardwareController->resetPorts();
+//   zoneController->begin();
 
 //   for (;;)
 //   {
 //     Time time = RealTime::getTimeObj();
 //     ESP_LOGD(TAG, "zone control tick: %s", time.toString().c_str());
-//     data.zones = zoneController.loopTick(time, &environmentSensors, &hardwareController);
+//     data.zones = zoneController->loopTick(time, environmentSensors, hardwareController);
 
 //     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
 //   }
@@ -160,15 +155,6 @@ static const char *TAG = "main";
 //       NULL,
 //       0);
 
-//   // xTaskCreatePinnedToCore(
-//   //     taskFetchSensors,
-//   //     "taskFetchSensors",
-//   //     4096,
-//   //     NULL,
-//   //     2,
-//   //     NULL,
-//   //     1);
-
 //   xTaskCreatePinnedToCore(
 //       taskZoneControl,
 //       "taskZoneControl",
@@ -189,8 +175,13 @@ static const char *TAG = "main";
 
 //   Utils::scanForI2C();
 
-//   hardwareController.begin();
-//   hardwareController.resetPorts();
+//   // Think how to avoid this
+//   Control::HardwareLayer hwl = Control::HardwareLayer();
+//   Control::Controller hardwareControllerOrig = Control::Controller(&hwl);
+//   hardwareController = &hardwareControllerOrig;
+
+//   hardwareController->begin();
+//   hardwareController->resetPorts();
 
 //   ESP_LOGD(TAG, "Hardware startup reset performed");
 
@@ -216,12 +207,12 @@ static const char *TAG = "main";
 
 //   std::string zoneControllerJSON = Eeprom::loadZoneControllerJSON();
 
-//   zoneController.initFromJSON(&zoneControllerJSON);
-//   ESP_LOGD(TAG, "%s", zoneController.getTemperatureZone(0).slug.c_str());
+//   zoneController->initFromJSON(&zoneControllerJSON);
+//   // ESP_LOGD(TAG, "%s", zoneController->getTemperatureZone(0).slug.c_str());
 
 //   data.metadata.id = Eeprom::loadSystemConfig().id;
 
-//   environmentSensors.readSensors();
+//   environmentSensors->readSensors();
 
 //   startTasks();
 
@@ -232,7 +223,7 @@ static const char *TAG = "main";
 //   }
 
 //   Net::setWiFiName(&data);
-//   HttpServer::start(&data, &zoneController, &environmentSensors, false);
+//   HttpServer::start(&data, zoneController, environmentSensors, false);
 //   data.mac = Utils::getMac();
 
 //   if (systemConfig.wifiAPMode)
@@ -254,25 +245,56 @@ static const char *TAG = "main";
 
 void setup()
 {
-  Serial.begin(115200); // to be removed?
-  ESP_LOGI(TAG, "[..] Booting");
 
   // Wire.begin();
-  // Measure::enable();
   // delay(5000);
-  // environmentSensors.scan();
-  // delay(2000);
-  // environmentSensors.scan();
 
-  // Eeprom::setup();
-  // systemConfig = Eeprom::loadSystemConfig();
-
+  delay(1000);
   // setup initial time (from RTC and will be adjusted later)
-  // RealTime::initRTC(systemConfig.timeZone, systemConfig.ntpEnabled);
-  RealTime::initRTC("CET-1CEST,M3.5.0/2,M10.5.0/ 3", false);
-  RealTime::syncFromRTC();
-  RealTime::printLocalTime();
+  //  RealTime::initRTC(systemConfig.timeZone, systemConfig.ntpEnabled);
+  // RealTime::initRTC("UTC", false);
+  // RealTime::syncFromRTC();
+  // RealTime::printLocalTime();
+
+        struct timeval tv;
+        tv.tv_sec = 1682452286;// rtcDateTime.unixtime(); //  9:51:26 PM
+
+        ESP_LOGD(TAG, "Timestamp from RTC: %d", tv.tv_sec);
+
+        settimeofday(&tv, NULL);
+        setenv("TZ", "UTC", 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+        // tzset();
+
+        ESP_LOGD(TAG, "timestamp after saving: %d", tv.tv_sec);
+
+        struct timeval tv2;
+        time_t t;
+        struct tm *info;
+
+        gettimeofday(&tv2, NULL);
+        t = tv2.tv_sec;
+
+        info = localtime(&t);
+
+        ESP_LOGI(TAG, "%d:%d:%d", info->tm_hour, info->tm_min, info->tm_sec);
+
   delay(5000);
+
+  // Measure::enable();
+  // Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
+  // environmentSensors = &envSensors;
+  // environmentSensors->scan();
+  // delay(2000);
+  // environmentSensors->scan();
+
+  // Zone::Controller zoneControllerOriginal = Zone::Controller();
+  // zoneController = &zoneControllerOriginal;
+
+  // ExternalEEPROM externalEEPROM;
+
+  // Eeprom::setup(&externalEEPROM);
+  // systemConfig = Eeprom::loadSystemConfig();
+  // RealTime::updateTimeZone(systemConfig.timeZone);
 
   // xTaskCreatePinnedToCore(
   //     setupTask,
@@ -291,6 +313,12 @@ void setup()
   //     100,
   //     NULL,
   //     0);
+
+
+  for (;;)
+  {
+    vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
+  }
 }
 
 void loop()

@@ -2,8 +2,7 @@
 
 namespace RealTime
 {
-    // todo - make it custom ntp - optional
-    const char *ntpServer1 = "0.europe.pool.ntp.org"; 
+    const char *ntpServer1 = "0.europe.pool.ntp.org";
     const char *ntpServer2 = "1.europe.pool.ntp.org";
     const char *ntpServer3 = "2.europe.pool.ntp.org";
     // const char *timeZone = "CET-1CEST"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
@@ -11,221 +10,203 @@ namespace RealTime
     std::string timeZone = "CET-1CEST,M3.5.0/2,M10.5.0/ 3"; // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
     bool ntpEnabled = false;
 
-    RTC_DS3231 rtc;
+    // RTC_DS3231 rtc;
 
     bool rtcBeginFailed = false;
 
-    void initRTC(std::string tz, bool ntp)
-    {
-        timeZone = tz;
-        ntpEnabled = ntp;
-        rtcBeginFailed = !rtc.begin();
-    }
+    // void initRTC(std::string tz, bool ntp)
+    // {
+    //     timeZone = tz;
+    //     ntpEnabled = ntp;
+    //     rtcBeginFailed = !rtc.begin();
+    //     if (rtcBeginFailed)
+    //     {
+    //         ESP_LOGD(TAG, "RTC failed to start");
+    //     }
+    // }
 
-    bool isWiFiRequired()
-    {
-        return rtcBeginFailed || isRtcSyncRequired();
-    }
+    // void updateTimeZone(std::string tz)
+    // {
+    //     timeZone = tz;
+    //     setenv("TZ", timeZone.c_str(), 1);
+    // }
 
-    bool isRtcSyncRequired()
-    {
-        DateTime rtcDateTime = rtc.now();
-        return rtcDateTime.unixtime() < 1644065211; // Sat, 05 Feb 2022 12:46:48 GMT
-    }
+    // bool isWiFiRequired()
+    // {
+    //     return rtcBeginFailed || isRtcSyncRequired();
+    // }
 
-    void setup()
-    {
+    // bool isRtcSyncRequired()
+    // {
+    //     DateTime rtcDateTime = rtc.now();
+    //     return rtcDateTime.unixtime() < 1644065211; // Sat, 05 Feb 2022 12:46:48 GMT
+    // }
 
-        ESP_LOGI(TAG, "[..] Enabling RTC chip");
+    // void setup()
+    // {
 
-        if (rtcBeginFailed)
-        {
-            ESP_LOGE(TAG, "[FAIL] Couldn't find RTC chip");
-            // Status::setFetchingTimeStatus(Status::WARNING);
-            // Serial.flush();
-            // syncFromNTP();
-            // // abort(); -> only if NTP time failed
+    //     ESP_LOGI(TAG, "[..] Enabling RTC chip");
 
-            // printLocalTime();
+    //     if (rtcBeginFailed)
+    //     {
+    //         ESP_LOGE(TAG, "[FAIL] Couldn't find RTC chip");
+    //         // Status::setFetchingTimeStatus(Status::WARNING);
+    //         // Serial.flush();
+    //         // syncFromNTP();
+    //         // // abort(); -> only if NTP time failed
 
-            return;
-        }
+    //         // printLocalTime();
 
-        ESP_LOGI(TAG, "[OK] Enabling RTC chip");
-        ESP_LOGI(TAG, "[..] Sync time from RTC");
+    //         return;
+    //     }
 
-        syncFromRTC();
+    //     ESP_LOGI(TAG, "[OK] Enabling RTC chip");
+    //     ESP_LOGI(TAG, "[..] Sync time from RTC");
 
-        delay(1000);
+    //     syncFromRTC();
 
-        if (isRtcSyncRequired())
-        {
-            ESP_LOGD(TAG, "RTC time expired");
-            syncFromNTP();
-            saveTimeToRTC();
-        }
+    //     delay(1000);
 
-        printLocalTime();
+    //     if (isRtcSyncRequired())
+    //     {
+    //         ESP_LOGD(TAG, "RTC time expired");
+    //         syncFromNTP();
+    //         saveTimeToRTC();
+    //     }
 
-        ESP_LOGI(TAG, "[OK] Sync time from RTC");
-    }
+    //     printLocalTime();
+
+    //     ESP_LOGI(TAG, "[OK] Sync time from RTC");
+    // }
 
     void syncFromRTC()
     {
-        DateTime rtcDateTime = rtc.now();
+        // DateTime rtcDateTime = rtc.now();
+
         struct timeval tv;
-        tv.tv_sec = rtcDateTime.unixtime();
+        tv.tv_sec = 1682452286;// rtcDateTime.unixtime(); // 6:45:29 PM GMT+02:00 DST
 
         ESP_LOGD(TAG, "Timestamp from RTC: %d", tv.tv_sec);
 
         settimeofday(&tv, NULL);
         setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
-        tzset();
+        // tzset();
 
-        Serial.println(getTime().c_str());
+        ESP_LOGD(TAG, "timestamp after saving: %d", tv.tv_sec);
+        printLocalTime();
     }
 
-    void setTimestamp(uint32_t timestamp, std::string tz)
-    {
-        struct timeval tv;
-        tv.tv_sec = timestamp;
-        timeZone = tz;
-        setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
-        tzset();
+    // void setTimestamp(uint32_t timestamp, std::string tz)
+    // {
+    //     struct timeval tv;
+    //     tv.tv_sec = timestamp;
+    //     timeZone = tz;
+    //     setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+    //     // tzset();
 
-        DateTime dt = DateTime(timestamp);
-        rtc.adjust(dt);
-    }
+    //     DateTime dt = DateTime(timestamp);
+    //     ESP_LOGD(TAG, "timestamp before saving: %d", dt.unixtime());
+    //     rtc.adjust(dt);
+    // }
 
-    void syncFromNTP()
-    {
-        if (!ntpEnabled)
-        {
-            ESP_LOGW(TAG, "NTP is disabled");
-            return;
-        }
+    // void syncFromNTP()
+    // {
+    //     if (!ntpEnabled)
+    //     {
+    //         ESP_LOGW(TAG, "NTP is disabled");
+    //         return;
+    //     }
 
-        ESP_LOGD(TAG, "[..] Sync from NTP");
-        struct tm timeinfo;
-        int attempts = 0;
-        while (!getLocalTime(&timeinfo))
-        {
-            ESP_LOGE(TAG, "Failed to obtain time, retrying");
-            configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
-            attempts++;
-        }
-        ESP_LOGD(TAG, "[OK] Sync from NTP");
-    }
+    //     ESP_LOGD(TAG, "[..] Sync from NTP");
+    //     struct tm timeinfo;
+    //     int attempts = 0;
+    //     while (!getLocalTime(&timeinfo))
+    //     {
+    //         ESP_LOGE(TAG, "Failed to obtain time, retrying");
+    //         configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
+    //         attempts++;
+    //     }
+    //     ESP_LOGD(TAG, "[OK] Sync from NTP");
+    // }
 
-    void syncFromNTPOnce()
-    {
+    // void syncFromNTPOnce()
+    // {
 
-        if (!ntpEnabled)
-        {
-            ESP_LOGW(TAG, "NTP is disabled");
-            return;
-        }
+    //     if (!ntpEnabled)
+    //     {
+    //         ESP_LOGW(TAG, "NTP is disabled");
+    //         return;
+    //     }
 
-        ESP_LOGD(TAG, "[..] Sync from NTP Once");
+    //     ESP_LOGD(TAG, "[..] Sync from NTP Once");
 
-        struct tm timeinfo;
-        int attempts = 0;
-        if (!getLocalTime(&timeinfo))
-        {
-            ESP_LOGE(TAG, "Failed to obtain time, retrying");
-            configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
-            attempts++;
-        }
-        ESP_LOGD(TAG, "[OK] Sync from NTP Once");
-    }
+    //     struct tm timeinfo;
+    //     int attempts = 0;
+    //     if (!getLocalTime(&timeinfo))
+    //     {
+    //         ESP_LOGE(TAG, "Failed to obtain time, retrying");
+    //         configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
+    //         attempts++;
+    //     }
+    //     ESP_LOGD(TAG, "[OK] Sync from NTP Once");
+    // }
 
-    bool saveTimeToRTC()
-    {
-        ESP_LOGD(TAG, "[..] Saving time into RTC");
+    // bool saveTimeToRTC()
+    // {
+    //     ESP_LOGD(TAG, "[..] Saving time into RTC");
 
-        time_t now;
-        struct tm timeDetails;
+    //     time_t now;
+    //     struct tm timeDetails;
 
-        time(&now);
-        localtime_r(&now, &timeDetails);
+    //     time(&now);
+    //     localtime_r(&now, &timeDetails);
 
-        rtc.adjust(mktime(&timeDetails));
+    //     rtc.adjust(mktime(&timeDetails));
 
-        ESP_LOGD(TAG, "[OK] Saving time into RTC");
+    //     ESP_LOGD(TAG, "[OK] Saving time into RTC");
 
-        return true;
-    }
+    //     return true;
+    // }
 
-    std::string getTime()
-    {
-        int hour = 0;
-        int minute = 0;
-        int second = 0;
+    // Time getTimeObj()
+    // {
+    //     struct timeval tv;
+    //     time_t t;
+    //     struct tm *info;
 
-        struct tm timeinfo;
-        if (!getLocalTime(&timeinfo))
-        {
-            ESP_LOGE(TAG, "getHour() Failed to obtain time");
-            return 0;
-        }
+    //     gettimeofday(&tv, NULL);
+    //     t = tv.tv_sec;
 
-        hour = timeinfo.tm_hour;
-        minute = timeinfo.tm_min;
-        second = timeinfo.tm_sec;
+    //     // ESP_LOGD(TAG, "%d", tv2.tv_sec);
 
-        return Time::hourMinuteToString(hour, minute);
-    }
+    //     info = localtime(&t);
+    //     // ESP_LOGD(TAG, "%d %d", info->tm_hour, info->tm_min);
 
-    Time getTimeObj()
-    {
-        time_t now;
-        struct tm timeDetails;
+    //     return Time(info->tm_hour,info->tm_min);
+    // }
 
-        time(&now);
-        localtime_r(&now, &timeDetails);
+    // int getHour()
+    // {
+    //     return getTimeObj().hours;
+    // }
 
-        return Time(timeDetails.tm_hour, timeDetails.tm_min);
-    }
-
-    int getHour()
-    {
-        return getTimeObj().hours;
-    }
-
-    int getMinute()
-    {
-        return getTimeObj().minutes;
-    }
-
-    int getSecond()
-    {
-        int second = 0;
-
-        struct tm timeinfo;
-        if (!getLocalTime(&timeinfo))
-        {
-            ESP_LOGE(TAG, "getSecond() Failed to obtain time");
-            // abort();
-            return 0;
-        }
-
-        second = timeinfo.tm_sec;
-
-        return second;
-    }
+    // int getMinute()
+    // {
+    //     return getTimeObj().minutes;
+    // }
 
     void printLocalTime()
     {
+        struct timeval tv;
+        time_t t;
+        struct tm *info;
 
-        time_t now;
-        struct tm timeDetails;
+        gettimeofday(&tv, NULL);
+        t = tv.tv_sec;
 
-        time(&now);
-        localtime_r(&now, &timeDetails);
+        info = localtime(&t);
 
-        // check it this format works
-
-        Serial.println(&timeDetails, "TIME > %A, %B %d %Y %H:%M:%S");
+        ESP_LOGI(TAG, "%d:%d:%d", info->tm_hour, info->tm_min, info->tm_sec);
     }
 
     int getBatteryPercent()

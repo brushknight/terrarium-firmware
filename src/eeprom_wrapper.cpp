@@ -12,7 +12,7 @@ namespace Eeprom
     const int ZONE_CONTROLLER_INDEX = ZONE_CONTROLLER_SET_INDEX + 1;
 
     const uint8_t externallAddress = 0x50;
-    ExternalEEPROM externalEEPROM;
+    ExternalEEPROM *externalEEPROM;
 
     bool isExternalEEPROM = false;
 
@@ -24,19 +24,20 @@ namespace Eeprom
     bool isZoneControllerSaving = false;
     bool wasSystemConfigLoaded = false;
 
-    void setup()
+    void setup(ExternalEEPROM *extEEPROM)
     {
+        externalEEPROM = extEEPROM;
         // zoneController = Zone::Controller();
         // zoneControllerReference = &zoneController;
 
         ESP_LOGD(TAG, "[..] starting EEPROM");
         EEPROM.begin(4000);
 
-        if (externalEEPROM.begin(externallAddress))
+        if (externalEEPROM->begin(externallAddress))
         {
             isExternalEEPROM = true;
             // transform into kb
-            ESP_LOGD(TAG, "[OK] External EEPROM detected, mem size in bytes: %d", externalEEPROM.length());
+            ESP_LOGD(TAG, "[OK] External EEPROM detected, mem size in bytes: %d", externalEEPROM->length());
         }
         else
         {
@@ -102,10 +103,10 @@ namespace Eeprom
         if (isExternalEEPROM)
         {
             ESP_LOGI(TAG, "[..] Full clearing external EEPROM ");
-            int eepromLength = externalEEPROM.length();
+            int eepromLength = externalEEPROM->length();
             for (int i = 0; i < eepromLength; i++)
             {
-                externalEEPROM.write(i, 0);
+                externalEEPROM->write(i, 0);
                 if (i % 1000 == 0)
                 {
                     int percent = i / eepromLength;
@@ -124,7 +125,7 @@ namespace Eeprom
             int cellsToClean = Zone::Controller::jsonSize();
             for (int i = 0; i < cellsToClean; i++)
             {
-                externalEEPROM.write(i, 0);
+                externalEEPROM->write(i, 0);
                 if (i % 1000 == 0)
                 {
                     int percent = i / cellsToClean;
@@ -144,7 +145,7 @@ namespace Eeprom
             EEPROM.write(i, 0);
             if (isExternalEEPROM)
             {
-                externalEEPROM.write(i, 0);
+                externalEEPROM->write(i, 0);
             }
             if (i % 10 == 0)
             {
@@ -167,12 +168,12 @@ namespace Eeprom
 
     bool isSystemConfigSetExternalEEPROM()
     {
-        return externalEEPROM.read(IS_SYSTEM_SET_INDEX) == 1;
+        return externalEEPROM->read(IS_SYSTEM_SET_INDEX) == 1;
     }
 
     bool isZoneControllerSetExternalEEPROM()
     {
-        return externalEEPROM.read(ZONE_CONTROLLER_SET_INDEX) == 1;
+        return externalEEPROM->read(ZONE_CONTROLLER_SET_INDEX) == 1;
     }
 
     void saveSystemConfig(SystemConfig systemConfig)
@@ -190,14 +191,14 @@ namespace Eeprom
             EEPROM.write(i + SYSTEM_CONFIG_INDEX, json[i]);
             if (isExternalEEPROM)
             {
-                externalEEPROM.write(i + SYSTEM_CONFIG_INDEX, json[i]);
+                externalEEPROM->write(i + SYSTEM_CONFIG_INDEX, json[i]);
             }
         }
         EEPROM.write(IS_SYSTEM_SET_INDEX, 1);
 
         if (isExternalEEPROM)
         {
-            externalEEPROM.write(IS_SYSTEM_SET_INDEX, 1);
+            externalEEPROM->write(IS_SYSTEM_SET_INDEX, 1);
         }
 
         ESP_LOGI(TAG, "[OK] Saving system config");
@@ -260,7 +261,7 @@ namespace Eeprom
 
         for (int i = 0; i < CONTROLLER_CONFIG_LENGTH; ++i)
         {
-            raw[i] = char(externalEEPROM.read(i + SYSTEM_CONFIG_INDEX));
+            raw[i] = char(externalEEPROM->read(i + SYSTEM_CONFIG_INDEX));
         }
         ESP_LOGD(TAG, "Raw config: %s", raw);
 
@@ -283,14 +284,14 @@ namespace Eeprom
 
         for (int i = 0; i < cellsToUpdate; ++i)
         {
-            externalEEPROM.write(i + ZONE_CONTROLLER_INDEX, json[i]);
+            externalEEPROM->write(i + ZONE_CONTROLLER_INDEX, json[i]);
             if (i % 100 == 0)
             {
                 ESP_LOGI(TAG, "[..] Saved %d %d%%", i, i / cellsToUpdate);
             }
         }
 
-        externalEEPROM.write(ZONE_CONTROLLER_SET_INDEX, 1);
+        externalEEPROM->write(ZONE_CONTROLLER_SET_INDEX, 1);
 
         ESP_LOGI(TAG, "[OK] Saving zone controller into external EEPROM");
     }
@@ -445,7 +446,7 @@ namespace Eeprom
 
             for (int i = 0; i < zoneControllerSize; ++i)
             {
-                raw[i] = char(externalEEPROM.read(i + ZONE_CONTROLLER_INDEX));
+                raw[i] = char(externalEEPROM->read(i + ZONE_CONTROLLER_INDEX));
             }
 
             ESP_LOGD(TAG, "%s", raw);

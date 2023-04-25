@@ -2,13 +2,13 @@
 
 namespace I2C
 {
-    int i2c_master_port = 0;
-    int i2c_slave_port = 0;
+    i2c_port_t i2c_master_port = i2c_port_t(0);
+    i2c_port_t i2c_slave_port = i2c_port_t(0);
 
 
 
-#define I2C_MASTER_SCL_IO 22        /*!< gpio number for I2C master clock */
-#define I2C_MASTER_SDA_IO 21        /*!< gpio number for I2C master data  */
+const gpio_num_t I2C_MASTER_SCL_IO = gpio_num_t(22);        /*!< gpio number for I2C master clock */
+const gpio_num_t I2C_MASTER_SDA_IO = gpio_num_t(21);     /*!< gpio number for I2C master data  */
 #define I2C_MASTER_FREQ_HZ 100000   /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
@@ -21,23 +21,21 @@ namespace I2C
 #define ACK_VAL 0x0                /*!< I2C ack value */
 #define NACK_VAL 0x1               /*!< I2C nack value */
 
-#define I2C_SLAVE_SCL_IO 22      /*!< gpio number for I2C master clock */
-#define I2C_SLAVE_SDA_IO 21      /*!< gpio number for I2C master data  */
+const gpio_num_t I2C_SLAVE_SCL_IO = gpio_num_t(22);      /*!< gpio number for I2C master clock */
+const gpio_num_t I2C_SLAVE_SDA_IO = gpio_num_t(21);      /*!< gpio number for I2C master data  */
 #define I2C_SLAVE_FREQ_HZ 100000 /*!< I2C master clock frequency */
 #define ESP_SLAVE_ADDR 0x0A
 
     esp_err_t i2c_master_init(void)
     {
 
-        i2c_config_t conf = {
-            .mode = I2C_MODE_MASTER,
-            .sda_io_num = I2C_MASTER_SDA_IO,
-            .scl_io_num = I2C_MASTER_SCL_IO,
-            .sda_pullup_en = GPIO_PULLUP_ENABLE,
-            .scl_pullup_en = GPIO_PULLUP_ENABLE,
-            .master = {.clk_speed = I2C_MASTER_FREQ_HZ},
-            // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
-        };
+        i2c_config_t conf;
+        conf.mode = I2C_MODE_MASTER;
+        conf.sda_io_num = I2C_MASTER_SDA_IO;
+        conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+        conf.scl_io_num = I2C_MASTER_SCL_IO;
+        conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
+
         esp_err_t err = i2c_param_config(i2c_master_port, &conf);
         if (err != ESP_OK)
         {
@@ -49,18 +47,17 @@ namespace I2C
     esp_err_t i2c_slave_init(void)
     {
 
-        i2c_config_t conf_slave = {
-            .mode = I2C_MODE_SLAVE,
-            .sda_io_num = I2C_SLAVE_SDA_IO, // select GPIO specific to your project
-            .scl_io_num = I2C_SLAVE_SCL_IO, // select GPIO specific to your project
-            .sda_pullup_en = GPIO_PULLUP_ENABLE,
-            .scl_pullup_en = GPIO_PULLUP_ENABLE,
-            .slave = {
-                .addr_10bit_en = 0,
-                .slave_addr = ESP_SLAVE_ADDR, // address of your project
-            },
-            .clk_flags = 0,
-        };
+        i2c_config_t conf_slave;
+        conf_slave.mode = I2C_MODE_SLAVE;
+        conf_slave.sda_io_num = I2C_SLAVE_SDA_IO;
+        conf_slave.sda_pullup_en = GPIO_PULLUP_ENABLE;
+        conf_slave.scl_io_num = I2C_SLAVE_SCL_IO;
+        conf_slave.scl_pullup_en = GPIO_PULLUP_ENABLE;
+        conf_slave.slave.addr_10bit_en = 0;
+        conf_slave.slave.slave_addr = ESP_SLAVE_ADDR;
+
+        
+
         esp_err_t err = i2c_param_config(i2c_slave_port, &conf_slave);
         if (err != ESP_OK)
         {

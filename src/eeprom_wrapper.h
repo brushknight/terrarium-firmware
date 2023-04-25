@@ -11,7 +11,7 @@ namespace Eeprom
 {
     static const char *TAG = "eeprom";
 
-    void setup();
+    void setup(ExternalEEPROM *extEEPROM);
     bool isMemorySet();
     void clear();
     void clearZoneController();

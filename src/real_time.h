@@ -1,18 +1,18 @@
 #ifndef TERRARIUM_RTC
 #define TERRARIUM_RTC
 
+#define __BSD_VISIBLE 1
+
 #include <sys/time.h>
 #include "Arduino.h"
-#include <RTClib.h>
+// #include <RTClib.h>
 // #include "utils.h"
 #include <string>
-#include "data_structures.h"
+// #include "data_structures.h"
 // #include "event.h"
-#include <string>
 
 namespace RealTime
 {
-
     static const char *TAG = "real-time";
 
     void setup();
@@ -24,11 +24,10 @@ namespace RealTime
     bool saveTimeToRTC();
     bool isRtcSyncRequired();
     void initRTC(std::string tz, bool ntp);
-    std::string getTime();
-    Time getTimeObj();
+    void updateTimeZone(std::string tz);
+    // Time getTimeObj();
     int getHour();
     int getMinute();
-    int getSecond();
     void printLocalTime();
     int getUptimeSec();
     int getBatteryPercent();
