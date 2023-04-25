@@ -5,7 +5,7 @@
 
 #include <sys/time.h>
 #include "Arduino.h"
-// #include <RTClib.h>
+#include <RTClib.h>
 // #include "utils.h"
 #include <string>
 // #include "data_structures.h"
