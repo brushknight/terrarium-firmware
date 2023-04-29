@@ -96,6 +96,13 @@ void taskSyncRTCfromNTP(void *parameter)
   }
 }
 
+void taskSyncFromRTC(void *parameter)
+{
+  realTime->syncFromRTC();
+  realTime->printTime();
+  vTaskDelete(NULL);
+}
+
 void taskWatchNetworkStatus(void *parameter)
 {
   for (;;)
@@ -171,13 +178,6 @@ void startTasks()
 
 void setupTask(void *parameter)
 {
-
-
-
-
-  // rest of controller loading
-
-
 
   Measure::enable();
   Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
@@ -280,19 +280,26 @@ void setup()
   digitalWrite(13, 1);
 
   Wire.begin();
-  // delay(5000);
 
   rtc.begin();
 
   RealTime::RealTime rtcOriginal = RealTime::RealTime("UTC", true, &rtc);
   realTime = &rtcOriginal;
 
-  realTime->syncFromRTC();
-  realTime->printTime();
+  xTaskCreatePinnedToCore(
+      taskSyncFromRTC,
+      "taskSyncFromRTC",
+      1024 * 2,
+      NULL,
+      100,
+      NULL,
+      0);
 
   delay(5000);
 
+  realTime->printTime();
 
+  delay(5000);
 
   xTaskCreatePinnedToCore(
       setupTask,

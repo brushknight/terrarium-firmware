@@ -62,7 +62,7 @@ namespace RealTime
             gettimeofday(&tv, NULL);
             t = tv.tv_sec;
 
-            // ESP_LOGD(TAG, "%d", tv2.tv_sec);
+            ESP_LOGD(TAG, "System timestamp %d", t);
 
             info = localtime(&t);
             // ESP_LOGD(TAG, "%d %d", info->tm_hour, info->tm_min);

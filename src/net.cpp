@@ -91,6 +91,7 @@ namespace Net
 
         while (!WiFi.isConnected())
         {
+            ESP_LOGI(TAG, "[..] Connecting to wifi | 30 seconds no connection, reconecting");
             attempts++;
             delay(1 * 1000);
 
