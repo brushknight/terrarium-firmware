@@ -163,12 +163,16 @@ namespace Eeprom
 
     bool isSystemConfigSetESP32()
     {
-        return EEPROM.read(IS_SYSTEM_SET_INDEX) == 1;
+        bool isSet = EEPROM.read(IS_SYSTEM_SET_INDEX) == 1;
+        ESP_LOGD(TAG, "System config is set in esp32 EEPROM: %d", isSet);
+        return isSet;
     }
 
     bool isSystemConfigSetExternalEEPROM()
     {
-        return externalEEPROM->read(IS_SYSTEM_SET_INDEX) == 1;
+        bool isSet = externalEEPROM->read(IS_SYSTEM_SET_INDEX) == 1;
+        ESP_LOGD(TAG, "System config is set in external EEPROM: %d", isSet);
+        return isSet;
     }
 
     bool isZoneControllerSetExternalEEPROM()
@@ -184,7 +188,7 @@ namespace Eeprom
         ESP_LOGI(TAG, "[..] Saving system config");
         ESP_LOGD(TAG, "%s", json.c_str());
 
-        clearSystemSettings();
+        // clearSystemSettings();
 
         for (int i = 0; i < json.length(); ++i)
         {
@@ -212,13 +216,16 @@ namespace Eeprom
             return systemConfig;
         }
 
+        ESP_LOGD(TAG, "[..] Trying to load system confgi from external EEPROM %p", externalEEPROM);
         if (isExternalEEPROM && isSystemConfigSetExternalEEPROM())
         {
+            ESP_LOGD(TAG, "[..] Loading system confgi from external EEPROM");
             systemConfig = loadSystemConfigFromExternalEEPROM();
             wasSystemConfigLoaded = true;
             return systemConfig;
         }
 
+        ESP_LOGD(TAG, "[..] Trying to load system confgi from esp32 EEPROM");
         if (isSystemConfigSetESP32())
         {
             systemConfig = loadSystemConfigFromESP32();
@@ -245,7 +252,7 @@ namespace Eeprom
 
         std::string json = std::string(raw);
 
-        config = SystemConfig::fromJSON(json);
+        config = SystemConfig::fromJSON(&json);
 
         ESP_LOGI(TAG, "[OK] Loading system config from ESP32 EEPROM");
 
@@ -254,9 +261,10 @@ namespace Eeprom
 
     SystemConfig loadSystemConfigFromExternalEEPROM()
     {
+        ESP_LOGI(TAG, "[..] Loading system config from external EEPROM");
+
         SystemConfig config;
 
-        ESP_LOGI(TAG, "[..] Loading system config from external EEPROM");
         char raw[CONTROLLER_CONFIG_LENGTH];
 
         for (int i = 0; i < CONTROLLER_CONFIG_LENGTH; ++i)
@@ -267,7 +275,7 @@ namespace Eeprom
 
         std::string json = std::string(raw);
 
-        config = SystemConfig::fromJSON(json);
+        config.updateFromJSON(&json);
         ESP_LOGI(TAG, "[OK] Loading system config from external EEPROM");
         return config;
     }

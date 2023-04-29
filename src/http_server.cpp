@@ -164,7 +164,7 @@ namespace HttpServer
 
                 Eeprom::saveSystemConfig(config);
 
-                vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
+                vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
 
                 request->send(200, "text/plain", "Controller configuration updated, rebooting in 3 seconds");
 

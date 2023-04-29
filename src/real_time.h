@@ -6,16 +6,16 @@
 #include <sys/time.h>
 #include "Arduino.h"
 #include <RTClib.h>
-// #include "utils.h"
+#include "utils.h"
 #include <string>
-// #include "data_structures.h"
+#include "data_structures.h"
 // #include "event.h"
 
 namespace RealTime
 {
     static const char *TAG = "real-time";
 
-    void setup();
+    // void setup();
     bool isWiFiRequired();
     void syncFromRTC();
     void syncFromNTP();
@@ -25,7 +25,7 @@ namespace RealTime
     bool isRtcSyncRequired();
     void initRTC(std::string tz, bool ntp);
     void updateTimeZone(std::string tz);
-    // Time getTimeObj();
+    Time getTimeObj();
     int getHour();
     int getMinute();
     void printLocalTime();

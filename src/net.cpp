@@ -21,32 +21,24 @@ namespace Net
         return WiFi.isConnected();
     }
 
-    void setWiFiName(Data *givenData)
-    {
-        std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
-
-        (*givenData).metadata.wifiName = wifiSSID.c_str();
-    }
-
-    void startInStandAloneMode()
+    void startInStandAloneMode(SystemConfig *systemConfig)
     {
         ESP_LOGI(TAG, "[..] Starting access point");
 
-        SystemConfig config = Eeprom::loadSystemConfig();
         // if wifiPassword is too short < 8, start without password to not break env
-        std::string wifiPassphrase = config.wifiPassword;
+        std::string wifiPassphrase = systemConfig->wifiPassword;
         if (wifiPassphrase.length() < 8)
         {
             wifiPassphrase = "";
         }
-        WiFi.softAP(config.wifiSSID.c_str(), wifiPassphrase.c_str());
+        WiFi.softAP(systemConfig->wifiSSID.c_str(), wifiPassphrase.c_str());
 
         IPAddress finalIp = WiFi.softAPIP();
         ESP_LOGI(TAG, "IP Address: %s", finalIp.toString());
         ESP_LOGI(TAG, "[OK] Starting access point");
     }
 
-    void startInNormalMode()
+    void startInNormalMode(SystemConfig *systemConfig)
     {
 
         ESP_LOGI(TAG, "[..] Connecting to wifi");
@@ -73,7 +65,7 @@ namespace Net
         isConnectingStarted = true;
 
         char buffer[100];
-        sprintf(buffer, "%s %s", "Terrarium controller", Eeprom::loadSystemConfig().id.c_str());
+        sprintf(buffer, "%s %s", "Terrarium controller", systemConfig->id.c_str());
 
         ESP_LOGD(TAG, "Hostname: %s", buffer);
 
@@ -90,8 +82,8 @@ namespace Net
 
         int attempts = 0;
 
-        std::string wifiSSID = Eeprom::loadSystemConfig().wifiSSID;
-        std::string wifiPassword = Eeprom::loadSystemConfig().wifiPassword;
+        std::string wifiSSID = systemConfig->wifiSSID;
+        std::string wifiPassword = systemConfig->wifiPassword;
 
         ESP_LOGD(TAG, "SSID: %s, Passphrase: %s", wifiSSID.c_str(), wifiPassword.c_str());
 

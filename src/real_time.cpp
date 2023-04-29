@@ -14,33 +14,34 @@ namespace RealTime
 
     bool rtcBeginFailed = false;
 
-    // void initRTC(std::string tz, bool ntp)
-    // {
-    //     timeZone = tz;
-    //     ntpEnabled = ntp;
-    //     rtcBeginFailed = !rtc.begin();
-    //     if (rtcBeginFailed)
-    //     {
-    //         ESP_LOGD(TAG, "RTC failed to start");
-    //     }
-    // }
+    void initRTC(std::string tz, bool ntp)
+    {
+        timeZone = tz;
+        ntpEnabled = ntp;
+        // rtcBeginFailed = !rtc.begin();
+        // if (rtcBeginFailed)
+        // {
+        //     ESP_LOGD(TAG, "RTC failed to start");
+        // }
+    }
 
-    // void updateTimeZone(std::string tz)
-    // {
-    //     timeZone = tz;
-    //     setenv("TZ", timeZone.c_str(), 1);
-    // }
+    void updateTimeZone(std::string tz)
+    {
+        timeZone = tz;
+        setenv("TZ", timeZone.c_str(), 1);
+    }
 
-    // bool isWiFiRequired()
-    // {
-    //     return rtcBeginFailed || isRtcSyncRequired();
-    // }
+    bool isWiFiRequired()
+    {
+        return rtcBeginFailed || isRtcSyncRequired();
+    }
 
-    // bool isRtcSyncRequired()
-    // {
-    //     DateTime rtcDateTime = rtc.now();
-    //     return rtcDateTime.unixtime() < 1644065211; // Sat, 05 Feb 2022 12:46:48 GMT
-    // }
+    bool isRtcSyncRequired()
+    {
+        return false;
+        // DateTime rtcDateTime = rtc.now();
+        // return rtcDateTime.unixtime() < 1644065211; // Sat, 05 Feb 2022 12:46:48 GMT
+    }
 
     // void setup()
     // {
@@ -83,117 +84,117 @@ namespace RealTime
     {
         // DateTime rtcDateTime = rtc.now();
 
+        // struct timeval tv;
+        // tv.tv_sec = 1682452286; //rtcDateTime.unixtime(); // 1682452286; // 6:45:29 PM GMT+02:00 DST
+
+        // ESP_LOGD(TAG, "Timestamp from RTC: %d", tv.tv_sec);
+
+        // settimeofday(&tv, NULL);
+        // setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+        // // tzset();
+
+        // ESP_LOGD(TAG, "timestamp after saving: %d", tv.tv_sec);
+        // printLocalTime();
+    }
+
+    void setTimestamp(uint32_t timestamp, std::string tz)
+    {
         struct timeval tv;
-        tv.tv_sec = 1682452286;// rtcDateTime.unixtime(); // 6:45:29 PM GMT+02:00 DST
-
-        ESP_LOGD(TAG, "Timestamp from RTC: %d", tv.tv_sec);
-
-        settimeofday(&tv, NULL);
+        tv.tv_sec = timestamp;
+        timeZone = tz;
         setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
         // tzset();
 
-        ESP_LOGD(TAG, "timestamp after saving: %d", tv.tv_sec);
-        printLocalTime();
+        DateTime dt = DateTime(timestamp);
+        ESP_LOGD(TAG, "timestamp before saving: %d", dt.unixtime());
+        // rtc.adjust(dt);
     }
 
-    // void setTimestamp(uint32_t timestamp, std::string tz)
-    // {
-    //     struct timeval tv;
-    //     tv.tv_sec = timestamp;
-    //     timeZone = tz;
-    //     setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
-    //     // tzset();
+    void syncFromNTP()
+    {
+        if (!ntpEnabled)
+        {
+            ESP_LOGW(TAG, "NTP is disabled");
+            return;
+        }
 
-    //     DateTime dt = DateTime(timestamp);
-    //     ESP_LOGD(TAG, "timestamp before saving: %d", dt.unixtime());
-    //     rtc.adjust(dt);
-    // }
+        ESP_LOGD(TAG, "[..] Sync from NTP");
+        struct tm timeinfo;
+        int attempts = 0;
+        while (!getLocalTime(&timeinfo))
+        {
+            ESP_LOGE(TAG, "Failed to obtain time, retrying");
+            configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
+            attempts++;
+        }
+        ESP_LOGD(TAG, "[OK] Sync from NTP");
+    }
 
-    // void syncFromNTP()
-    // {
-    //     if (!ntpEnabled)
-    //     {
-    //         ESP_LOGW(TAG, "NTP is disabled");
-    //         return;
-    //     }
+    void syncFromNTPOnce()
+    {
 
-    //     ESP_LOGD(TAG, "[..] Sync from NTP");
-    //     struct tm timeinfo;
-    //     int attempts = 0;
-    //     while (!getLocalTime(&timeinfo))
-    //     {
-    //         ESP_LOGE(TAG, "Failed to obtain time, retrying");
-    //         configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
-    //         attempts++;
-    //     }
-    //     ESP_LOGD(TAG, "[OK] Sync from NTP");
-    // }
+        if (!ntpEnabled)
+        {
+            ESP_LOGW(TAG, "NTP is disabled");
+            return;
+        }
 
-    // void syncFromNTPOnce()
-    // {
+        ESP_LOGD(TAG, "[..] Sync from NTP Once");
 
-    //     if (!ntpEnabled)
-    //     {
-    //         ESP_LOGW(TAG, "NTP is disabled");
-    //         return;
-    //     }
+        struct tm timeinfo;
+        int attempts = 0;
+        if (!getLocalTime(&timeinfo))
+        {
+            ESP_LOGE(TAG, "Failed to obtain time, retrying");
+            configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
+            attempts++;
+        }
+        ESP_LOGD(TAG, "[OK] Sync from NTP Once");
+    }
 
-    //     ESP_LOGD(TAG, "[..] Sync from NTP Once");
+    bool saveTimeToRTC()
+    {
+        ESP_LOGD(TAG, "[..] Saving time into RTC");
 
-    //     struct tm timeinfo;
-    //     int attempts = 0;
-    //     if (!getLocalTime(&timeinfo))
-    //     {
-    //         ESP_LOGE(TAG, "Failed to obtain time, retrying");
-    //         configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
-    //         attempts++;
-    //     }
-    //     ESP_LOGD(TAG, "[OK] Sync from NTP Once");
-    // }
+        time_t now;
+        struct tm timeDetails;
 
-    // bool saveTimeToRTC()
-    // {
-    //     ESP_LOGD(TAG, "[..] Saving time into RTC");
+        time(&now);
+        localtime_r(&now, &timeDetails);
 
-    //     time_t now;
-    //     struct tm timeDetails;
+        // rtc.adjust(mktime(&timeDetails));
 
-    //     time(&now);
-    //     localtime_r(&now, &timeDetails);
+        ESP_LOGD(TAG, "[OK] Saving time into RTC");
 
-    //     rtc.adjust(mktime(&timeDetails));
+        return true;
+    }
 
-    //     ESP_LOGD(TAG, "[OK] Saving time into RTC");
+    Time getTimeObj()
+    {
+        struct timeval tv;
+        time_t t;
+        struct tm *info;
 
-    //     return true;
-    // }
+        gettimeofday(&tv, NULL);
+        t = tv.tv_sec;
 
-    // Time getTimeObj()
-    // {
-    //     struct timeval tv;
-    //     time_t t;
-    //     struct tm *info;
+        // ESP_LOGD(TAG, "%d", tv2.tv_sec);
 
-    //     gettimeofday(&tv, NULL);
-    //     t = tv.tv_sec;
+        info = localtime(&t);
+        // ESP_LOGD(TAG, "%d %d", info->tm_hour, info->tm_min);
 
-    //     // ESP_LOGD(TAG, "%d", tv2.tv_sec);
+        return Time(info->tm_hour,info->tm_min);
+    }
 
-    //     info = localtime(&t);
-    //     // ESP_LOGD(TAG, "%d %d", info->tm_hour, info->tm_min);
+    int getHour()
+    {
+        return getTimeObj().hours;
+    }
 
-    //     return Time(info->tm_hour,info->tm_min);
-    // }
-
-    // int getHour()
-    // {
-    //     return getTimeObj().hours;
-    // }
-
-    // int getMinute()
-    // {
-    //     return getTimeObj().minutes;
-    // }
+    int getMinute()
+    {
+        return getTimeObj().minutes;
+    }
 
     void printLocalTime()
     {

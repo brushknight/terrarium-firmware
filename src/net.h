@@ -3,10 +3,8 @@
 
 #include <SPI.h>
 #include <WiFi.h>
-// #include "display.h"
 #include "data.h"
-#include "eeprom_wrapper.h"
-// #include "status.h"
+#include "config.h"
 #include <esp_wifi.h>
 
 namespace Net
@@ -15,12 +13,9 @@ namespace Net
 
     bool isConnected();
     char *statusToString(int code);
-    void setWiFiName(Data *givenData);
 
-
-    void startInStandAloneMode();
-    void startInNormalMode();
-
+    void startInStandAloneMode(SystemConfig *systemConfig);
+    void startInNormalMode(SystemConfig *systemConfig);
 }
 
 #endif

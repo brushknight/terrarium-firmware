@@ -6,7 +6,7 @@ namespace Status
 #define LEDPIN 23
 #define LED_COUNT 1
 
-const int statusLedBrightness = 5;
+const int statusLedBrightness = 20;
 
 
     int pixelFormat = NEO_GRB + NEO_KHZ800;

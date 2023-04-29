@@ -59,9 +59,10 @@ public:
     std::string timeZone;
     bool ntpEnabled;
 
-    SystemConfig(){
+    SystemConfig()
+    {
         // defaults for wifi
-        wifiSSID = "Terrarium Controller" + Utils::getMac();
+        wifiSSID = "Terrarium Controller " + Utils::getMac();
         wifiPassword = "Chameleon";
         wifiAPMode = true;
         ntpEnabled = false;
@@ -69,7 +70,7 @@ public:
 
     static int jsonSize()
     {
-        return 1024;
+        return 2048;
     }
     DynamicJsonDocument toJSON()
     {
@@ -84,16 +85,38 @@ public:
         doc["ntp_enabled"] = ntpEnabled;
         return doc;
     }
-    static SystemConfig fromJSON(std::string json)
-    {
-        DynamicJsonDocument doc(jsonSize());
-        deserializeJson(doc, json);
 
-        return SystemConfig::fromJSONObj(doc);
+    void updateFromJSON(std::string *json)
+    {
+        ESP_LOGD(TAG, "[..] String to JSON");
+        DynamicJsonDocument jsonObj(jsonSize());
+        deserializeJson(jsonObj, *json);
+        ESP_LOGD(TAG, "[OK] String to JSON");
+
+        wifiSSID = jsonObj["wifi_ssid"].as<std::string>();
+        wifiPassword = jsonObj["wifi_password"].as<std::string>();
+        id = jsonObj["id"].as<std::string>();
+        animalName = jsonObj["animal_name"].as<std::string>();
+        timeZone = jsonObj["time_zone"].as<std::string>();
+        ntpEnabled = jsonObj["ntp_enabled"];
+        wifiAPMode = jsonObj["wifi_ap_mode"];
+    }
+
+    static SystemConfig fromJSON(std::string *json)
+    {
+
+        // ESP_LOGD(TAG, "[..] String to JSON");
+        // DynamicJsonDocument doc(jsonSize());
+        // deserializeJson(doc, *json);
+        // ESP_LOGD(TAG, "[OK] String to JSON");
+        // return SystemConfig::fromJSONObj(doc);
+        return SystemConfig();
     }
     static SystemConfig fromJSONObj(DynamicJsonDocument jsonObj)
     {
         SystemConfig config;
+
+        ESP_LOGD(TAG, "[..] Loading system config");
 
         if (jsonObj.containsKey("wifiSSID"))
         {
@@ -114,6 +137,8 @@ public:
             config.ntpEnabled = jsonObj["ntp_enabled"];
             config.wifiAPMode = jsonObj["wifi_ap_mode"];
         }
+
+        ESP_LOGD(TAG, "[OK] Loading system config");
 
         return config;
     }
