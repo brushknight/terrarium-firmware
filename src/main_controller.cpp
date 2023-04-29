@@ -23,6 +23,7 @@ Control::Controller *hardwareController;
 Zone::Controller *zoneController;
 SystemConfig *systemConfig;
 Measure::EnvironmentSensors *environmentSensors;
+RealTime::RealTime *realTime;
 
 bool initialSetupMode = false;
 
@@ -50,7 +51,7 @@ void taskZoneControl(void *parameter)
 
   for (;;)
   {
-    Time time = RealTime::getTimeObj();
+    Time time = realTime->getTimeObj();
     ESP_LOGD(TAG, "zone control tick: %s", time.toString().c_str());
     data.zones = zoneController->loopTick(time, environmentSensors, hardwareController);
 
@@ -88,8 +89,9 @@ void taskSyncRTCfromNTP(void *parameter)
   {
     if (Net::isConnected())
     {
-      RealTime::syncFromNTPOnce();
       vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
+      realTime->syncFromNTP(true);
+      realTime->saveTimeToRTC();
     }
   }
 }
@@ -157,58 +159,25 @@ void startTasks()
       NULL,
       0);
 
-  // xTaskCreatePinnedToCore(
-  //     taskZoneControl,
-  //     "taskZoneControl",
-  //     1024 * 32,
-  //     NULL,
-  //     2,
-  //     NULL,
-  //     1);
+  xTaskCreatePinnedToCore(
+      taskZoneControl,
+      "taskZoneControl",
+      1024 * 32,
+      NULL,
+      2,
+      NULL,
+      1);
 }
 
 void setupTask(void *parameter)
 {
-  pinMode(13, OUTPUT);
-  digitalWrite(13, 0);
 
-  Wire.begin();
-  // delay(5000);
 
-  rtc.begin();
-  DateTime rtcDateTime = rtc.now();
-  struct timeval tv;
-  tv.tv_sec = rtcDateTime.unixtime(); //  9:51:26 PM 7:51:26
 
-  ESP_LOGD(TAG, "Timestamp from RTC: %d", tv.tv_sec);
 
-  settimeofday(&tv, NULL);
-  setenv("TZ", "UTC", 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
-  // tzset();
+  // rest of controller loading
 
-  ESP_LOGD(TAG, "timestamp after saving: %d", tv.tv_sec);
 
-  delay(1000);
-  // setup initial time (from RTC and will be adjusted later)
-  //  RealTime::initRTC(systemConfig.timeZone, systemConfig.ntpEnabled);
-  // RealTime::initRTC("UTC", false);
-  // RealTime::syncFromRTC();
-  // RealTime::printLocalTime();
-
-  struct timeval tv2;
-  time_t t;
-  struct tm *info;
-
-  gettimeofday(&tv2, NULL);
-  t = tv2.tv_sec;
-
-  info = localtime(&t);
-
-  ESP_LOGD(TAG, "timestamp loaded %d", tv2.tv_sec);
-
-  ESP_LOGI(TAG, "%d:%d:%d", info->tm_hour, info->tm_min, info->tm_sec);
-
-  delay(5000);
 
   Measure::enable();
   Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
@@ -225,7 +194,8 @@ void setupTask(void *parameter)
   Eeprom::setup(&externalEEPROM);
   SystemConfig systemConfigOriginal = Eeprom::loadSystemConfig();
   systemConfig = &systemConfigOriginal;
-  RealTime::updateTimeZone(systemConfig->timeZone);
+  // RealTime::initRTC(systemConfig->timeZone, systemConfig->ntpEnabled, &rtc);
+  // RealTime::updateTimeZone(systemConfig->timeZone);
 
   Status::setup();
   Status::setOrange();
@@ -252,17 +222,17 @@ void setupTask(void *parameter)
   bool wasWiFiStarted = false;
 
   // check if wifi required and start it
-  if (RealTime::isWiFiRequired() || systemConfig->wifiAPMode)
+  if (realTime->isRtcSyncRequired() || systemConfig->wifiAPMode)
   {
     startWiFi();
     wasWiFiStarted = true;
   }
 
   // sync time from NTP if requires
-  if (RealTime::isRtcSyncRequired())
+  if (realTime->isRtcSyncRequired())
   {
-    RealTime::syncFromNTP();
-    RealTime::saveTimeToRTC();
+    realTime->syncFromNTP(false);
+    realTime->saveTimeToRTC();
   }
 
   std::string zoneControllerJSON = Eeprom::loadZoneControllerJSON();
@@ -274,7 +244,7 @@ void setupTask(void *parameter)
 
   environmentSensors->readSensors();
 
-  // startTasks();
+  startTasks();
 
   if (!wasWiFiStarted)
   {
@@ -283,7 +253,7 @@ void setupTask(void *parameter)
   }
 
   // Net::setWiFiName(&data);
-  HttpServer::start(&data, zoneController, environmentSensors, false);
+  HttpServer::start(&data, realTime, zoneController, environmentSensors, false);
   data.mac = Utils::getMac();
 
   if (systemConfig->wifiAPMode)
@@ -305,6 +275,25 @@ void setupTask(void *parameter)
 
 void setup()
 {
+
+  pinMode(13, OUTPUT);
+  digitalWrite(13, 1);
+
+  Wire.begin();
+  // delay(5000);
+
+  rtc.begin();
+
+  RealTime::RealTime rtcOriginal = RealTime::RealTime("UTC", true, &rtc);
+  realTime = &rtcOriginal;
+
+  realTime->syncFromRTC();
+  realTime->printTime();
+
+  delay(5000);
+
+
+
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",

@@ -46,6 +46,7 @@ namespace HttpServer
     Data *data;
     Zone::Controller *zoneController;
     Measure::EnvironmentSensors *environmentSensors;
+    RealTime::RealTime *realTime;
 
     bool wasClimateControllerSaved = false;
 
@@ -160,7 +161,7 @@ namespace HttpServer
                 uint32_t timestamp = doc["timestamp"];
                 // ESP_LOGI(TAG, "timestamp %d", timestamp);
 
-                RealTime::setTimestamp(timestamp, config.timeZone);
+                realTime->setTimestamp(timestamp, config.timeZone);
 
                 Eeprom::saveSystemConfig(config);
 
@@ -249,12 +250,14 @@ namespace HttpServer
 
         SystemConfig controllerConfig = Eeprom::loadSystemConfig();
 
+        Time time = realTime->getTimeObj();
+
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
         doc["metadata"]["mac"] = (*data).mac.c_str();
-        doc["metadata"]["id"] = controllerConfig.id.c_str();
-        doc["metadata"]["time"]["hour"] = RealTime::getHour();
-        doc["metadata"]["time"]["minute"] = RealTime::getMinute();
-        doc["metadata"]["time"]["uptime"] = RealTime::getUptimeSec();
+        // doc["metadata"]["id"] = controllerConfig.id.c_str();
+        doc["metadata"]["time"]["hour"] = time.hours;
+        doc["metadata"]["time"]["minute"] = time.minutes;
+        doc["metadata"]["time"]["uptime"] = realTime->getUptimeSec();
         doc["metadata"]["build_time"] = BUILD_TIME;
         doc["system"]["rtc"]["percent"] = (*data).RtcBatteryPercent;
         doc["system"]["rtc"]["mV"] = (*data).RtcBatteryMilliVolt;
@@ -281,11 +284,12 @@ namespace HttpServer
         request->send(200, "application/json", requestBody.c_str());
     }
 
-    void start(Data *givenData, Zone::Controller *givenZoneController, Measure::EnvironmentSensors *givenEnvironmentSensors, bool isSetupMode)
+    void start(Data *givenData, RealTime::RealTime *giventRealTime, Zone::Controller *givenZoneController, Measure::EnvironmentSensors *givenEnvironmentSensors, bool isSetupMode)
     {
         data = givenData;
         zoneController = givenZoneController;
         environmentSensors = givenEnvironmentSensors;
+        realTime = giventRealTime;
 
         server.on("/", HTTP_GET, onFormSettings);
         server.on("/settings", HTTP_GET, onFormSettings);
