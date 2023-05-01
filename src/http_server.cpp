@@ -45,8 +45,10 @@ namespace HttpServer
 
     Data *data;
     Zone::Controller *zoneController;
+    SystemConfig *systemConfig;
     Measure::EnvironmentSensors *environmentSensors;
     RealTime::RealTime *realTime;
+    Eeprom::Eeprom *eeprom;
 
     bool wasClimateControllerSaved = false;
 
@@ -57,7 +59,7 @@ namespace HttpServer
 
     void onPostReset(AsyncWebServerRequest *request)
     {
-        Eeprom::clear();
+        // Eeprom::clear();
 
         request->send(200, "text/plain", "Controller & climate configuration cleared, rebooting in 3 seconds");
 
@@ -68,7 +70,7 @@ namespace HttpServer
 
     void onPostResetSystem(AsyncWebServerRequest *request)
     {
-        Eeprom::clearSystemSettings();
+        // Eeprom::clearSystemSettings();
 
         request->send(200, "text/plain", "System configuration cleared, rebooting in 3 seconds");
 
@@ -79,7 +81,7 @@ namespace HttpServer
 
     void onPostResetClimate(AsyncWebServerRequest *request)
     {
-        Eeprom::clearZoneController();
+        // Eeprom::clearZoneController();
 
         request->send(200, "text/plain", "Climate configuration cleared, rebooting in 3 seconds");
 
@@ -106,8 +108,7 @@ namespace HttpServer
 
     void onGetSettings(AsyncWebServerRequest *request)
     {
-        SystemConfig config = Eeprom::loadSystemConfig();
-        DynamicJsonDocument json = config.toJSON();
+        DynamicJsonDocument json = systemConfig->toJSON();
 
         json["wifi_password"] = "************";
 
@@ -139,7 +140,6 @@ namespace HttpServer
 
     void onPostSettings(AsyncWebServerRequest *request)
     {
-        SystemConfig config = Eeprom::loadSystemConfig();
         int params = request->params();
         for (int i = 0; i < params; i++)
         {
@@ -153,17 +153,17 @@ namespace HttpServer
                 // Serial.println("POST: raw config");
                 // Serial.println(p->value().c_str());
 
-                DynamicJsonDocument doc(SystemConfig::jsonSize());
-                deserializeJson(doc, p->value().c_str());
+                std::string json = p->value().c_str();
 
-                config = SystemConfig::fromJSONObj(doc);
+                DynamicJsonDocument doc(SystemConfig::jsonSize());
+                deserializeJson(doc, json);
 
                 uint32_t timestamp = doc["timestamp"];
                 // ESP_LOGI(TAG, "timestamp %d", timestamp);
 
-                realTime->setTimestamp(timestamp, config.timeZone);
+                realTime->setTimestamp(timestamp, systemConfig->timeZone);
 
-                Eeprom::saveSystemConfig(config);
+                systemConfig->updateFromJSON(&json);
 
                 vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
 
@@ -248,8 +248,6 @@ namespace HttpServer
     {
         DynamicJsonDocument doc(1024 * 2 + Zone::ZonesStatuses::jsonSize());
 
-        SystemConfig controllerConfig = Eeprom::loadSystemConfig();
-
         Time time = realTime->getTimeObj();
 
         doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
@@ -274,8 +272,6 @@ namespace HttpServer
     {
         DynamicJsonDocument doc(1024);
 
-        SystemConfig controllerConfig = Eeprom::loadSystemConfig();
-
         doc["status"] = "ok";
 
         std::string requestBody;
@@ -284,12 +280,20 @@ namespace HttpServer
         request->send(200, "application/json", requestBody.c_str());
     }
 
-    void start(Data *givenData, RealTime::RealTime *giventRealTime, Zone::Controller *givenZoneController, Measure::EnvironmentSensors *givenEnvironmentSensors, bool isSetupMode)
+    void start(Data *givenData,
+               SystemConfig *givenSystemConfig,
+               RealTime::RealTime *giventRealTime,
+               Zone::Controller *givenZoneController,
+               Measure::EnvironmentSensors *givenEnvironmentSensors,
+               Eeprom::Eeprom *givenEeprom,
+               bool isSetupMode)
     {
         data = givenData;
+        systemConfig = givenSystemConfig;
         zoneController = givenZoneController;
         environmentSensors = givenEnvironmentSensors;
         realTime = giventRealTime;
+        eeprom = givenEeprom;
 
         server.on("/", HTTP_GET, onFormSettings);
         server.on("/settings", HTTP_GET, onFormSettings);

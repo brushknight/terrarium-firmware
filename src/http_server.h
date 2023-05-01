@@ -19,7 +19,13 @@ namespace HttpServer
     static const char *TAG = "http-server";
 
     AsyncWebServer *getServer();
-    void start(Data *givenData, RealTime::RealTime *giventRealTime, Zone::Controller *givenZoneController, Measure::EnvironmentSensors *givenEnvironmentSensors, bool isSetupMode);
+    void start(Data *givenData,
+               SystemConfig *givenSystemConfig,
+               RealTime::RealTime *giventRealTime,
+               Zone::Controller *givenZoneController,
+               Measure::EnvironmentSensors *givenEnvironmentSensors,
+               Eeprom::Eeprom *givenEeprom,
+               bool isSetupMode);
     void notFound(AsyncWebServerRequest *request);
     void onFormSettings(AsyncWebServerRequest *request);
     void onGetSettings(AsyncWebServerRequest *request);

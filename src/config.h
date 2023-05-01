@@ -62,7 +62,16 @@ public:
     SystemConfig()
     {
         // defaults for wifi
-        wifiSSID = "Terrarium Controller " + Utils::getMac();
+        wifiSSID = "Terrarium Controller";
+        wifiPassword = "Chameleon";
+        wifiAPMode = true;
+        ntpEnabled = false;
+    }
+
+    SystemConfig(std::string mac)
+    {
+        // defaults for wifi
+        wifiSSID = "Terrarium Controller " + mac;
         wifiPassword = "Chameleon";
         wifiAPMode = true;
         ntpEnabled = false;

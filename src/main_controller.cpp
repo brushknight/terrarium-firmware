@@ -24,8 +24,7 @@ Zone::Controller *zoneController;
 SystemConfig *systemConfig;
 Measure::EnvironmentSensors *environmentSensors;
 RealTime::RealTime *realTime;
-
-bool initialSetupMode = false;
+Eeprom::Eeprom *eeprom;
 
 void saveClimateConfig(void *parameter)
 {
@@ -35,7 +34,12 @@ void saveClimateConfig(void *parameter)
     if (zoneController != NULL && zoneController->toBePersisted())
     {
       zoneController->pause();
-      Eeprom::saveZoneControllerJSON(zoneController);
+
+      DynamicJsonDocument doc = zoneController->toJSON();
+      std::string json;
+      serializeJson(doc, json);
+
+      eeprom->saveClimateConfig(&json);
       zoneController->persisted();
       zoneController->resume();
     }
@@ -75,10 +79,10 @@ void taskResetEepromChecker(void *parameter)
 {
   for (;;)
   {
-    if (Eeprom::resetEepromChecker())
-    {
-      ESP.restart();
-    }
+    // if (Eeprom::resetEepromChecker())
+    // {
+    //   ESP.restart();
+    // }
     vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
   }
 }
@@ -179,7 +183,9 @@ void startTasks()
 void setupTask(void *parameter)
 {
 
-  Measure::enable();
+  Status::setup();
+
+  Measure::enable(); // TODO re-do
   Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
   environmentSensors = &envSensors;
   environmentSensors->scan();
@@ -191,13 +197,18 @@ void setupTask(void *parameter)
 
   ExternalEEPROM externalEEPROM;
 
-  Eeprom::setup(&externalEEPROM);
-  SystemConfig systemConfigOriginal = Eeprom::loadSystemConfig();
-  systemConfig = &systemConfigOriginal;
-  // RealTime::initRTC(systemConfig->timeZone, systemConfig->ntpEnabled, &rtc);
-  // RealTime::updateTimeZone(systemConfig->timeZone);
+  Eeprom::Eeprom eepromOriginal = Eeprom::Eeprom(&externalEEPROM, SystemConfig::jsonSize(), Zone::Controller::jsonSize());
+  eeprom = &eepromOriginal;
 
-  Status::setup();
+  SystemConfig systemConfigOriginal = SystemConfig(Utils::getMac());
+  systemConfig = &systemConfigOriginal;
+
+  if (eeprom->isSystemConfigSet())
+  {
+    std::string systemConfigJSON = eeprom->loadSystemConfg();
+    systemConfig->updateFromJSON(&systemConfigJSON);
+  }
+
   Status::setOrange();
 
   ESP_LOGD(TAG, "Max alloc heap: %d", ESP.getMaxAllocHeap());
@@ -217,8 +228,6 @@ void setupTask(void *parameter)
 
   data = Data();
 
-  initialSetupMode = !Eeprom::isMemorySet();
-
   bool wasWiFiStarted = false;
 
   // check if wifi required and start it
@@ -235,9 +244,12 @@ void setupTask(void *parameter)
     realTime->saveTimeToRTC();
   }
 
-  std::string zoneControllerJSON = Eeprom::loadZoneControllerJSON();
+  if (eeprom->isClimateConfigSet())
+  {
+    std::string zoneControllerJSON = eeprom->loadClimateConfig();
+    zoneController->initFromJSON(&zoneControllerJSON);
+  }
 
-  zoneController->initFromJSON(&zoneControllerJSON);
   // ESP_LOGD(TAG, "%s", zoneController->getTemperatureZone(0).slug.c_str());
 
   data.metadata.id = systemConfig->id;
@@ -253,7 +265,7 @@ void setupTask(void *parameter)
   }
 
   // Net::setWiFiName(&data);
-  HttpServer::start(&data, realTime, zoneController, environmentSensors, false);
+  HttpServer::start(&data, systemConfig, realTime, zoneController, environmentSensors, eeprom, false);
   data.mac = Utils::getMac();
 
   if (systemConfig->wifiAPMode)
