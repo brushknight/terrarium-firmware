@@ -58,6 +58,16 @@ public:
     std::string animalName;
     std::string timeZone;
     bool ntpEnabled;
+    bool changed = false;
+
+    bool toBePersisted()
+    {
+        return changed;
+    }
+    void persisted()
+    {
+        changed = false;
+    }
 
     SystemConfig()
     {
@@ -97,6 +107,8 @@ public:
 
     void updateFromJSON(std::string *json)
     {
+        static const char *TAG = "config";
+
         ESP_LOGD(TAG, "[..] String to JSON");
         DynamicJsonDocument jsonObj(jsonSize());
         deserializeJson(jsonObj, *json);
@@ -109,6 +121,7 @@ public:
         timeZone = jsonObj["time_zone"].as<std::string>();
         ntpEnabled = jsonObj["ntp_enabled"];
         wifiAPMode = jsonObj["wifi_ap_mode"];
+        changed = true;
     }
 
     static SystemConfig fromJSON(std::string *json)
@@ -123,6 +136,7 @@ public:
     }
     static SystemConfig fromJSONObj(DynamicJsonDocument jsonObj)
     {
+        static const char *TAG = "config";
         SystemConfig config;
 
         ESP_LOGD(TAG, "[..] Loading system config");

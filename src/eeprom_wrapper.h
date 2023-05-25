@@ -77,11 +77,15 @@ namespace Eeprom
         // 0 - not set, 1 - set in esp32 eeprom, 2 - set in external eeprom
         int isSystemConfigSet()
         {
-            if (isExternalEEPROM && externalEEPROM->read(INDEX_SYSTEM_JSON) == 1)
+            ESP_LOGD(TAG, "isExternalEEPROM %d, externalEEPROM->read(INDEX_SYSTEM_SET) %d,  EEPROM.read(INDEX_SYSTEM_SET)",
+                     isExternalEEPROM,
+                     externalEEPROM->read(INDEX_SYSTEM_SET),
+                     EEPROM.read(INDEX_SYSTEM_SET));
+            if (isExternalEEPROM && externalEEPROM->read(INDEX_SYSTEM_SET) == 1)
             {
                 return 2;
             }
-            return EEPROM.read(INDEX_SYSTEM_JSON) == 1 ? 1 : 0;
+            return EEPROM.read(INDEX_SYSTEM_SET) == 1 ? 1 : 0;
         }
         void saveSystemConfig(std::string *json)
         {
@@ -218,17 +222,17 @@ namespace Eeprom
                 }
                 if (i % 100 == 0)
                 {
-                    int percent = float(i) / float(cellsToClean) * 100;
+                    float percent = float(i) / float(cellsToClean) * 100.0;
                     ESP_LOGI(TAG, "Cleaned %.2f%%", percent);
                 }
             }
 
             if (isExternalEEPROM)
             {
-                externalEEPROM->write(INDEX_SYSTEM_JSON, 0);
+                externalEEPROM->write(INDEX_SYSTEM_SET, 0);
             }
 
-            EEPROM.write(INDEX_SYSTEM_JSON, 0);
+            EEPROM.write(INDEX_SYSTEM_SET, 0);
 
             ESP_LOGI(TAG, "[OK] Clearing system config from both EEPROMs ");
         }
@@ -247,85 +251,37 @@ namespace Eeprom
 
                 if (i % 100 == 0)
                 {
-                    int percent = float(i) / float(cellsToClean) * 100;
+                    float percent = float(i) / float(cellsToClean) * 100.0;
                     ESP_LOGI(TAG, "Cleaned %.2f%%", percent);
                 }
             }
 
-            EEPROM.write(INDEX_CLIMATE_JSON, 0);
+            EEPROM.write(INDEX_SYSTEM_SET, 0);
 
             ESP_LOGI(TAG, "[OK] Clearing climate config from external EEPROM");
         }
-        bool resetWatcher()
+
+        bool resetEepromsOnBootChecker()
         {
             pinMode(BUTTON_RESET_EEPROM, INPUT);
             int resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
-            int previousResetButtonState = 0;
-            for (int i = 0; i < 3; i++)
+            ESP_LOGD(TAG, "reset button state %d, check %d", resetButtonState, resetButtonState == 1);
+            if (resetButtonState == 1)
             {
-                resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
-                if (resetButtonState == 1)
-                {
-                    Status::setWarning();
-                    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-                    previousResetButtonState = 1;
-                }
-                else
-                {
-                    if (previousResetButtonState == 1)
-                    {
-                        Status::turnLedOff();
-                    }
-                    previousResetButtonState = 0;
-                    return false;
-                }
-            }
-            for (int i = 0; i < 3; i++)
-            {
+                Status::setWarning();
+                vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
                 resetButtonState = digitalRead(BUTTON_RESET_EEPROM);
                 if (resetButtonState == 1)
                 {
                     Status::setError();
-                    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-                    previousResetButtonState = 1;
-                }
-                else
-                {
-                    if (previousResetButtonState == 1)
-                    {
-                        Status::turnLedOff();
-                    }
-                    previousResetButtonState = 0;
-                    return false;
+                    resetSystemConfig();
+                    resetClimateConfig();
+                    return true;
                 }
             }
-            // clearZoneController();
-            return true;
+            return false;
         }
     };
-
-    // void setup(ExternalEEPROM *extEEPROM);
-    // bool isMemorySet();
-    // void clear();
-    // void clearZoneController();
-    // void clearZoneControllerFull();
-    // void clearSystemSettings();
-    // void saveSystemConfig(SystemConfig config);
-    // // void updateZoneControllerFromJson(std::string *json);
-    // void saveZoneController();
-    // void saveZoneControllerJSON(Zone::Controller *zoneController);
-    // // Zone::Controller *loadZoneController();
-    // SystemConfig loadSystemConfig();
-    // SystemConfig loadSystemConfigFromESP32();
-    // SystemConfig loadSystemConfigFromExternalEEPROM();
-    // bool isSystemConfigSetESP32();
-    // bool isSystemConfigSetExternalEEPROM();
-    // bool isZoneControllerSetExternalEEPROM();
-    // void saveZoneControllerTask(void *parameter);
-    // bool resetEepromChecker();
-
-    // // refactoring
-    // std::string loadZoneControllerJSON();
 }
 
 #endif

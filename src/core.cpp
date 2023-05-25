@@ -12,8 +12,6 @@
 
 // #define __BSD_VISIBLE 1
 
-// #include <sys/time.h>
-
 static const char *TAG = "main";
 
 RTC_DS3231 rtc;
@@ -48,6 +46,30 @@ void saveClimateConfig(void *parameter)
   }
 }
 
+void saveSystemConfig(void *parameter)
+{
+  for (;;)
+  {
+    ESP_LOGD(TAG, "save system config tick");
+    if (systemConfig != NULL && systemConfig->toBePersisted())
+    {
+      DynamicJsonDocument doc = systemConfig->toJSON();
+      std::string json;
+      serializeJson(doc, json);
+
+      ESP_LOGD(TAG, "save system config triggered %s", json.c_str());
+
+      eeprom->saveSystemConfig(&json);
+      systemConfig->persisted();
+
+      //TODO do system reinit
+
+    }
+    
+    vTaskDelay(2 * 1000 / portTICK_PERIOD_MS);
+  }
+}
+
 void taskZoneControl(void *parameter)
 {
   hardwareController->resetPorts();
@@ -75,18 +97,6 @@ void taskCheckRtcBattery(void *parameter)
   }
 }
 
-void taskResetEepromChecker(void *parameter)
-{
-  for (;;)
-  {
-    // if (Eeprom::resetEepromChecker())
-    // {
-    //   ESP.restart();
-    // }
-    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
-  }
-}
-
 void taskSyncRTCfromNTP(void *parameter)
 {
   for (;;)
@@ -102,6 +112,7 @@ void taskSyncRTCfromNTP(void *parameter)
 
 void taskSyncFromRTC(void *parameter)
 {
+  rtc.begin();
   realTime->syncFromRTC();
   realTime->printTime();
   vTaskDelete(NULL);
@@ -144,15 +155,6 @@ void startTasks()
       1);
 
   xTaskCreatePinnedToCore(
-      taskResetEepromChecker,
-      "taskResetEepromChecker",
-      1024 * 2,
-      NULL,
-      1,
-      NULL,
-      1);
-
-  xTaskCreatePinnedToCore(
       taskSyncRTCfromNTP,
       "taskSyncRTCfromNTP",
       1024 * 4,
@@ -183,7 +185,7 @@ void startTasks()
 void setupTask(void *parameter)
 {
 
-  Status::setup();
+  
 
   Measure::enable(); // TODO re-do
   Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
@@ -195,15 +197,16 @@ void setupTask(void *parameter)
   Zone::Controller zoneControllerOriginal = Zone::Controller();
   zoneController = &zoneControllerOriginal;
 
-  ExternalEEPROM externalEEPROM;
 
-  Eeprom::Eeprom eepromOriginal = Eeprom::Eeprom(&externalEEPROM, SystemConfig::jsonSize(), Zone::Controller::jsonSize());
-  eeprom = &eepromOriginal;
 
   SystemConfig systemConfigOriginal = SystemConfig(Utils::getMac());
   systemConfig = &systemConfigOriginal;
 
-  if (eeprom->isSystemConfigSet())
+  int isSystemSet = eeprom->isSystemConfigSet();
+
+  ESP_LOGD(TAG, "is system set %d", isSystemSet);
+
+  if (eeprom->isSystemConfigSet() > 0)
   {
     std::string systemConfigJSON = eeprom->loadSystemConfg();
     systemConfig->updateFromJSON(&systemConfigJSON);
@@ -288,13 +291,24 @@ void setupTask(void *parameter)
 void setup()
 {
 
-  pinMode(13, OUTPUT);
-  digitalWrite(13, 1);
 
   Wire.begin();
 
-  rtc.begin();
+  Status::setup();
 
+  pinMode(13, OUTPUT);
+  digitalWrite(13, 1);
+
+  ExternalEEPROM externalEEPROM;
+
+  Eeprom::Eeprom eepromOriginal = Eeprom::Eeprom(&externalEEPROM, SystemConfig::jsonSize(), Zone::Controller::jsonSize());
+  eeprom = &eepromOriginal;
+  eeprom->setup();
+  if(eeprom->resetEepromsOnBootChecker()){
+    Status::setGreen();
+    vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
+  }
+ 
   RealTime::RealTime rtcOriginal = RealTime::RealTime("UTC", true, &rtc);
   realTime = &rtcOriginal;
 
@@ -306,12 +320,6 @@ void setup()
       100,
       NULL,
       0);
-
-  delay(5000);
-
-  realTime->printTime();
-
-  delay(5000);
 
   xTaskCreatePinnedToCore(
       setupTask,
@@ -325,6 +333,15 @@ void setup()
   xTaskCreatePinnedToCore(
       saveClimateConfig,
       "saveClimateConfig",
+      1024 * 32,
+      NULL,
+      100,
+      NULL,
+      0);
+
+  xTaskCreatePinnedToCore(
+      saveSystemConfig,
+      "savSystemConfig",
       1024 * 32,
       NULL,
       100,

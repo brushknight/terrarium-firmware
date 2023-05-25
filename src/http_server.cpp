@@ -165,11 +165,11 @@ namespace HttpServer
 
                 systemConfig->updateFromJSON(&json);
 
-                vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
+                // vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
 
-                request->send(200, "text/plain", "Controller configuration updated, rebooting in 3 seconds");
+                request->send(200, "text/plain", "Controller configuration updated, re-init initialized");
 
-                ESP.restart();
+                // ESP.restart();
             }
         }
 

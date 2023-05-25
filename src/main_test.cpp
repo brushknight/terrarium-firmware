@@ -8,9 +8,9 @@ PCF8574 pcf(0x20);
 
 void setup()
 {
-    pinMode(4, OUTPUT);
-    pinMode(25, OUTPUT);
-    pinMode(13, OUTPUT);
+    pinMode(9, OUTPUT);
+    // pinMode(25, OUTPUT);
+    // pinMode(13, OUTPUT);
     
     
     
@@ -23,10 +23,12 @@ void setup()
 void loop()
 {
 
-digitalWrite(13, 1);
+digitalWrite(9, 1);
 delay(1000);
-digitalWrite(13, 0);
+digitalWrite(9, 0);
 delay(1000);
+// digitalWrite(13, 0);
+// delay(1000);
 
     // for (int i = 0; i < 51; i++)
     // {
