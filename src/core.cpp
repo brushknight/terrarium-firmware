@@ -17,6 +17,7 @@ static const char *TAG = "main";
 RTC_DS3231 rtc;
 
 Data data;
+Net::Network *net;
 Control::Controller *hardwareController;
 Zone::Controller *zoneController;
 SystemConfig *systemConfig;
@@ -63,6 +64,8 @@ void saveSystemConfig(void *parameter)
       systemConfig->persisted();
 
       // TODO do system reinit
+      realTime->updateTimeZOne(systemConfig->timeZone);
+      // reconnect wifi if it or ID changed
     }
 
     vTaskDelay(2 * 1000 / portTICK_PERIOD_MS);
@@ -100,7 +103,7 @@ void taskSyncRTCfromNTP(void *parameter)
 {
   for (;;)
   {
-    if (Net::isConnected())
+    if (net->isConnected())
     {
       vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
       realTime->syncFromNTP(true);
@@ -121,23 +124,22 @@ void taskWatchNetworkStatus(void *parameter)
 {
   for (;;)
   {
-    data.WiFiStatus = Net::isConnected();
+    data.WiFiStatus = net->isConnected();
     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
   }
 }
 
 void startWiFi()
 {
+
+  net->start();
+
   if (systemConfig->wifiAPMode)
   {
-    // stand alone mode
-    Net::startInStandAloneMode(systemConfig);
     Status::setPurple();
   }
   else
   {
-    // normal wifi client mode
-    Net::startInNormalMode(systemConfig);
     data.metadata.wifiName = systemConfig->wifiSSID;
   }
 }
@@ -190,20 +192,6 @@ void setupTask(void *parameter)
   environmentSensors->scan();
   delay(2000);
   environmentSensors->scan();
-
-  SystemConfig systemConfigOriginal = SystemConfig(Utils::getMac());
-  systemConfig = &systemConfigOriginal;
-
-  int isSystemSet = eeprom->isSystemConfigSet();
-
-  ESP_LOGD(TAG, "is system set %d", isSystemSet);
-
-  if (eeprom->isSystemConfigSet() > 0)
-  {
-    std::string systemConfigJSON = eeprom->loadSystemConfg();
-    ESP_LOGD(TAG, "loaded json for system config: %s", systemConfigJSON.c_str());
-    systemConfig->updateFromJSON(&systemConfigJSON, false);
-  }
 
   Zone::Controller zoneControllerOriginal = Zone::Controller();
   zoneController = &zoneControllerOriginal;
@@ -303,7 +291,24 @@ void setup()
     vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
   }
 
-  RealTime::RealTime rtcOriginal = RealTime::RealTime("UTC", true, &rtc);
+  SystemConfig systemConfigOriginal = SystemConfig(Utils::getMac());
+  systemConfig = &systemConfigOriginal;
+
+  int isSystemSet = eeprom->isSystemConfigSet();
+
+  ESP_LOGD(TAG, "is system set %d", isSystemSet);
+
+  if (eeprom->isSystemConfigSet() > 0)
+  {
+    std::string systemConfigJSON = eeprom->loadSystemConfg();
+    ESP_LOGD(TAG, "loaded json for system config: %s", systemConfigJSON.c_str());
+    systemConfig->updateFromJSON(&systemConfigJSON, false);
+  }
+
+  Net::Network netOriginal = Net::Network(systemConfig);
+  net = &netOriginal;
+
+  RealTime::RealTime rtcOriginal = RealTime::RealTime(systemConfig->timeZone, true, &rtc);
   realTime = &rtcOriginal;
 
   xTaskCreatePinnedToCore(

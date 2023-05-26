@@ -36,13 +36,14 @@ namespace RealTime
         }
         bool isRtcSyncRequired()
         {
-            return true; // debug
+            return true;                       // debug
             return getUnixtime() < 1644065211; // Sat, 05 Feb 2022 12:46:48 GMT
         }
         void updateTimeZOne(std::string tz)
         {
             timeZone = tz;
             setenv("TZ", timeZone.c_str(), 1);
+            ESP_LOGD(TAG, "timezone: %s", timeZone.c_str());
         }
         time_t getUnixtime()
         {
@@ -80,8 +81,9 @@ namespace RealTime
             ESP_LOGD(TAG, "Timestamp from RTC: %d", tv.tv_sec);
 
             settimeofday(&tv, NULL);
+            ESP_LOGD(TAG, "timezone: %s", timeZone.c_str());
             setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
-            // tzset();
+            tzset();
 
             return true;
         }
