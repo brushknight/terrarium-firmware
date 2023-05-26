@@ -62,10 +62,9 @@ void saveSystemConfig(void *parameter)
       eeprom->saveSystemConfig(&json);
       systemConfig->persisted();
 
-      //TODO do system reinit
-
+      // TODO do system reinit
     }
-    
+
     vTaskDelay(2 * 1000 / portTICK_PERIOD_MS);
   }
 }
@@ -184,20 +183,13 @@ void startTasks()
 
 void setupTask(void *parameter)
 {
-
-  
-
+  Status::setOrange();
   Measure::enable(); // TODO re-do
   Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
   environmentSensors = &envSensors;
   environmentSensors->scan();
   delay(2000);
   environmentSensors->scan();
-
-  Zone::Controller zoneControllerOriginal = Zone::Controller();
-  zoneController = &zoneControllerOriginal;
-
-
 
   SystemConfig systemConfigOriginal = SystemConfig(Utils::getMac());
   systemConfig = &systemConfigOriginal;
@@ -209,10 +201,12 @@ void setupTask(void *parameter)
   if (eeprom->isSystemConfigSet() > 0)
   {
     std::string systemConfigJSON = eeprom->loadSystemConfg();
-    systemConfig->updateFromJSON(&systemConfigJSON);
+    ESP_LOGD(TAG, "loaded json for system config: %s", systemConfigJSON.c_str());
+    systemConfig->updateFromJSON(&systemConfigJSON, false);
   }
 
-  Status::setOrange();
+  Zone::Controller zoneControllerOriginal = Zone::Controller();
+  zoneController = &zoneControllerOriginal;
 
   ESP_LOGD(TAG, "Max alloc heap: %d", ESP.getMaxAllocHeap());
   ESP_LOGD(TAG, "Max alloc psram: %d", ESP.getMaxAllocPsram());
@@ -291,7 +285,6 @@ void setupTask(void *parameter)
 void setup()
 {
 
-
   Wire.begin();
 
   Status::setup();
@@ -304,11 +297,12 @@ void setup()
   Eeprom::Eeprom eepromOriginal = Eeprom::Eeprom(&externalEEPROM, SystemConfig::jsonSize(), Zone::Controller::jsonSize());
   eeprom = &eepromOriginal;
   eeprom->setup();
-  if(eeprom->resetEepromsOnBootChecker()){
+  if (eeprom->resetEepromsOnBootChecker())
+  {
     Status::setGreen();
     vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
   }
- 
+
   RealTime::RealTime rtcOriginal = RealTime::RealTime("UTC", true, &rtc);
   realTime = &rtcOriginal;
 

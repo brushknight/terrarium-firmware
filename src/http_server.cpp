@@ -163,7 +163,7 @@ namespace HttpServer
 
                 realTime->setTimestamp(timestamp, systemConfig->timeZone);
 
-                systemConfig->updateFromJSON(&json);
+                systemConfig->updateFromJSON(&json, true);
 
                 // vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
 

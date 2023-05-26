@@ -149,12 +149,14 @@ namespace Eeprom
 
                 char raw[systemConfigMaxLength];
 
+                ESP_LOGD(TAG, "loading system config length: %d", systemConfigMaxLength);
+
                 for (int i = 0; i < systemConfigMaxLength; ++i)
                 {
-                    raw[i] = char(externalEEPROM->read(i + INDEX_CLIMATE_JSON));
+                    raw[i] = char(externalEEPROM->read(i + INDEX_SYSTEM_JSON));
                 }
 
-                ESP_LOGD(TAG, "%s", raw);
+                ESP_LOGD(TAG, "loading system config raw: %s", raw);
 
                 json = std::string(raw);
 
@@ -170,7 +172,7 @@ namespace Eeprom
 
                 for (int i = 0; i < systemConfigMaxLength; ++i)
                 {
-                    raw[i] = char(EEPROM.read(i + INDEX_CLIMATE_JSON));
+                    raw[i] = char(EEPROM.read(i + INDEX_SYSTEM_JSON));
                 }
 
                 ESP_LOGD(TAG, "%s", raw);

@@ -105,7 +105,7 @@ public:
         return doc;
     }
 
-    void updateFromJSON(std::string *json)
+    void updateFromJSON(std::string *json, bool triggerPersister)
     {
         static const char *TAG = "config";
 
@@ -121,49 +121,7 @@ public:
         timeZone = jsonObj["time_zone"].as<std::string>();
         ntpEnabled = jsonObj["ntp_enabled"];
         wifiAPMode = jsonObj["wifi_ap_mode"];
-        changed = true;
-    }
-
-    static SystemConfig fromJSON(std::string *json)
-    {
-
-        // ESP_LOGD(TAG, "[..] String to JSON");
-        // DynamicJsonDocument doc(jsonSize());
-        // deserializeJson(doc, *json);
-        // ESP_LOGD(TAG, "[OK] String to JSON");
-        // return SystemConfig::fromJSONObj(doc);
-        return SystemConfig();
-    }
-    static SystemConfig fromJSONObj(DynamicJsonDocument jsonObj)
-    {
-        static const char *TAG = "config";
-        SystemConfig config;
-
-        ESP_LOGD(TAG, "[..] Loading system config");
-
-        if (jsonObj.containsKey("wifiSSID"))
-        {
-            // legacy compatibility
-            config.wifiSSID = jsonObj["wifiSSID"].as<std::string>();
-            config.wifiPassword = jsonObj["wifiPassword"].as<std::string>();
-            config.id = jsonObj["id"].as<std::string>();
-            config.animalName = jsonObj["name"].as<std::string>();
-        }
-        else
-        {
-            // new structure
-            config.wifiSSID = jsonObj["wifi_ssid"].as<std::string>();
-            config.wifiPassword = jsonObj["wifi_password"].as<std::string>();
-            config.id = jsonObj["id"].as<std::string>();
-            config.animalName = jsonObj["animal_name"].as<std::string>();
-            config.timeZone = jsonObj["time_zone"].as<std::string>();
-            config.ntpEnabled = jsonObj["ntp_enabled"];
-            config.wifiAPMode = jsonObj["wifi_ap_mode"];
-        }
-
-        ESP_LOGD(TAG, "[OK] Loading system config");
-
-        return config;
+        changed = triggerPersister;
     }
 };
 
