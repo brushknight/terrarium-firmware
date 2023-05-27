@@ -7,7 +7,7 @@ The main goal of this project is to provide reptiles with the closest environmen
 
 ### Climate
 
-- Temperature control with PI and PID (experimental) options
+- Temperature control with PD and PID (experimental) options
     - Static temperature maintenance
     - Ramping up and down temperatures for 2 given points in time. (e.g. from 7.00 to 10.00, from 23C to 30C will re-calculate wanted temperature every 15s)
 - Illumination control with day/night schedule
