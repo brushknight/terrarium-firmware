@@ -60,6 +60,10 @@ public:
     bool ntpEnabled;
     bool changed = false;
 
+    bool isNetConfigEqual(SystemConfig *compareTo){
+        return id != compareTo->id || wifiSSID != compareTo->wifiSSID || wifiPassword != compareTo->wifiPassword || wifiAPMode != compareTo->wifiAPMode;
+    }
+
     bool toBePersisted()
     {
         return changed;

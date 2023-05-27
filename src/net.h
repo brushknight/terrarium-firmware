@@ -17,7 +17,9 @@ namespace Net
     {
     private:
         SystemConfig *systemConfig;
+        SystemConfig lastAppliedConfig;
         bool isConnectingStarted = false;
+
         void startAsClient()
         {
             ESP_LOGI(TAG, "[..] Connecting to wifi");
@@ -87,6 +89,10 @@ namespace Net
                 }
             }
 
+            lastAppliedConfig = *systemConfig;
+
+            isConnectingStarted = false;
+
             ESP_LOGI(TAG, "[OK] Connecting to wifi | IP: %s", WiFi.localIP().toString());
         }
         void startAsAccessPoint()
@@ -103,6 +109,9 @@ namespace Net
 
             IPAddress finalIp = WiFi.softAPIP();
             ESP_LOGI(TAG, "IP Address: %s", finalIp.toString());
+
+            lastAppliedConfig = *systemConfig;
+
             ESP_LOGI(TAG, "[OK] Starting access point");
         }
         char *statusToString(int code)
@@ -133,12 +142,28 @@ namespace Net
         Network(SystemConfig *config)
         {
             systemConfig = config;
+            lastAppliedConfig = *config;
+        }
+        bool isReconnectNeeded()
+        {
+            return lastAppliedConfig.isNetConfigEqual(systemConfig);
         }
         bool isConnected()
         {
             return WiFi.isConnected();
         }
-        void start()
+        bool disconnect()
+        {
+            if (lastAppliedConfig.wifiAPMode)
+            {
+                return WiFi.softAPdisconnect(true);
+            }
+            else
+            {
+                return WiFi.disconnect(true, true);
+            }
+        }
+        void connect()
         {
             if (systemConfig->wifiAPMode)
             {
@@ -150,7 +175,6 @@ namespace Net
             }
         }
     };
-
 }
 
 #endif

@@ -39,6 +39,14 @@ namespace RealTime
             return true;                       // debug
             return getUnixtime() < 1644065211; // Sat, 05 Feb 2022 12:46:48 GMT
         }
+        bool isNTP()
+        {
+            return ntpEnabled;
+        }
+        void setNTPStatus(bool ntp)
+        {
+            ntpEnabled = ntp;
+        }
         void updateTimeZOne(std::string tz)
         {
             timeZone = tz;

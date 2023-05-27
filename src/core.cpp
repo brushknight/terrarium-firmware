@@ -65,7 +65,18 @@ void saveSystemConfig(void *parameter)
 
       // TODO do system reinit
       realTime->updateTimeZOne(systemConfig->timeZone);
-      // reconnect wifi if it or ID changed
+      realTime->setNTPStatus(systemConfig->ntpEnabled);
+
+      if (net->isReconnectNeeded())
+      {
+        ESP_LOGD(TAG, "net reconnect required");
+        // disconnect
+        net->disconnect();
+        Status::setWarning();
+        // connect agian
+        net->connect();
+        Status::setGreen();
+      }
     }
 
     vTaskDelay(2 * 1000 / portTICK_PERIOD_MS);
@@ -103,12 +114,13 @@ void taskSyncRTCfromNTP(void *parameter)
 {
   for (;;)
   {
-    if (net->isConnected())
+    if (realTime->isNTP() && net->isConnected())
     {
-      vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
+
       realTime->syncFromNTP(true);
       realTime->saveTimeToRTC();
     }
+    vTaskDelay(SYNC_RTC_SEC * 1000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -131,17 +143,13 @@ void taskWatchNetworkStatus(void *parameter)
 
 void startWiFi()
 {
-
-  net->start();
+  net->connect();
 
   if (systemConfig->wifiAPMode)
   {
     Status::setPurple();
   }
-  else
-  {
-    data.metadata.wifiName = systemConfig->wifiSSID;
-  }
+  data.metadata.wifiName = systemConfig->wifiSSID;
 }
 
 void startTasks()
