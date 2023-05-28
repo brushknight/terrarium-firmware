@@ -2,7 +2,7 @@
 #define TERRARIUM_EVENT
 
 #include "Arduino.h"
-#include "control.h"
+#include "actuator.h"
 #include "utils.h"
 #include "transform.h"
 #include "data_structures.h"

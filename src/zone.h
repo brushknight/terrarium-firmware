@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include "utils.h"
 #include "event.h"
-#include "control.h"
+#include "actuator.h"
 #include "measure.h"
 #include <string>
 #include "ArduinoJson.h"
@@ -30,7 +30,7 @@ namespace Zone
     const int actuatorTypeLightDome = 1;
     const int actuatorTypeDimmer = 2;
 
-    class Actuator
+    class ActuatorConfig
     {
     public:
         int type = -1;      // on board, light_dome, dimmer, rain...
@@ -47,20 +47,26 @@ namespace Zone
             return doc;
         }
 
-        static Actuator fromJSON(std::string json)
+        static ActuatorConfig fromJSON(std::string json)
         {
             DynamicJsonDocument doc(jsonSize());
             deserializeJson(doc, json);
 
-            return Actuator::fromJSONObj(doc);
+            return ActuatorConfig::fromJSONObj(doc);
         }
 
-        static Actuator fromJSONObj(DynamicJsonDocument doc)
+        static ActuatorConfig fromJSONObj(DynamicJsonDocument doc)
         {
-            Actuator actuator;
+            ActuatorConfig actuator;
             actuator.type = doc["type"];
             actuator.i2cID = doc["i2c_id"];
             return actuator;
+        }
+
+        void updateFromJSONObj(DynamicJsonDocument doc)
+        {
+            type = doc["type"];
+            i2cID = doc["i2c_id"];
         }
     };
 
@@ -393,7 +399,7 @@ namespace Zone
             return enabled;
         }
 
-        TemperatureZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        TemperatureZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Actuator::Controller *controller)
         {
             // TODO return status
             //  find active event (latest in the window)
@@ -601,7 +607,7 @@ namespace Zone
             return enabled;
         }
 
-        DimmerZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        DimmerZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Actuator::Controller *controller)
         {
             status = DimmerZoneStatus();
 
@@ -641,7 +647,7 @@ namespace Zone
         std::string slug = "";
         Event::LightEvent events[maxDimmerZonesEventsCount];
         // int ledPort = -1;
-        Actuator actuator;
+        ActuatorConfig actuator;
         ColorLightZoneStatus status;
 
         ColorLightZone()
@@ -657,7 +663,7 @@ namespace Zone
 
         static int jsonSize()
         {
-            return 128 + ColorLightZoneStatus::jsonSize() + Event::LightEvent::jsonSize() * maxDimmerZonesEventsCount + Actuator::jsonSize();
+            return 128 + ColorLightZoneStatus::jsonSize() + Event::LightEvent::jsonSize() * maxDimmerZonesEventsCount + ActuatorConfig::jsonSize();
         }
 
         DynamicJsonDocument toJSON()
@@ -690,7 +696,7 @@ namespace Zone
             {
                 zone.events[i] = Event::LightEvent::fromJSONObj(doc["events"][i]);
             }
-            zone.actuator = Actuator::fromJSONObj(doc["actuator"]);
+            zone.actuator = ActuatorConfig::fromJSONObj(doc["actuator"]);
 
             return zone;
         }
@@ -703,7 +709,7 @@ namespace Zone
             {
                 events[i] = Event::LightEvent::fromJSONObj(doc["events"][i]);
             }
-            actuator = Actuator::fromJSONObj(doc["actuator"]);
+            actuator = ActuatorConfig::fromJSONObj(doc["actuator"]);
         }
 
         void reset()
@@ -716,7 +722,7 @@ namespace Zone
             return enabled;
         }
 
-        ColorLightZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ColorLightZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Actuator::Controller *controller)
         {
 
             status = ColorLightZoneStatus();
@@ -796,7 +802,7 @@ namespace Zone
         }
     };
 
-    class Controller
+    class ClimateService
     {
     private:
         TemperatureZone temperatureZones[maxTemperatureZonesCount];
@@ -807,7 +813,7 @@ namespace Zone
         bool changed = false;
 
     public:
-        Controller() {}
+        ClimateService() {}
         void begin()
         {
             // ESP_ERROR_CHECK(I2C::i2c_master_init());
@@ -848,7 +854,7 @@ namespace Zone
             ESP_LOGD(TAG, "resume");
             paused = false;
         }
-        ZonesStatuses loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Control::Controller *controller)
+        ZonesStatuses loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Actuator::Controller *controller)
         {
 
             ZonesStatuses statuses;
@@ -951,38 +957,38 @@ namespace Zone
                 doc["color_light_zones"][i] = colorLightZones[i].toJSON();
             }
 
-            // ESP_LOGD(TAG, "%s", doc);
+            ESP_LOGD(TAG, "Climate config as JSON: %s", doc);
 
             return doc;
         }
 
-        static Controller fromJSON(std::string json)
+        static ClimateService fromJSON(std::string json)
         {
             DynamicJsonDocument doc = DynamicJsonDocument(jsonSize());
             deserializeJson(doc, json);
-            return Controller::fromJSONObj(doc);
+            return ClimateService::fromJSONObj(doc);
         }
 
-        static Controller fromJSONObj(DynamicJsonDocument doc)
+        static ClimateService fromJSONObj(DynamicJsonDocument doc)
         {
-            Controller controller;
+            ClimateService climateService;
 
             for (int i = 0; i < maxTemperatureZonesCount; i++)
             {
-                controller.temperatureZones[i] = TemperatureZone::fromJSONObj(doc["temperature_zones"][i]);
+                climateService.temperatureZones[i] = TemperatureZone::fromJSONObj(doc["temperature_zones"][i]);
             }
 
             for (int i = 0; i < maxDimmerZonesCount; i++)
             {
-                controller.dimmerZones[i] = DimmerZone::fromJSONObj(doc["dimmer_zones"][i]);
+                climateService.dimmerZones[i] = DimmerZone::fromJSONObj(doc["dimmer_zones"][i]);
             }
 
             for (int i = 0; i < maxColorLightZonesCount; i++)
             {
-                controller.colorLightZones[i] = ColorLightZone::fromJSONObj(doc["color_light_zones"][i]);
+                climateService.colorLightZones[i] = ColorLightZone::fromJSONObj(doc["color_light_zones"][i]);
             }
 
-            return controller;
+            return climateService;
         }
 
         void updateFromJSON(std::string *json)
@@ -1019,7 +1025,7 @@ namespace Zone
             changed = true;
         }
 
-                void initFromJSON(std::string *json)
+        void initFromJSON(std::string *json)
         {
             pause();
             // ESP_LOGD(TAG, "updating from JSON: %s", json->c_str());

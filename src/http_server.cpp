@@ -44,7 +44,7 @@ namespace HttpServer
     AsyncWebServer server(80);
 
     Data *data;
-    Zone::Controller *zoneController;
+    Zone::ClimateService *zoneClimateService;
     SystemConfig *systemConfig;
     Measure::EnvironmentSensors *environmentSensors;
     RealTime::RealTime *realTime;
@@ -121,9 +121,9 @@ namespace HttpServer
     void onGetClimateConfig(AsyncWebServerRequest *request)
     {
         // Zone::Controller *config = Eeprom::loadZoneController();
-        ESP_LOGD(TAG, "[..] Climate confor requested");
-        zoneController->pause();
-        DynamicJsonDocument json = zoneController->toJSON();
+        ESP_LOGD(TAG, "[..] Climate config requested");
+        zoneClimateService->pause();
+        DynamicJsonDocument json = zoneClimateService->toJSON();
         ESP_LOGD(TAG, "Converted to json");
 
         std::string requestBody;
@@ -134,8 +134,8 @@ namespace HttpServer
 
         request->send(200, "application/json", requestBody.c_str());
         vTaskDelay(1000 / portTICK_PERIOD_MS);
-        zoneController->resume();
-        ESP_LOGD(TAG, "[OK] Climate confor requested");
+        zoneClimateService->resume();
+        ESP_LOGD(TAG, "[OK] Climate config requested");
     }
 
     void onPostSettings(AsyncWebServerRequest *request)
@@ -180,7 +180,7 @@ namespace HttpServer
     {
         ESP_LOGD(TAG, "incoming request");
         int params = request->params();
-        zoneController->pause();
+        zoneClimateService->pause();
 
         for (int i = 0; i < params; i++)
         {
@@ -218,7 +218,7 @@ namespace HttpServer
                         ESP_LOGD(TAG, "%s", json.c_str());
                         // Serial.println("POST: raw config");
                         // Serial.println(p->value().c_str());
-                        zoneController->updateFromJSON(&json);
+                        zoneClimateService->updateFromJSON(&json);
                         // Eeprom::updateZoneControllerFromJson(&json);
                         // config = Zone::Controller::fromJSON(p->value().c_str());
                         // Eeprom::saveZoneController();
@@ -227,7 +227,7 @@ namespace HttpServer
                 }
             }
         }
-        zoneController->resume();
+        zoneClimateService->resume();
         // this is probably wrong
         request->send(502, "text/plain", "Internal server error");
     }
@@ -283,14 +283,14 @@ namespace HttpServer
     void start(Data *givenData,
                SystemConfig *givenSystemConfig,
                RealTime::RealTime *giventRealTime,
-               Zone::Controller *givenZoneController,
+               Zone::ClimateService *givenZoneClimateService,
                Measure::EnvironmentSensors *givenEnvironmentSensors,
                Eeprom::Eeprom *givenEeprom,
                bool isSetupMode)
     {
         data = givenData;
         systemConfig = givenSystemConfig;
-        zoneController = givenZoneController;
+        zoneClimateService = givenZoneClimateService;
         environmentSensors = givenEnvironmentSensors;
         realTime = giventRealTime;
         eeprom = givenEeprom;

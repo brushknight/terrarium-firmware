@@ -5,7 +5,7 @@
 #include "eeprom_wrapper.h"
 #include "status.h"
 #include "measure.h"
-#include "control.h"
+#include "actuator.h"
 #include "zone.h"
 #include "net.h"
 #include "data_structures.h"
@@ -18,8 +18,8 @@ RTC_DS3231 rtc;
 
 Data data;
 Net::Network *net;
-Control::Controller *hardwareController;
-Zone::Controller *zoneController;
+Actuator::Controller *hardwareController;
+Zone::ClimateService *zoneClimateService;
 SystemConfig *systemConfig;
 Measure::EnvironmentSensors *environmentSensors;
 RealTime::RealTime *realTime;
@@ -30,17 +30,17 @@ void saveClimateConfig(void *parameter)
 
   for (;;)
   {
-    if (zoneController != NULL && zoneController->toBePersisted())
+    if (zoneClimateService != NULL && zoneClimateService->toBePersisted())
     {
-      zoneController->pause();
+      zoneClimateService->pause();
 
-      DynamicJsonDocument doc = zoneController->toJSON();
+      DynamicJsonDocument doc = zoneClimateService->toJSON();
       std::string json;
       serializeJson(doc, json);
 
       eeprom->saveClimateConfig(&json);
-      zoneController->persisted();
-      zoneController->resume();
+      zoneClimateService->persisted();
+      zoneClimateService->resume();
     }
 
     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
@@ -86,13 +86,13 @@ void saveSystemConfig(void *parameter)
 void taskZoneControl(void *parameter)
 {
   hardwareController->resetPorts();
-  zoneController->begin();
+  zoneClimateService->begin();
 
   for (;;)
   {
     Time time = realTime->getTimeObj();
     ESP_LOGD(TAG, "zone control tick: %s", time.toString().c_str());
-    data.zones = zoneController->loopTick(time, environmentSensors, hardwareController);
+    data.zones = zoneClimateService->loopTick(time, environmentSensors, hardwareController);
 
     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
   }
@@ -201,8 +201,8 @@ void setupTask(void *parameter)
   delay(2000);
   environmentSensors->scan();
 
-  Zone::Controller zoneControllerOriginal = Zone::Controller();
-  zoneController = &zoneControllerOriginal;
+  Zone::ClimateService zoneClimateServiceOriginal = Zone::ClimateService();
+  zoneClimateService = &zoneClimateServiceOriginal;
 
   ESP_LOGD(TAG, "Max alloc heap: %d", ESP.getMaxAllocHeap());
   ESP_LOGD(TAG, "Max alloc psram: %d", ESP.getMaxAllocPsram());
@@ -210,8 +210,8 @@ void setupTask(void *parameter)
   Utils::scanForI2C();
 
   // Think how to avoid this
-  Control::HardwareLayer hwl = Control::HardwareLayer();
-  Control::Controller hardwareControllerOrig = Control::Controller(&hwl);
+  Actuator::HardwareLayer hwl = Actuator::HardwareLayer();
+  Actuator::Controller hardwareControllerOrig = Actuator::Controller(&hwl);
   hardwareController = &hardwareControllerOrig;
 
   hardwareController->begin();
@@ -240,7 +240,7 @@ void setupTask(void *parameter)
   if (eeprom->isClimateConfigSet())
   {
     std::string zoneControllerJSON = eeprom->loadClimateConfig();
-    zoneController->initFromJSON(&zoneControllerJSON);
+    zoneClimateService->initFromJSON(&zoneControllerJSON);
   }
 
   // ESP_LOGD(TAG, "%s", zoneController->getTemperatureZone(0).slug.c_str());
@@ -258,7 +258,7 @@ void setupTask(void *parameter)
   }
 
   // Net::setWiFiName(&data);
-  HttpServer::start(&data, systemConfig, realTime, zoneController, environmentSensors, eeprom, false);
+  HttpServer::start(&data, systemConfig, realTime, zoneClimateService, environmentSensors, eeprom, false);
   data.mac = Utils::getMac();
 
   if (systemConfig->wifiAPMode)
@@ -290,7 +290,7 @@ void setup()
 
   ExternalEEPROM externalEEPROM;
 
-  Eeprom::Eeprom eepromOriginal = Eeprom::Eeprom(&externalEEPROM, SystemConfig::jsonSize(), Zone::Controller::jsonSize());
+  Eeprom::Eeprom eepromOriginal = Eeprom::Eeprom(&externalEEPROM, SystemConfig::jsonSize(), Zone::ClimateService::jsonSize());
   eeprom = &eepromOriginal;
   eeprom->setup();
   if (eeprom->resetEepromsOnBootChecker())

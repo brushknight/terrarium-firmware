@@ -1,6 +1,6 @@
-#include "control.h"
+#include "actuator.h"
 
-namespace Control
+namespace Actuator
 {
     // refactor this to accept 0-255 
     void analogPinHigh(int pin)

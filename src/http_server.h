@@ -22,7 +22,7 @@ namespace HttpServer
     void start(Data *givenData,
                SystemConfig *givenSystemConfig,
                RealTime::RealTime *giventRealTime,
-               Zone::Controller *givenZoneController,
+               Zone::ClimateService *givenZoneClimateService,
                Measure::EnvironmentSensors *givenEnvironmentSensors,
                Eeprom::Eeprom *givenEeprom,
                bool isSetupMode);

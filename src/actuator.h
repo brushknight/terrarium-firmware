@@ -1,5 +1,5 @@
-#ifndef TERRARIUM_CONTROL
-#define TERRARIUM_CONTROL
+#ifndef TERRARIUM_ACTUATOR
+#define TERRARIUM_ACTUATOR
 
 #include "Arduino.h"
 #include <Adafruit_NeoPixel.h>
@@ -7,10 +7,10 @@
 #include "data_structures.h"
 #include <PCF8574.h>
 
-namespace Control
+namespace Actuator
 {
 
-    static const char *TAG = "control";
+    static const char *TAG = "actuator";
 
     void analogPinHigh(int pin);
     void analogPinLow(int pin);
