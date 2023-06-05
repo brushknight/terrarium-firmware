@@ -7,8 +7,8 @@ namespace I2C
 
 
 
-const gpio_num_t I2C_MASTER_SCL_IO = gpio_num_t(22);        /*!< gpio number for I2C master clock */
-const gpio_num_t I2C_MASTER_SDA_IO = gpio_num_t(21);     /*!< gpio number for I2C master data  */
+const gpio_num_t I2C_MASTER_SCL_IO = gpio_num_t(35);        /*!< gpio number for I2C master clock */
+const gpio_num_t I2C_MASTER_SDA_IO = gpio_num_t(36);     /*!< gpio number for I2C master data  */
 #define I2C_MASTER_FREQ_HZ 100000   /*!< I2C master clock frequency */
 #define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */
 #define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master doesn't need buffer */

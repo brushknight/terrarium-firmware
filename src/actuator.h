@@ -14,6 +14,7 @@ namespace Actuator
 
     void analogPinHigh(int pin);
     void analogPinLow(int pin);
+    void analogPinSet(int pin, int value);
 
     struct HardwareLayer
     {
@@ -25,46 +26,69 @@ namespace Actuator
         HardwareLayer() {}
         void begin()
         {
-            // Set pinMode to OUTPUT
-            pcf.pinMode(0, OUTPUT);
-            pcf.pinMode(1, OUTPUT);
-            pcf.pinMode(2, OUTPUT);
-            pcf.pinMode(3, OUTPUT);
 
             ESP_LOGD(TAG, "[..] Starting PCF8574 (IO expander)");
-            if (pcf.begin())
+            // if (pcf.begin())
+            // {
+            ESP_LOGD(TAG, "[OK] Starting PCF8574 (IO expander)");
+            isGPIOExpanderFound = true;
+
+            ESP_LOGD(TAG, "[..] Resetting PCF8574 (IO expander)");
+            for (int i = 0; i < 8; i++)
             {
-                ESP_LOGD(TAG, "[OK] Starting PCF8574 (IO expander)");
-                isGPIOExpanderFound = true;
+                pcf.pinMode(i, OUTPUT);
+                pcf.digitalWrite(i, LOW);
             }
-            else
-            {
-                ESP_LOGD(TAG, "[FAIL] PCF8574 (IO expander) not found");
-            }
+            ESP_LOGD(TAG, "[OK] Resetting PCF8574 (IO expander)");
+            // }
+            // else
+            // {
+            // ESP_LOGD(TAG, "[FAIL] PCF8574 (IO expander) not found");
+            // }
         }
-        void setExpanderPort(int port, bool value)
+        void setExpanderRelayPort(int port, bool value)
         {
-            pcf.digitalWrite(port, value ? HIGH : LOW);
+            int expanderPin = IO_EXPANDER_RELAY_PORTS[port];
+            pcf.digitalWrite(expanderPin, value ? HIGH : LOW);
+        }
+        void setExpanderPin(int pin, bool value)
+        {
+            pcf.digitalWrite(pin, value ? HIGH : LOW);
         }
 
         void setRelayTo(int relayIndex, bool value)
         {
             if (isGPIOExpanderFound)
             {
-                setExpanderPort(relayIndex, value); // right now relays are 0,1,2 ports of expander
+
+                setExpanderRelayPort(relayIndex, value); // right now relays are 0,1,2 ports of expander
             }
             else
             {
-                int pinNumber = RELAY_PINS[relayIndex];
-                if (value)
-                {
-                    analogPinHigh(pinNumber);
-                }
-                else
-                {
-                    analogPinLow(pinNumber);
-                }
+                // error
+                // int pinNumber = RELAY_PINS[relayIndex];
+                // if (value)
+                // {
+                //     analogPinHigh(pinNumber);
+                // }
+                // else
+                // {
+                //     analogPinLow(pinNumber);
+                // }
             }
+        }
+        void satFanTo(int port, int value)
+        {
+            int pin = FANS[port];
+            analogPinSet(pin, value);
+        }
+        void safetyRelayOn()
+        {
+            analogPinHigh(SAFETY_RELAY_PIN);
+        }
+        void safetyRelayOff()
+        {
+            analogPinLow(SAFETY_RELAY_PIN);
         }
     };
 
@@ -86,7 +110,7 @@ namespace Actuator
         {
             port = p;
             hardwareLayer = hl;
-            pinMode(RELAY_PINS[port], OUTPUT);
+            // pinMode(RELAY_PINS[port], OUTPUT);
         };
         bool enabled()
         {
@@ -106,6 +130,15 @@ namespace Actuator
             state = false;
             applyHardware();
         }
+        bool test()
+        {
+            off();
+            vTaskDelay(0.2 * 1000 / portTICK_PERIOD_MS);
+            on();
+            vTaskDelay(0.2 * 1000 / portTICK_PERIOD_MS);
+            off();
+            return true;
+        }
     };
     class Dimmer
     {
@@ -115,14 +148,14 @@ namespace Actuator
         void applyHardware()
         {
             // work around to control "dimmers" with relays
-            if (brightness > 0)
-            {
-                analogPinHigh(RELAY_PINS[port]);
-            }
-            else
-            {
-                analogPinLow(RELAY_PINS[port]);
-            }
+            // if (brightness > 0)
+            // {
+            //     analogPinHigh(RELAY_PINS[port]);
+            // }
+            // else
+            // {
+            //     analogPinLow(RELAY_PINS[port]);
+            // }
         }
 
     public:
@@ -143,6 +176,9 @@ namespace Actuator
         {
             brightness = b;
             applyHardware();
+        }
+        void off(){
+            setBrigntness(0);
         }
     };
     class ColorLight
@@ -218,11 +254,68 @@ namespace Actuator
             pixels->show();
         }
     };
+    class Fan
+    {
+    private:
+        int port = -1;
+        int state = 0;
+        HardwareLayer *hardwareLayer;
+
+        void applyHardware()
+        {
+            hardwareLayer->satFanTo(port, state);
+        }
+
+    public:
+        Fan(){};
+        Fan(int p, HardwareLayer *hl)
+        {
+            port = p;
+            hardwareLayer = hl;
+            // pinMode(RELAY_PINS[port], OUTPUT);
+        };
+        bool enabled()
+        {
+            return port > -1;
+        }
+        int status()
+        {
+            return state;
+        }
+        void on()
+        {
+            state = 255;
+            applyHardware();
+        }
+        void off()
+        {
+            state = 0;
+            applyHardware();
+        }
+        void adjust(int value)
+        {
+            state = value;
+            applyHardware();
+        }
+        bool test()
+        {
+            for (int i = 1; i <= 10; i++)
+            {
+                adjust(10 * i);
+                vTaskDelay(0.2 * 1000 / portTICK_PERIOD_MS);
+                // TODO read feedback and check
+            }
+
+            off();
+
+            return false;
+        }
+    };
 
     class Switches
     {
     public:
-        Switch list[3];
+        Switch list[4];
     };
 
     class Dimmers
@@ -237,16 +330,24 @@ namespace Actuator
         ColorLight list[3];
     };
 
+    class Fans
+    {
+    public:
+        Fan list[2];
+    };
+
     class Controller
     {
     private:
         Switches switches = Switches();
         Dimmers dimmers = Dimmers();
         ColorLights colorLights = ColorLights();
+        Fans fans = Fans();
         HardwareLayer *hardwareLayer;
 
     public:
-        Controller(HardwareLayer *hl){
+        Controller(HardwareLayer *hl)
+        {
             hardwareLayer = hl;
         };
         void begin()
@@ -255,15 +356,48 @@ namespace Actuator
             switches.list[0] = Switch(0, hardwareLayer);
             switches.list[1] = Switch(1, hardwareLayer);
             switches.list[2] = Switch(2, hardwareLayer);
+            switches.list[3] = Switch(3, hardwareLayer);
 
             dimmers.list[0] = Dimmer(0);
             dimmers.list[1] = Dimmer(1);
             dimmers.list[2] = Dimmer(2);
 
+            fans.list[0] = Fan(0, hardwareLayer);
+            fans.list[1] = Fan(1, hardwareLayer);
+
+            hardwareLayer->safetyRelayOn();
+
             // Only compatible with controller v1.9 and higher
             // colorLights.list[0] = ColorLight(32, 30);
         }
+        void test()
+        {
+            // run tests in parallel "threads"
+            for (int i = 0; i < 8; i++)
+            {
+                hardwareLayer->setExpanderPin(i, false);
+                vTaskDelay(0.2 * 1000 / portTICK_PERIOD_MS);
+                hardwareLayer->setExpanderPin(i, true);
+                vTaskDelay(0.2 * 1000 / portTICK_PERIOD_MS);
+                hardwareLayer->setExpanderPin(i, false);
+                vTaskDelay(0.2 * 1000 / portTICK_PERIOD_MS);
+            }
 
+            switches.list[0].test();
+            switches.list[1].test();
+            switches.list[2].test();
+            switches.list[3].test();
+
+            // test safety switch
+            hardwareLayer->safetyRelayOff();
+            vTaskDelay(0.2 * 1000 / portTICK_PERIOD_MS);
+            hardwareLayer->safetyRelayOn();
+            vTaskDelay(0.2 * 1000 / portTICK_PERIOD_MS);
+            hardwareLayer->safetyRelayOff();
+
+            fans.list[0].test();
+            fans.list[1].test();
+        }
         void beginLightDome()
         {
             colorLights.list[0] = ColorLight(32, 20);
@@ -276,6 +410,16 @@ namespace Actuator
             switches.list[0].off();
             switches.list[1].off();
             switches.list[2].off();
+            switches.list[3].off();
+
+            dimmers.list[0].off();
+            dimmers.list[1].off();
+            dimmers.list[2].off();
+            
+            fans.list[0].off();
+            fans.list[1].off();
+
+
         }
         bool turnSwitchOn(int port)
         {
@@ -302,6 +446,24 @@ namespace Actuator
                 return false;
             }
             dimmers.list[port].setBrigntness(percent);
+            return true;
+        };
+        bool setFan(int port, int percent)
+        {
+            if (port < 0 || port > 1)
+            {
+                return false;
+            }
+            int power = 255.0 * (((float)percent) / 100.0);
+            if (power > 255)
+            {
+                power = 255;
+            }
+            if (power < 0)
+            {
+                power = 0;
+            }
+            fans.list[port].adjust(power);
             return true;
         };
         bool setColorAndBrightness(int port, Color color, int percent)

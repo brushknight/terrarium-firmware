@@ -2,6 +2,7 @@
 #define TERRARIUM_STATUS
 
 #include <Adafruit_NeoPixel.h>
+#include "config.h"
 
 namespace Status
 {

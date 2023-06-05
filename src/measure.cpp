@@ -178,8 +178,9 @@ namespace Measure
     void enable()
     {
         ESP_LOGI(TAG, "[..] Enabling sensors");
-        pinMode(SENSORS_ENABLE_PIN, OUTPUT);
-        digitalWrite(SENSORS_ENABLE_PIN, HIGH);
+        // TODO incorporate IO expander
+        // pinMode(SENSORS_ENABLE_PIN, OUTPUT);
+        // digitalWrite(SENSORS_ENABLE_PIN, HIGH);
         ESP_LOGI(TAG, "[OK] Enabling sensors");
     }
 

@@ -35,7 +35,7 @@ namespace Utils
                 // Serial.print(i, HEX);
                 // Serial.println(")");
                 count++;
-                delay(1);
+                delay(0.2);
             }
         }
         ESP_LOGD(TAG, "Found %d devices", count);
@@ -48,7 +48,7 @@ namespace Utils
         for (int i = 0; i < 8; i++)
         {
             TCA9548A(i, true);
-            delay(1);
+            delay(0.2);
             scanForI2CLoop();
         }
         ESP_LOGD(TAG, "[OK] Scanning for I2C devices");

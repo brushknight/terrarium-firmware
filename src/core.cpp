@@ -126,7 +126,7 @@ void taskSyncRTCfromNTP(void *parameter)
 
 void taskSyncFromRTC(void *parameter)
 {
-  rtc.begin();
+  // rtc.begin();
   realTime->syncFromRTC();
   realTime->printTime();
   vTaskDelete(NULL);
@@ -154,6 +154,32 @@ void startWiFi()
 
 void startTasks()
 {
+  xTaskCreatePinnedToCore(
+      taskSyncFromRTC,
+      "taskSyncFromRTC",
+      1024 * 2,
+      NULL,
+      100,
+      NULL,
+      0);
+
+  xTaskCreatePinnedToCore(
+      saveClimateConfig,
+      "saveClimateConfig",
+      1024 * 32,
+      NULL,
+      100,
+      NULL,
+      0);
+
+  xTaskCreatePinnedToCore(
+      saveSystemConfig,
+      "savSystemConfig",
+      1024 * 32,
+      NULL,
+      100,
+      NULL,
+      0);
   xTaskCreatePinnedToCore(
       taskCheckRtcBattery,
       "taskCheckRtcBattery",
@@ -193,35 +219,32 @@ void startTasks()
 
 void setupTask(void *parameter)
 {
-  Status::setOrange();
-  Measure::enable(); // TODO re-do
-  Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
-  environmentSensors = &envSensors;
-  environmentSensors->scan();
-  delay(2000);
-  environmentSensors->scan();
-
-  Zone::ClimateService zoneClimateServiceOriginal = Zone::ClimateService();
-  zoneClimateService = &zoneClimateServiceOriginal;
-
-  ESP_LOGD(TAG, "Max alloc heap: %d", ESP.getMaxAllocHeap());
-  ESP_LOGD(TAG, "Max alloc psram: %d", ESP.getMaxAllocPsram());
-
-  Utils::scanForI2C();
-
-  // Think how to avoid this
-  Actuator::HardwareLayer hwl = Actuator::HardwareLayer();
-  Actuator::Controller hardwareControllerOrig = Actuator::Controller(&hwl);
-  hardwareController = &hardwareControllerOrig;
-
-  hardwareController->begin();
-  hardwareController->resetPorts();
-
-  ESP_LOGD(TAG, "Hardware startup reset performed");
-
   data = Data();
 
   bool wasWiFiStarted = false;
+
+  SystemConfig systemConfigOriginal = SystemConfig(Utils::getMac());
+  systemConfig = &systemConfigOriginal;
+
+  int isSystemSet = eeprom->isSystemConfigSet();
+
+  ESP_LOGD(TAG, "is system set %d", isSystemSet);
+
+  if (eeprom->isSystemConfigSet())
+  {
+    std::string systemConfigJSON = eeprom->loadSystemConfg();
+    ESP_LOGD(TAG, "loaded json for system config: %s", systemConfigJSON.c_str());
+    systemConfig->updateFromJSON(&systemConfigJSON, false);
+  }
+
+  Net::Network netOriginal = Net::Network(systemConfig);
+  net = &netOriginal;
+
+  RealTime::RealTime rtcOriginal = RealTime::RealTime(systemConfig->timeZone, true, &rtc);
+  realTime = &rtcOriginal;
+
+  Zone::ClimateService zoneClimateServiceOriginal = Zone::ClimateService();
+  zoneClimateService = &zoneClimateServiceOriginal;
 
   // check if wifi required and start it
   if (realTime->isRtcSyncRequired() || systemConfig->wifiAPMode)
@@ -231,7 +254,7 @@ void setupTask(void *parameter)
   }
 
   // sync time from NTP if requires
-  if (realTime->isRtcSyncRequired())
+  if (realTime->isRtcSyncRequired() && !systemConfig->wifiAPMode && wasWiFiStarted)
   {
     realTime->syncFromNTP(false);
     realTime->saveTimeToRTC();
@@ -281,12 +304,16 @@ void setupTask(void *parameter)
 void setup()
 {
 
-  Wire.begin();
+  Wire.begin(36, 35);
+
+  // only in dev mode
+  // ESP_LOGD(TAG, "Max alloc heap: %d", ESP.getMaxAllocHeap());
+  // ESP_LOGD(TAG, "Max alloc psram: %d", ESP.getMaxAllocPsram());
+
+  // enable only in debug mode
+  // Utils::scanForI2C();
 
   Status::setup();
-
-  pinMode(13, OUTPUT);
-  digitalWrite(13, 1);
 
   ExternalEEPROM externalEEPROM;
 
@@ -299,57 +326,29 @@ void setup()
     vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
   }
 
-  SystemConfig systemConfigOriginal = SystemConfig(Utils::getMac());
-  systemConfig = &systemConfigOriginal;
+  Status::setOrange();
+  Measure::enable(); // TODO re-do
+  Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
+  environmentSensors = &envSensors;
+  environmentSensors->scan();
+  // delay(2000);
+  // environmentSensors->scan();
 
-  int isSystemSet = eeprom->isSystemConfigSet();
+  Actuator::HardwareLayer hwl = Actuator::HardwareLayer();
+  Actuator::Controller hardwareControllerOrig = Actuator::Controller(&hwl);
+  hardwareController = &hardwareControllerOrig;
 
-  ESP_LOGD(TAG, "is system set %d", isSystemSet);
+  hardwareController->begin();
+  hardwareController->resetPorts();
 
-  if (eeprom->isSystemConfigSet() > 0)
-  {
-    std::string systemConfigJSON = eeprom->loadSystemConfg();
-    ESP_LOGD(TAG, "loaded json for system config: %s", systemConfigJSON.c_str());
-    systemConfig->updateFromJSON(&systemConfigJSON, false);
-  }
+  ESP_LOGD(TAG, "Hardware startup reset performed");
 
-  Net::Network netOriginal = Net::Network(systemConfig);
-  net = &netOriginal;
-
-  RealTime::RealTime rtcOriginal = RealTime::RealTime(systemConfig->timeZone, true, &rtc);
-  realTime = &rtcOriginal;
-
-  xTaskCreatePinnedToCore(
-      taskSyncFromRTC,
-      "taskSyncFromRTC",
-      1024 * 2,
-      NULL,
-      100,
-      NULL,
-      0);
+  // hardwareController->test();
 
   xTaskCreatePinnedToCore(
       setupTask,
       "setupTask",
       1024 * 38,
-      NULL,
-      100,
-      NULL,
-      0);
-
-  xTaskCreatePinnedToCore(
-      saveClimateConfig,
-      "saveClimateConfig",
-      1024 * 32,
-      NULL,
-      100,
-      NULL,
-      0);
-
-  xTaskCreatePinnedToCore(
-      saveSystemConfig,
-      "savSystemConfig",
-      1024 * 32,
       NULL,
       100,
       NULL,

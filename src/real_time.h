@@ -33,6 +33,7 @@ namespace RealTime
             timeZone = tz;
             ntpEnabled = ntp;
             rtc = givenRtc;
+            rtc->begin();
         }
         bool isRtcSyncRequired()
         {
@@ -109,9 +110,10 @@ namespace RealTime
             configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
             while (!once && getUnixtime() < 946681200)
             {
-                ESP_LOGE(TAG, "Failed to obtain time, retrying");
+                ESP_LOGE(TAG, "Failed to obtain time, retrying: %d", getUnixtime());
                 configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
                 attempts++;
+                vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
             }
             ESP_LOGD(TAG, "[OK] Sync from NTP, %d", getUnixtime());
             return true;

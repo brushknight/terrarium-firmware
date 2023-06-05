@@ -3,11 +3,9 @@
 namespace Status
 {
 
-#define LEDPIN 23
 #define LED_COUNT 1
 
-const int statusLedBrightness = 20;
-
+const int statusLedBrightness = 50;
 
     int pixelFormat = NEO_GRB + NEO_KHZ800;
 
@@ -19,7 +17,7 @@ const int statusLedBrightness = 20;
 
     void setup()
     {
-        pixels = new Adafruit_NeoPixel(LED_COUNT, LEDPIN, pixelFormat);
+        pixels = new Adafruit_NeoPixel(LED_COUNT, STATUS_PIN, pixelFormat);
         pixels->begin();
         pixels->setBrightness(statusLedBrightness);
         turnLedOff();

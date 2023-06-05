@@ -260,7 +260,7 @@ namespace HttpServer
         doc["system"]["rtc"]["percent"] = (*data).RtcBatteryPercent;
         doc["system"]["rtc"]["mV"] = (*data).RtcBatteryMilliVolt;
 
-        doc["climate"] = (*data).zones.toJSON();
+        // doc["climate"] = (*data).zones.toJSON();
 
         std::string requestBody;
         serializeJson(doc, requestBody);

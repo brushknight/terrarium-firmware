@@ -42,17 +42,6 @@ namespace Eeprom
         }
         void setup()
         {
-            ESP_LOGD(TAG, "[..] starting ESP32 onboard EEPROM");
-            if (EEPROM.begin(4000))
-            {
-                isEEPROM = true;
-                ESP_LOGD(TAG, "[OK] ESP32 onboard EEPROM initialised");
-            }
-            else
-            {
-                ESP_LOGE(TAG, "[FAIL] ESP32 onboard EEPROM failed to initialised");
-            }
-
             ESP_LOGD(TAG, "[..] starting external EEPROM");
             if (externalEEPROM->begin(externallAddress))
             {
@@ -74,18 +63,18 @@ namespace Eeprom
             }
             return externalEEPROM->read(INDEX_CLIMATE_SET) == 1;
         }
-        // 0 - not set, 1 - set in esp32 eeprom, 2 - set in external eeprom
-        int isSystemConfigSet()
+
+        bool isSystemConfigSet()
         {
-            ESP_LOGD(TAG, "isExternalEEPROM %d, externalEEPROM->read(INDEX_SYSTEM_SET) %d,  EEPROM.read(INDEX_SYSTEM_SET)",
+            ESP_LOGD(TAG, "isExternalEEPROM %d, externalEEPROM->read(INDEX_SYSTEM_SET) %d",
                      isExternalEEPROM,
-                     externalEEPROM->read(INDEX_SYSTEM_SET),
-                     EEPROM.read(INDEX_SYSTEM_SET));
+                     externalEEPROM->read(INDEX_SYSTEM_SET));
+
             if (isExternalEEPROM && externalEEPROM->read(INDEX_SYSTEM_SET) == 1)
             {
-                return 2;
+                return true;
             }
-            return EEPROM.read(INDEX_SYSTEM_SET) == 1 ? 1 : 0;
+            return false;
         }
         void saveSystemConfig(std::string *json)
         {
@@ -94,23 +83,23 @@ namespace Eeprom
 
             // clearSystemSettings();
 
+            if (!isExternalEEPROM)
+            {
+                ESP_LOGE(TAG, "[FAIL] Saving system config is not possible without external EEPROM");
+                return;
+            }
+
             int cellsToSave = json->length();
 
             for (int i = 0; i < cellsToSave; ++i)
             {
-                EEPROM.write(i + INDEX_SYSTEM_JSON, (*json)[i]);
-                if (isExternalEEPROM)
-                {
-                    externalEEPROM->write(i + INDEX_SYSTEM_JSON, (*json)[i]);
-                }
+                externalEEPROM->write(i + INDEX_SYSTEM_JSON, (*json)[i]);
+                float percent = float(i) / float(cellsToSave) * 100.0;
+                ESP_LOGI(TAG, "Saved %.2f%%", percent);
             }
             // TODO clear rest of cells
 
-            if (isExternalEEPROM)
-            {
-                externalEEPROM->write(INDEX_SYSTEM_SET, 1);
-            }
-            EEPROM.write(INDEX_SYSTEM_SET, 1);
+            externalEEPROM->write(INDEX_SYSTEM_SET, 1);
 
             ESP_LOGI(TAG, "[OK] Saving system config");
         }
@@ -130,6 +119,8 @@ namespace Eeprom
             for (int i = 0; i < cellsToSave; ++i)
             {
                 externalEEPROM->write(i + INDEX_CLIMATE_JSON, (*json)[i]);
+                float percent = float(i) / float(cellsToSave) * 100.0;
+                ESP_LOGI(TAG, "Saved %.2f%%", percent);
             }
             // TODO clear rest of cells
             externalEEPROM->write(INDEX_CLIMATE_SET, 1);
@@ -141,9 +132,7 @@ namespace Eeprom
         {
             std::string json = "{}";
 
-            int systemConfigStatus = isSystemConfigSet();
-
-            if (systemConfigStatus == 2)
+            if (isSystemConfigSet())
             {
                 ESP_LOGI(TAG, "[..] Loading system config from external EEPROM");
 
@@ -161,25 +150,6 @@ namespace Eeprom
                 json = std::string(raw);
 
                 ESP_LOGI(TAG, "[OK] Loading system config from external EEPROM");
-                return json;
-            }
-
-            if (systemConfigStatus == 1)
-            {
-                ESP_LOGI(TAG, "[..] Loading system config from ESP32 EEPROM");
-
-                char raw[systemConfigMaxLength];
-
-                for (int i = 0; i < systemConfigMaxLength; ++i)
-                {
-                    raw[i] = char(EEPROM.read(i + INDEX_SYSTEM_JSON));
-                }
-
-                ESP_LOGD(TAG, "%s", raw);
-
-                json = std::string(raw);
-
-                ESP_LOGI(TAG, "[OK] Loading system config from ESP32 EEPROM");
                 return json;
             }
 
@@ -214,27 +184,23 @@ namespace Eeprom
         void resetSystemConfig()
         {
             ESP_LOGI(TAG, "[..] Clearing system config from both EEPROMs ");
+
+            if (!isExternalEEPROM)
+            {
+                ESP_LOGE(TAG, "[FAIL] Clearing system config is not possible without external EEPROM");
+                return;
+            }
+
             int cellsToClean = systemConfigMaxLength;
             for (int i = 0; i < cellsToClean; i++)
             {
-                EEPROM.write(i + INDEX_SYSTEM_JSON, 0);
-                if (isExternalEEPROM)
-                {
-                    externalEEPROM->write(i + INDEX_SYSTEM_JSON, 0);
-                }
-                if (i % 100 == 0)
-                {
-                    float percent = float(i) / float(cellsToClean) * 100.0;
-                    ESP_LOGI(TAG, "Cleaned %.2f%%", percent);
-                }
+                externalEEPROM->write(i + INDEX_SYSTEM_JSON, 0);
+
+                float percent = float(i) / float(cellsToClean) * 100.0;
+                ESP_LOGI(TAG, "Cleaned %.2f%%", percent);
             }
 
-            if (isExternalEEPROM)
-            {
-                externalEEPROM->write(INDEX_SYSTEM_SET, 0);
-            }
-
-            EEPROM.write(INDEX_SYSTEM_SET, 0);
+            externalEEPROM->write(INDEX_SYSTEM_SET, 0);
 
             ESP_LOGI(TAG, "[OK] Clearing system config from both EEPROMs ");
         }
@@ -251,14 +217,11 @@ namespace Eeprom
             {
                 externalEEPROM->write(i + INDEX_CLIMATE_JSON, 0);
 
-                if (i % 100 == 0)
-                {
-                    float percent = float(i) / float(cellsToClean) * 100.0;
-                    ESP_LOGI(TAG, "Cleaned %.2f%%", percent);
-                }
+                float percent = float(i) / float(cellsToClean) * 100.0;
+                ESP_LOGI(TAG, "Cleaned %.2f%%", percent);
             }
 
-            EEPROM.write(INDEX_SYSTEM_SET, 0);
+            externalEEPROM->write(INDEX_CLIMATE_SET, 0);
 
             ESP_LOGI(TAG, "[OK] Clearing climate config from external EEPROM");
         }

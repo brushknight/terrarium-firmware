@@ -13,16 +13,13 @@
 #define BATTERY_CHECK_INTERVAL_SEC 60 * 5
 #define SYNC_RTC_SEC 60 * 5
 
-// Hardware
-#define SENSORS_ENABLE_PIN 32
-
 // DHT22 sensors pins
 #define ONE_WIRE_0 int(16)
-#define ONE_WIRE_1 int(17)
-#define ONE_WIRE_2 int(18)
-#define ONE_WIRE_3 int(19)
-#define ONE_WIRE_4 int(27)
-#define ONE_WIRE_5 int(26)
+#define ONE_WIRE_1 int(15)
+#define ONE_WIRE_2 int(7)
+#define ONE_WIRE_3 int(6)
+#define ONE_WIRE_4 int(5)
+#define ONE_WIRE_5 int(4)
 
 // I2c Busses ports
 #define I2C_BUS_0 int(3)
@@ -32,21 +29,26 @@
 #define I2C_BUS_4 int(4)
 #define I2C_BUS_5 int(5)
 
-// relay pins
-#define RELAY_0_PIN 5
-#define RELAY_1_PIN 4
-#define RELAY_2_PIN 25
-
 // lights
-#define LEDPIN 32
-#define STATUS_PIN 23
+#define LEDPIN 11
+#define STATUS_PIN 10
 
 // buttons
-#define BUTTON_RESET_EEPROM 15
+#define BUTTON_RESET_EEPROM 9
 
 const int SENSOR_PINS[6] = {ONE_WIRE_0, ONE_WIRE_1, ONE_WIRE_2, ONE_WIRE_3, ONE_WIRE_4, ONE_WIRE_5};
 const int I2C_BUSES[6] = {I2C_BUS_0, I2C_BUS_1, I2C_BUS_2, I2C_BUS_3, I2C_BUS_4, I2C_BUS_5};
-const int RELAY_PINS[3] = {RELAY_0_PIN, RELAY_1_PIN, RELAY_2_PIN};
+
+const int IO_EXPANDER_RELAY_PORTS[4] = {3, 2, 1, 0};
+const int IO_EXPANDER_SENSORS_EN = 5;
+const int IO_EXPANDER_SENSORS_PULL_UP = 4;
+
+const int SAFETY_RELAY_PIN = 12;
+
+const int FAN_1_PIN = 18;
+const int FAN_2_PIN = 17;
+
+const int FANS[2] = {FAN_1_PIN, FAN_2_PIN};
 
 class SystemConfig
 {
@@ -60,8 +62,24 @@ public:
     bool ntpEnabled;
     bool changed = false;
 
-    bool isNetConfigEqual(SystemConfig *compareTo){
-        return id != compareTo->id || wifiSSID != compareTo->wifiSSID || wifiPassword != compareTo->wifiPassword || wifiAPMode != compareTo->wifiAPMode;
+    bool isNetConfigEqual(SystemConfig *compareTo)
+    {
+        static const char *TAG = "config";
+
+        ESP_LOGD(TAG, "ID %d, %d \n SSID %s, %s \n Password %s, %s \n AP mode %d, %d",
+                 id,
+                 compareTo->id,
+                 wifiSSID.c_str(),
+                 compareTo->wifiSSID.c_str(),
+                 wifiPassword.c_str(),
+                 compareTo->wifiPassword.c_str(),
+                 wifiAPMode,
+                 compareTo->wifiAPMode);
+
+        return id == compareTo->id &&
+               wifiSSID == compareTo->wifiSSID &&
+               wifiPassword == compareTo->wifiPassword &&
+               wifiAPMode == compareTo->wifiAPMode;
     }
 
     bool toBePersisted()

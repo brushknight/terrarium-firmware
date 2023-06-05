@@ -3,6 +3,8 @@
 namespace RealTime
 {
 
+    const int BATTERY_PIN = 8;
+
     void printLocalTime()
     {
         struct timeval tv;
@@ -26,7 +28,7 @@ namespace RealTime
 
         float empty = 2000.0 / oneMilliVolt;
 
-        float current = float(analogRead(33));
+        float current = float(analogRead(BATTERY_PIN));
 
         // TODO add check for zero
         if (full - empty == 0)
@@ -46,10 +48,7 @@ namespace RealTime
 
     int getBatteryVoltage()
     {
-
-        float oneMilliVolt = 3300.0 / 4096.0;
-
-        return int(float(analogRead(33)) * oneMilliVolt);
+        return int(analogReadMilliVolts(BATTERY_PIN));
     }
 
     int getUptimeSec()
