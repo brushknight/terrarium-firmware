@@ -50,10 +50,4 @@ namespace RealTime
     {
         return int(analogReadMilliVolts(BATTERY_PIN));
     }
-
-    int getUptimeSec()
-    {
-        return esp_timer_get_time() / 1000000;
-    }
-
 }

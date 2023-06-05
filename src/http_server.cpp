@@ -50,8 +50,6 @@ namespace HttpServer
     RealTime::RealTime *realTime;
     Eeprom::Eeprom *eeprom;
 
-    bool wasClimateControllerSaved = false;
-
     AsyncWebServer *getServer()
     {
         return &server;
@@ -250,17 +248,17 @@ namespace HttpServer
 
         Time time = realTime->getTimeObj();
 
-        doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
-        doc["metadata"]["mac"] = (*data).mac.c_str();
+        doc["metadata"]["wifi"] = data->metadata.wifiName.c_str();
+        doc["metadata"]["mac"] = data->mac.c_str();
         // doc["metadata"]["id"] = controllerConfig.id.c_str();
         doc["metadata"]["time"]["hour"] = time.hours;
         doc["metadata"]["time"]["minute"] = time.minutes;
         doc["metadata"]["time"]["uptime"] = realTime->getUptimeSec();
         doc["metadata"]["build_time"] = BUILD_TIME;
-        doc["system"]["rtc"]["percent"] = (*data).RtcBatteryPercent;
-        doc["system"]["rtc"]["mV"] = (*data).RtcBatteryMilliVolt;
+        doc["system"]["rtc"]["percent"] = data->RtcBatteryPercent;
+        doc["system"]["rtc"]["mV"] = data->RtcBatteryMilliVolt;
 
-        // doc["climate"] = (*data).zones.toJSON();
+        doc["climate"] = data->zones.toJSON();
 
         std::string requestBody;
         serializeJson(doc, requestBody);
@@ -288,6 +286,32 @@ namespace HttpServer
                Eeprom::Eeprom *givenEeprom,
                bool isSetupMode)
     {
+
+        if (givenData == NULL)
+        {
+            ESP_LOGE(TAG, "Data object pointer is NULL");
+        }
+        if (givenSystemConfig == NULL)
+        {
+            ESP_LOGE(TAG, "System Config object pointer is NULL");
+        }
+        if (givenZoneClimateService == NULL)
+        {
+            ESP_LOGE(TAG, "Climate config object pointer is NULL");
+        }
+        if (givenEnvironmentSensors == NULL)
+        {
+            ESP_LOGE(TAG, "Sensors object pointer is NULL");
+        }
+        if (giventRealTime == NULL)
+        {
+            ESP_LOGE(TAG, "Real Time object pointer is NULL");
+        }
+        if (givenEeprom == NULL)
+        {
+            ESP_LOGE(TAG, "EEPROM object pointer is NULL");
+        }
+
         data = givenData;
         systemConfig = givenSystemConfig;
         zoneClimateService = givenZoneClimateService;
@@ -312,11 +336,6 @@ namespace HttpServer
         server.onNotFound(notFound);
 
         ESP_LOGI(TAG, "[..] Starting server");
-
-        if (isSetupMode)
-        {
-            ESP_LOGI(TAG, "Initial setup mode");
-        }
 
         AsyncElegantOTA.begin(&server);
 

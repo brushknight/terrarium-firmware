@@ -127,6 +127,7 @@ void taskSyncRTCfromNTP(void *parameter)
 void taskSyncFromRTC(void *parameter)
 {
   // rtc.begin();
+  ESP_LOGD(TAG, "task to sync time from RTC stated");
   realTime->syncFromRTC();
   realTime->printTime();
   vTaskDelete(NULL);
@@ -154,14 +155,6 @@ void startWiFi()
 
 void startTasks()
 {
-  xTaskCreatePinnedToCore(
-      taskSyncFromRTC,
-      "taskSyncFromRTC",
-      1024 * 2,
-      NULL,
-      100,
-      NULL,
-      0);
 
   xTaskCreatePinnedToCore(
       saveClimateConfig,
@@ -240,8 +233,17 @@ void setupTask(void *parameter)
   Net::Network netOriginal = Net::Network(systemConfig);
   net = &netOriginal;
 
-  RealTime::RealTime rtcOriginal = RealTime::RealTime(systemConfig->timeZone, true, &rtc);
+  RealTime::RealTime rtcOriginal = RealTime::RealTime(systemConfig->timeZone, systemConfig->ntpEnabled, &rtc);
   realTime = &rtcOriginal;
+
+  xTaskCreatePinnedToCore(
+      taskSyncFromRTC,
+      "taskSyncFromRTC",
+      1024 * 2,
+      NULL,
+      100,
+      NULL,
+      1);
 
   Zone::ClimateService zoneClimateServiceOriginal = Zone::ClimateService();
   zoneClimateService = &zoneClimateServiceOriginal;
@@ -251,6 +253,11 @@ void setupTask(void *parameter)
   {
     startWiFi();
     wasWiFiStarted = true;
+  }
+
+  while (!realTime->wasRTCChecked())
+  {
+    vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
   }
 
   // sync time from NTP if requires
@@ -280,9 +287,10 @@ void setupTask(void *parameter)
     wasWiFiStarted = true;
   }
 
+  data.mac = Utils::getMac();
+
   // Net::setWiFiName(&data);
   HttpServer::start(&data, systemConfig, realTime, zoneClimateService, environmentSensors, eeprom, false);
-  data.mac = Utils::getMac();
 
   if (systemConfig->wifiAPMode)
   {

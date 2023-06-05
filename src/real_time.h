@@ -27,6 +27,8 @@ namespace RealTime
         const char *ntpServer2 = "1.europe.pool.ntp.org";
         const char *ntpServer3 = "2.europe.pool.ntp.org";
 
+        bool wasSyncedFromRTC = false;
+
     public:
         RealTime(std::string tz, bool ntp, RTC_DS3231 *givenRtc)
         {
@@ -35,9 +37,11 @@ namespace RealTime
             rtc = givenRtc;
             rtc->begin();
         }
+        bool wasRTCChecked(){
+            return wasSyncedFromRTC;
+        }
         bool isRtcSyncRequired()
         {
-            return true;                       // debug
             return getUnixtime() < 1644065211; // Sat, 05 Feb 2022 12:46:48 GMT
         }
         bool isNTP()
@@ -79,7 +83,9 @@ namespace RealTime
 
             return Time(info->tm_hour, info->tm_min);
         }
-        int getUptimeSec() {}
+        int getUptimeSec() {
+            return esp_timer_get_time() / 1000000;
+        }
         bool syncFromRTC()
         {
             DateTime rtcDateTime = rtc->now();
@@ -93,6 +99,8 @@ namespace RealTime
             ESP_LOGD(TAG, "timezone: %s", timeZone.c_str());
             setenv("TZ", timeZone.c_str(), 1); // https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
             tzset();
+
+            wasSyncedFromRTC = true;
 
             return true;
         }
@@ -113,7 +121,7 @@ namespace RealTime
                 ESP_LOGE(TAG, "Failed to obtain time, retrying: %d", getUnixtime());
                 configTzTime(timeZone.c_str(), ntpServer1, ntpServer2, ntpServer3);
                 attempts++;
-                vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
+                vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
             }
             ESP_LOGD(TAG, "[OK] Sync from NTP, %d", getUnixtime());
             return true;
