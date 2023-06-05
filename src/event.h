@@ -2,7 +2,7 @@
 #define TERRARIUM_EVENT
 
 #include "Arduino.h"
-#include "control.h"
+#include "actuator.h"
 #include "utils.h"
 #include "transform.h"
 #include "data_structures.h"
@@ -170,6 +170,7 @@ namespace Event
     {
     public:
         float temperature = -1;
+        int mode; // 0 - PD, 1 - PID
         TemperatureEvent() {} // just for empty array of events
         TemperatureEvent(std::string s, std::string u, int dSec, float t) : Event(s, u, dSec)
         {
@@ -181,9 +182,11 @@ namespace Event
         }
         static int jsonSize()
         {
-            return 128 + Transform::Transform::jsonSize();
+            return 128 + 16 + Transform::Transform::jsonSize(); // re-calculate
         }
-
+        bool isPID(){
+            return mode == 1;
+        }
         DynamicJsonDocument toJSON()
         {
             DynamicJsonDocument doc(jsonSize());
@@ -192,8 +195,8 @@ namespace Event
             doc["until"] = until.toString();
             doc["duration_sec"] = durationSec;
             doc["temperature"] = temperature;
+            doc["mode"] = mode;
             doc["transform"] = transform.toJSON();
-            // Serial.printf("DEBUG - to JSON temp: %0.2f\n",doc["temperature"]);
             return doc;
         }
 
@@ -212,8 +215,8 @@ namespace Event
             event.since = Time::fromString(doc["since"].as<std::string>());
             event.until = Time::fromString(doc["until"].as<std::string>());
             event.durationSec = doc["duration_sec"];
-            // Serial.printf("DEBUG - from JSON temp: %0.2f\n",doc["temperature"]);
             event.temperature = doc["temperature"];
+            event.mode = doc["mode"];
             event.transform = Transform::Transform::fromJSONObj(doc["transform"]);
             event.durationMin = event.since.diff(event.until);
             return event;

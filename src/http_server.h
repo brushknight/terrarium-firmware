@@ -5,7 +5,7 @@
 #include <ESPAsyncWebServer.h>
 
 #include "http_server_html.h"
-#include "eeprom.h"
+#include "eeprom_wrapper.h"
 #include "data.h"
 #include "ArduinoJson.h"
 #include "real_time.h"
@@ -15,8 +15,17 @@
 
 namespace HttpServer
 {
-    AsyncWebServer * getServer();
-    void start(Data *givenData, bool isSetupMode);
+
+    static const char *TAG = "http-server";
+
+    AsyncWebServer *getServer();
+    void start(Data *givenData,
+               SystemConfig *givenSystemConfig,
+               RealTime::RealTime *giventRealTime,
+               Zone::ClimateService *givenZoneClimateService,
+               Measure::EnvironmentSensors *givenEnvironmentSensors,
+               Eeprom::Eeprom *givenEeprom,
+               bool isSetupMode);
     void notFound(AsyncWebServerRequest *request);
     void onFormSettings(AsyncWebServerRequest *request);
     void onGetSettings(AsyncWebServerRequest *request);

@@ -3,80 +3,24 @@
 namespace Measure
 {
 
-    EnvironmentSensors sharedSensors = EnvironmentSensors();
-
-    EnvironmentSensors *getSharedSensors()
-    {
-        return &sharedSensors;
-    }
-
-    // run in the loop and check each 5s
-    bool readSensors()
-    {
-        for (int i = 0; i < sensorPortCount; i++)
-        {
-            // debug
-            // Serial.printf("DHT %d check\n", i);
-            if (sharedSensors.getDHT22(i).enabled())
-            {
-                if (!sharedSensors.readDHT22(i))
-                {
-                    Serial.printf("DHT port: %d failed\n", i);
-                }
-            }
-
-            // debug
-            // Serial.printf("BME280 %d check\n", i);
-            if (sharedSensors.getBME280(i).enabled())
-            {
-
-                if (!sharedSensors.readBME280(i))
-                {
-                    Serial.printf("BME280 port: %d failed\n", i);
-                }
-            }
-
-            // debug
-            // Serial.printf("DS18B20 %d check\n", i);
-            if (sharedSensors.getDS18B20(i).enabled())
-            {
-
-                if (!sharedSensors.readDS18B20(i))
-                {
-                    Serial.printf("DS18B20 port: %d failed\n", i);
-                }
-            }
-
-            if (sharedSensors.getSHT31(i).enabled())
-            {
-
-                if (!sharedSensors.readSHT31(i))
-                {
-                    Serial.printf("SHT31 port: %d failed\n", i);
-                }
-            }
-        }
-        return true;
-    }
-
     bool readDHT22(int port, float *t, float *h)
     {
         DHTStable DHT;
 
         int pin = SENSOR_PINS[port];
 
-        // Serial.printf("reading DHT22 at port %d, GPIO %d\n", port, pin);
+        ESP_LOGD(TAG, "[..] Reading DHT22 at port %d, GPIO %d", port, pin);
 
         int status = DHT.read22(pin);
 
         if (status == DHTLIB_OK)
         {
-            // Serial.printf("DHT22 at port %d, GPIO %d\n", port, pin);
+            ESP_LOGD(TAG, "Found DHT22 at port %d, GPIO %d", port, pin);
 
             *h = DHT.getHumidity();
             *t = DHT.getTemperature();
 
-            // Serial.printf("DHT22 DEBUG: t:%.2f, h:%.2f\n", *t, *h);
+            ESP_LOGD(TAG, "[OK] Read DHT22 at port %d, GPIO %d | t:%.2f, h:%.2f", port, pin, *t, *h);
 
             return true;
         }
@@ -90,20 +34,21 @@ namespace Measure
 
         int bus = I2C_BUSES[port];
 
-        // Serial.printf("reading BME280 at port %d, multiplexer bus %d\n", port, bus);
+        ESP_LOGD(TAG, "[..] Reading BME280 at port %d, multiplexer bus %d", port, bus);
 
         Utils::TCA9548A(bus, false);
         bool statusBme = bme.begin(0x76);
 
         if (statusBme)
         {
-            // Serial.printf("BME280 at port %d, multiplexer bus %d\n", port, bus);
+
+            ESP_LOGD(TAG, "Found BME280 at port %d, multiplexer bus %d", port, bus);
 
             *t = bme.readTemperature();
             // float p = bme.readPressure() / 100.0F;
             *h = bme.readHumidity();
 
-            // Serial.printf("BME280 DEBUG: t:%.2f, h:%.2f\n", *t, *h);
+            ESP_LOGD(TAG, "[OK] Read BME280 at port %d, bus %d | t:%.2f, h:%.2f", port, bus, *t, *h);
 
             return true;
         }
@@ -117,20 +62,19 @@ namespace Measure
 
         int bus = I2C_BUSES[port];
 
-        // Serial.printf("reading BME280 at port %d, multiplexer bus %d\n", port, bus);
+        ESP_LOGD(TAG, "[..] Reading SHT31 at port %d, multiplexer bus %d", port, bus);
 
         Utils::TCA9548A(bus, false);
         bool sensorStatus = sht31.begin(0x44);
 
         if (sensorStatus)
         {
-            // Serial.printf("BME280 at port %d, multiplexer bus %d\n", port, bus);
+            ESP_LOGD(TAG, "Found SHT31 at port %d, multiplexer bus %d", port, bus);
 
             *t = sht31.readTemperature();
-            // float p = bme.readPressure() / 100.0F;
             *h = sht31.readHumidity();
 
-            // Serial.printf("BME280 DEBUG: t:%.2f, h:%.2f\n", *t, *h);
+            ESP_LOGD(TAG, "[OK] Read SHT31 at port %d, bus %d | t:%.2f, h:%.2f", port, bus, *t, *h);
 
             return true;
         }
@@ -143,11 +87,13 @@ namespace Measure
 
         int pin = SENSOR_PINS[port];
 
-        OneWire oneWire(pin);
-        DallasTemperature sensors(&oneWire);
+        ESP_LOGD(TAG, "[..] Reading DS18B20 at port %d, GPIO %d", port, pin);
 
-        sensors.begin();
-        sensors.requestTemperatures();
+        OneWire oneWire(pin);
+        DallasTemperature ds18b20(&oneWire);
+
+        ds18b20.begin();
+        ds18b20.requestTemperatures();
         // Serial.printf("reading DS18B20 at port %d, GPIO %d\n", port, pin);
 
         // DeviceAddress addr;
@@ -155,19 +101,17 @@ namespace Measure
         // Serial.printf("DS18B20 DEBUG: address t:%d\n", addr);
         // float temperature = sensors.getTempC(addr);
 
-        float temperature = sensors.getTempCByIndex(0);
+        float temperature = ds18b20.getTempCByIndex(0);
 
         if (temperature == 85.0 || temperature == -127.0)
         {
-            Serial.printf("DS18B20 port %d error code %0.2f\n", port, temperature);
+            ESP_LOGE(TAG, "[FAIL] Reading DS18B20 at port %d, GPIO %d, error code: %d", port, pin, temperature);
             return false;
         }
 
-        // Serial.printf("DS18B20 at port %d, GPIO %d\n", port, pin);
-
         *t = temperature;
 
-        // Serial.printf("DS18B20 DEBUG: t:%.2f\n", *t);
+        ESP_LOGD(TAG, "[OK] Read DS18B20 at port %d, GPIO %d | t:%.2f", port, pin, *t);
 
         return true;
     }
@@ -181,7 +125,6 @@ namespace Measure
 
         if (success)
         {
-            Serial.printf("t: %.2f C, h: %.2f%%\n", t, h);
             return true;
         }
 
@@ -197,7 +140,6 @@ namespace Measure
 
         if (success)
         {
-            Serial.printf("t: %.2f C, h: %.2f%%\n", t, h);
             return true;
         }
 
@@ -213,7 +155,6 @@ namespace Measure
 
         if (success)
         {
-            Serial.printf("t: %.2f C, h: %.2f%%\n", t, h);
             return true;
         }
 
@@ -228,44 +169,18 @@ namespace Measure
 
         if (success)
         {
-            Serial.printf("t: %.2f C\n", t);
             return true;
         }
 
         return false;
     }
 
-    void enable()
+    void enable(Actuator::HardwareLayer *hl)
     {
-        Serial.println("Enabling sensors");
-        pinMode(SENSORS_ENABLE_PIN, OUTPUT);
-        digitalWrite(SENSORS_ENABLE_PIN, HIGH);
+        ESP_LOGI(TAG, "[..] Enabling sensors");
+        hl->setExpanderPin(5, HIGH);
+        ESP_LOGI(TAG, "[OK] Enabling sensors");
     }
 
-    bool scan()
-    {
-        Serial.println("Scan for sensors");
-        for (int i = 0; i < sensorPortCount; i++)
-        {
-            if (scanBME280(i))
-            {
-                sharedSensors.list[i + SENSOR_OFFSET_BME280] = BME280(i);
-            }
-            if (scanSHT31(i))
-            {
-                sharedSensors.list[i + SENSOR_OFFSET_SHT31] = SHT31(i);
-            }
-            if (scanDS18B20(i))
-            {
-                sharedSensors.list[i + SENSOR_OFFSET_DS18B20] = DS18B20(i);
-            }
-            if (scanDHT22(i))
-            {
-                sharedSensors.list[i + SENSOR_OFFSET_DHT22] = DHT22(i);
-            }
-        }
-
-        return true;
-    }
 
 }

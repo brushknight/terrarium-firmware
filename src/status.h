@@ -2,6 +2,7 @@
 #define TERRARIUM_STATUS
 
 #include <Adafruit_NeoPixel.h>
+#include "config.h"
 
 namespace Status
 {
@@ -15,6 +16,8 @@ namespace Status
     void setup();
     void setWarning();
     void setError();
+    void setOrange();
+    void setGreen();
     void setPink();
     void setPurple();
     void setMint();

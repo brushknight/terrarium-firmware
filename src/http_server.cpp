@@ -29,8 +29,8 @@ extern "C" {
     #include "lwip/pbuf.h"
 }
 
-In order to avoid #error "include FreeRTOS.h" must appear in source files before "include semphr.h" 
-semphr.h which located in include/freertos/freertos/semphr.h:74:3, "freertos/FreeRTOS.h" 
+In order to avoid #error "include FreeRTOS.h" must appear in source files before "include semphr.h"
+semphr.h which located in include/freertos/freertos/semphr.h:74:3, "freertos/FreeRTOS.h"
 library has to be included. PlatformIO on ubuntu-latest
 
 
@@ -40,9 +40,15 @@ library has to be included. PlatformIO on ubuntu-latest
 
 namespace HttpServer
 {
+
     AsyncWebServer server(80);
 
     Data *data;
+    Zone::ClimateService *zoneClimateService;
+    SystemConfig *systemConfig;
+    Measure::EnvironmentSensors *environmentSensors;
+    RealTime::RealTime *realTime;
+    Eeprom::Eeprom *eeprom;
 
     AsyncWebServer *getServer()
     {
@@ -51,7 +57,7 @@ namespace HttpServer
 
     void onPostReset(AsyncWebServerRequest *request)
     {
-        Eeprom::clear();
+        // Eeprom::clear();
 
         request->send(200, "text/plain", "Controller & climate configuration cleared, rebooting in 3 seconds");
 
@@ -62,7 +68,7 @@ namespace HttpServer
 
     void onPostResetSystem(AsyncWebServerRequest *request)
     {
-        Eeprom::clearSystemSettings();
+        // Eeprom::clearSystemSettings();
 
         request->send(200, "text/plain", "System configuration cleared, rebooting in 3 seconds");
 
@@ -73,7 +79,7 @@ namespace HttpServer
 
     void onPostResetClimate(AsyncWebServerRequest *request)
     {
-        Eeprom::clearZoneController();
+        // Eeprom::clearZoneController();
 
         request->send(200, "text/plain", "Climate configuration cleared, rebooting in 3 seconds");
 
@@ -89,6 +95,7 @@ namespace HttpServer
 
     void onFormSettings(AsyncWebServerRequest *request)
     {
+        ESP_LOGD(TAG, "From requested");
         request->send_P(200, "text/html", SETTINGS_FORM);
     }
 
@@ -99,10 +106,9 @@ namespace HttpServer
 
     void onGetSettings(AsyncWebServerRequest *request)
     {
-        SystemConfig config = Eeprom::loadSystemConfig();
-        DynamicJsonDocument json = config.toJSON();
+        DynamicJsonDocument json = systemConfig->toJSON();
 
-        json["wifiPassword"] = "DELETED";
+        json["wifi_password"] = "************";
 
         std::string requestBody;
         serializeJson(json, requestBody);
@@ -112,74 +118,115 @@ namespace HttpServer
 
     void onGetClimateConfig(AsyncWebServerRequest *request)
     {
-        Zone::Controller config = Eeprom::loadZoneController();
-        DynamicJsonDocument json = config.toJSON();
+        // Zone::Controller *config = Eeprom::loadZoneController();
+        ESP_LOGD(TAG, "[..] Climate config requested");
+        zoneClimateService->pause();
+        DynamicJsonDocument json = zoneClimateService->toJSON();
+        ESP_LOGD(TAG, "Converted to json");
 
         std::string requestBody;
         serializeJson(json, requestBody);
 
+        ESP_LOGD(TAG, "Serialized to string");
+        ESP_LOGD(TAG, "%s", requestBody.c_str());
+
         request->send(200, "application/json", requestBody.c_str());
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        zoneClimateService->resume();
+        ESP_LOGD(TAG, "[OK] Climate config requested");
     }
 
     void onPostSettings(AsyncWebServerRequest *request)
     {
-        // ssid, pass, id
-        SystemConfig config = Eeprom::loadSystemConfig();
-
         int params = request->params();
         for (int i = 0; i < params; i++)
         {
             AsyncWebParameter *p = request->getParam(i);
 
-            if (p->name().compareTo(String("wifi_ssid")) == 0)
+            // ESP_LOGI(TAG, "resieved param = %s -> %s", p->name(), p->value().c_str());
+
+            if (p->name().compareTo(String("json")) == 0)
             {
 
-                config.wifiSSID = p->value().c_str();
-            }
+                // Serial.println("POST: raw config");
+                // Serial.println(p->value().c_str());
 
-            if (p->name().compareTo(String("wifi_pass")) == 0)
-            {
-                config.wifiPassword = p->value().c_str();
-            }
+                std::string json = p->value().c_str();
 
-            if (p->name().compareTo(String("id")) == 0)
-            {
-                config.id = p->value().c_str();
+                DynamicJsonDocument doc(SystemConfig::jsonSize());
+                deserializeJson(doc, json);
+
+                uint32_t timestamp = doc["timestamp"];
+                // ESP_LOGI(TAG, "timestamp %d", timestamp);
+
+                realTime->setTimestamp(timestamp, systemConfig->timeZone);
+
+                systemConfig->updateFromJSON(&json, true);
+
+                // vTaskDelay(5 * 1000 / portTICK_PERIOD_MS);
+
+                request->send(200, "text/plain", "Controller configuration updated, re-init initialized");
+
+                // ESP.restart();
             }
         }
 
-        // do some validation
-
-        Eeprom::saveSystemConfig(config);
-
-        request->send(200, "text/plain", "Controller configuration updated, rebooting in 3 seconds");
-
-        vTaskDelay(3 * 1000 / portTICK_PERIOD_MS);
-
-        ESP.restart();
+        request->send(502, "text/plain", "Internal server error");
     }
 
     void onPostClimateConfig(AsyncWebServerRequest *request)
     {
-
-        Zone::Controller config;
+        ESP_LOGD(TAG, "incoming request");
         int params = request->params();
+        zoneClimateService->pause();
+
         for (int i = 0; i < params; i++)
         {
             AsyncWebParameter *p = request->getParam(i);
 
-            if (p->name().compareTo(String("json_config")) == 0)
+            ESP_LOGE(TAG, "%p, %d", p, p->size());
+
+            if (p == NULL)
+            {
+                ESP_LOGE(TAG, "data is NULL");
+            }
+            else
             {
 
-                Serial.println("POST: raw config");
-                Serial.println(p->value().c_str());
-                config = Zone::Controller::fromJSON(p->value().c_str());
-                Eeprom::saveZoneController(config);
+                const String param = p->name();
 
-                request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
+                if (param == NULL)
+                {
+                    ESP_LOGE(TAG, "data is NULL");
+                }
+
+                ESP_LOGD(TAG, "%s", p->name().c_str());
+
+                if (p->name().compareTo(String("json_config")) == 0)
+                {
+
+                    if (p == NULL)
+                    {
+                        ESP_LOGE(TAG, "data is NULL");
+                    }
+                    else
+                    {
+                        std::string json = p->value().c_str();
+
+                        ESP_LOGD(TAG, "%s", json.c_str());
+                        // Serial.println("POST: raw config");
+                        // Serial.println(p->value().c_str());
+                        zoneClimateService->updateFromJSON(&json);
+                        // Eeprom::updateZoneControllerFromJson(&json);
+                        // config = Zone::Controller::fromJSON(p->value().c_str());
+                        // Eeprom::saveZoneController();
+                        request->send(200, "text/plain", "Controller configuration updated, rebooting soon");
+                    }
+                }
             }
         }
-
+        zoneClimateService->resume();
+        // this is probably wrong
         request->send(502, "text/plain", "Internal server error");
     }
 
@@ -187,7 +234,7 @@ namespace HttpServer
     {
         DynamicJsonDocument doc(1024 * 2 + Measure::EnvironmentSensors::jsonSize());
 
-        doc["sensors"] = (*data).sharedSensors.toJSON();
+        doc["sensors"] = environmentSensors->toJSON();
 
         std::string requestBody;
         serializeJson(doc, requestBody);
@@ -199,19 +246,19 @@ namespace HttpServer
     {
         DynamicJsonDocument doc(1024 * 2 + Zone::ZonesStatuses::jsonSize());
 
-        SystemConfig controllerConfig = Eeprom::loadSystemConfig();
+        Time time = realTime->getTimeObj();
 
-        doc["metadata"]["wifi"] = (*data).metadata.wifiName.c_str();
-        doc["metadata"]["mac"] = (*data).mac.c_str();
-        doc["metadata"]["id"] = controllerConfig.id.c_str();
-        doc["metadata"]["time"]["hour"] = RealTime::getHour();
-        doc["metadata"]["time"]["minute"] = RealTime::getMinute();
-        doc["metadata"]["time"]["uptime"] = RealTime::getUptimeSec();
+        doc["metadata"]["wifi"] = data->metadata.wifiName.c_str();
+        doc["metadata"]["mac"] = data->mac.c_str();
+        // doc["metadata"]["id"] = controllerConfig.id.c_str();
+        doc["metadata"]["time"]["hour"] = time.hours;
+        doc["metadata"]["time"]["minute"] = time.minutes;
+        doc["metadata"]["time"]["uptime"] = realTime->getUptimeSec();
         doc["metadata"]["build_time"] = BUILD_TIME;
-        doc["system"]["rtc"]["percent"] = (*data).RtcBatteryPercent;
-        doc["system"]["rtc"]["mV"] = (*data).RtcBatteryMilliVolt;
+        doc["system"]["rtc"]["percent"] = data->RtcBatteryPercent;
+        doc["system"]["rtc"]["mV"] = data->RtcBatteryMilliVolt;
 
-        doc["climate"] = (*data).zones.toJSON();
+        doc["climate"] = data->zones.toJSON();
 
         std::string requestBody;
         serializeJson(doc, requestBody);
@@ -223,8 +270,6 @@ namespace HttpServer
     {
         DynamicJsonDocument doc(1024);
 
-        SystemConfig controllerConfig = Eeprom::loadSystemConfig();
-
         doc["status"] = "ok";
 
         std::string requestBody;
@@ -233,9 +278,46 @@ namespace HttpServer
         request->send(200, "application/json", requestBody.c_str());
     }
 
-    void start(Data *givenData, bool isSetupMode)
+    void start(Data *givenData,
+               SystemConfig *givenSystemConfig,
+               RealTime::RealTime *giventRealTime,
+               Zone::ClimateService *givenZoneClimateService,
+               Measure::EnvironmentSensors *givenEnvironmentSensors,
+               Eeprom::Eeprom *givenEeprom,
+               bool isSetupMode)
     {
+
+        if (givenData == NULL)
+        {
+            ESP_LOGE(TAG, "Data object pointer is NULL");
+        }
+        if (givenSystemConfig == NULL)
+        {
+            ESP_LOGE(TAG, "System Config object pointer is NULL");
+        }
+        if (givenZoneClimateService == NULL)
+        {
+            ESP_LOGE(TAG, "Climate config object pointer is NULL");
+        }
+        if (givenEnvironmentSensors == NULL)
+        {
+            ESP_LOGE(TAG, "Sensors object pointer is NULL");
+        }
+        if (giventRealTime == NULL)
+        {
+            ESP_LOGE(TAG, "Real Time object pointer is NULL");
+        }
+        if (givenEeprom == NULL)
+        {
+            ESP_LOGE(TAG, "EEPROM object pointer is NULL");
+        }
+
         data = givenData;
+        systemConfig = givenSystemConfig;
+        zoneClimateService = givenZoneClimateService;
+        environmentSensors = givenEnvironmentSensors;
+        realTime = giventRealTime;
+        eeprom = givenEeprom;
 
         server.on("/", HTTP_GET, onFormSettings);
         server.on("/settings", HTTP_GET, onFormSettings);
@@ -253,16 +335,11 @@ namespace HttpServer
 
         server.onNotFound(notFound);
 
-        Serial.println("Starting server");
-
-        if (isSetupMode)
-        {
-            Serial.println("Setup mode");
-        }
+        ESP_LOGI(TAG, "[..] Starting server");
 
         AsyncElegantOTA.begin(&server);
 
         server.begin();
-        Serial.println("Server started [OK]");
+        ESP_LOGI(TAG, "[OK] Starting server");
     }
 }

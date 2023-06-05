@@ -1,0 +1,15 @@
+.page-header {
+  height: 300px;
+  background-color: #639403;
+  background: image("../img/day.webp");
+}
+.page-header__wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+.page-header__title {
+  padding: 100px 0 0 10px;
+}
+.page-header__setting-wrapper {
+  padding: 0 10px 0 0;
+}
