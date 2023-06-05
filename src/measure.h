@@ -4,6 +4,7 @@
 #include "config.h"
 #include "DHTStable.h"
 #include "utils.h"
+#include "actuator.h"
 #include <Adafruit_BME280.h>
 #include <Adafruit_SHT31.h>
 #include <Adafruit_Sensor.h>
@@ -372,7 +373,7 @@ namespace Measure
         }
     };
 
-    void enable();
+    void enable(Actuator::HardwareLayer *hl);
 }
 
 #endif

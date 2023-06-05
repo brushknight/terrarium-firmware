@@ -335,7 +335,6 @@ void setup()
   }
 
   Status::setOrange();
-  Measure::enable(); // TODO re-do
   Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
   environmentSensors = &envSensors;
   environmentSensors->scan();
@@ -348,6 +347,8 @@ void setup()
 
   hardwareController->begin();
   hardwareController->resetPorts();
+
+  Measure::enable(&hwl);
 
   ESP_LOGD(TAG, "Hardware startup reset performed");
 

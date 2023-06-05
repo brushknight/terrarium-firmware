@@ -175,12 +175,10 @@ namespace Measure
         return false;
     }
 
-    void enable()
+    void enable(Actuator::HardwareLayer *hl)
     {
         ESP_LOGI(TAG, "[..] Enabling sensors");
-        // TODO incorporate IO expander
-        // pinMode(SENSORS_ENABLE_PIN, OUTPUT);
-        // digitalWrite(SENSORS_ENABLE_PIN, HIGH);
+        hl->setExpanderPin(5, HIGH);
         ESP_LOGI(TAG, "[OK] Enabling sensors");
     }
 

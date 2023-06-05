@@ -36,7 +36,6 @@ public:
     std::string mac;
     Metadata metadata;
     InitialSetup initialSetup;
-    // terrarium metadata
 };
 
 #endif
