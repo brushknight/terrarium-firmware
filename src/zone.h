@@ -26,6 +26,9 @@ namespace Zone
     const int maxColorLightZonesCount = 1;
     const int maxColorLightZonesEventsCount = 5;
 
+    const int maxFanZonesCount = 2;
+    const int maxFanZonesEventsCount = 5;
+
     const int actuatorTypeOnBoard = 0;
     const int actuatorTypeLightDome = 1;
     const int actuatorTypeDimmer = 2;
@@ -230,12 +233,44 @@ namespace Zone
         }
     };
 
+    class FanZoneStatus : public ZoneStatus
+    {
+    public:
+        int power = 0;
+        static int jsonSize()
+        {
+            return 96;
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["power"] = power;
+            return doc;
+        }
+        static FanZoneStatus fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return FanZoneStatus::fromJSONObj(doc);
+        }
+
+        static FanZoneStatus fromJSONObj(DynamicJsonDocument doc)
+        {
+            FanZoneStatus zoneStatus;
+
+            zoneStatus.power = doc["power"];
+            return zoneStatus;
+        }
+    };
+
     class ZonesStatuses
     {
     public:
         TemperatureZoneStatus temperatureZones[maxTemperatureZonesCount];
         DimmerZoneStatus dimmerZones[maxDimmerZonesCount];
         ColorLightZoneStatus colorLightZones[maxColorLightZonesCount];
+        FanZoneStatus fanZones[maxFanZonesCount];
         static int jsonSize()
         {
             return 64 + TemperatureZoneStatus::jsonSize() * maxTemperatureZonesCount + DimmerZoneStatus::jsonSize() * maxDimmerZonesCount;
@@ -262,6 +297,13 @@ namespace Zone
                 if (colorLightZones[i].isSet())
                 {
                     doc["color_light_zones"][colorLightZones[i].slug] = colorLightZones[i].toJSON();
+                }
+            }
+            for (int i = 0; i < maxFanZonesCount; i++)
+            {
+                if (fanZones[i].isSet())
+                {
+                    doc["fan_zones"][fanZones[i].slug] = fanZones[i].toJSON();
                 }
             }
             return doc;
@@ -638,6 +680,130 @@ namespace Zone
         }
     };
 
+    class FanZone
+    {
+    private:
+        bool enabled = false;
+
+    public:
+        std::string slug = "";
+        Event::FanEvent events[maxDimmerZonesEventsCount];
+        int port = -1;
+        FanZoneStatus status;
+
+        FanZone()
+        {
+            // stub for empty array creation
+        }
+
+        FanZone(std::string s)
+        {
+            enabled = true;
+            slug = s;
+        }
+
+        static int jsonSize()
+        {
+            return 128 + FanZoneStatus::jsonSize() + Event::FanEvent::jsonSize() * maxFanZonesEventsCount;
+        }
+
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["slug"] = slug;
+            doc["enabled"] = enabled;
+            for (int i = 0; i < maxFanZonesEventsCount; i++)
+            {
+                doc["events"][i] = events[i].toJSON();
+            }
+            doc["port"] = port;
+            return doc;
+        }
+
+        static FanZone fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return FanZone::fromJSONObj(doc);
+        }
+
+        static FanZone fromJSONObj(DynamicJsonDocument doc)
+        {
+            FanZone zone;
+            zone.slug = doc["slug"].as<std::string>();
+            zone.port = doc["port"];
+            zone.enabled = doc["enabled"];
+            for (int i = 0; i < maxFanZonesEventsCount; i++)
+            {
+                zone.events[i] = Event::FanEvent::fromJSONObj(doc["events"][i]);
+            }
+
+            return zone;
+        }
+
+        void updateFromJSONObj(DynamicJsonDocument doc)
+        {
+            slug = doc["slug"].as<std::string>();
+            port = doc["port"];
+            enabled = doc["enabled"];
+            for (int i = 0; i < maxFanZonesEventsCount; i++)
+            {
+                events[i] = Event::FanEvent::fromJSONObj(doc["events"][i]);
+            }
+        }
+
+        void reset()
+        {
+            enabled = false;
+        }
+
+        bool isEnabled()
+        {
+            return enabled;
+        }
+
+        FanZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Actuator::Controller *controller)
+        {
+            status = FanZoneStatus();
+
+            Event::FanEvent activeEvent;
+
+            for (int i = 0; i < maxFanZonesEventsCount; i++)
+            {
+                if (events[i].isActive(now))
+                {
+                    activeEvent = events[i];
+                    ESP_LOGD(TAG, "active event id: %d", i);
+                }
+            }
+
+            if (!activeEvent.isSet())
+            {
+                status.addError("ERROR: no active event found");
+                ESP_LOGE(TAG, "No active event found");
+                return status;
+            }
+
+            if (activeEvent.power > -1)
+            {
+                status.power = activeEvent.power;
+            }
+
+            if (activeEvent.transform.isSet())
+            {
+                status.power = activeEvent.transformedValue(now);
+            }
+
+            (*controller).setFan(port, status.power);
+            status.power = activeEvent.power;
+
+            status.slug = slug;
+
+            return status;
+        }
+    };
+
     class ColorLightZone
     {
     private:
@@ -808,6 +974,7 @@ namespace Zone
         TemperatureZone temperatureZones[maxTemperatureZonesCount];
         DimmerZone dimmerZones[maxDimmerZonesCount];
         ColorLightZone colorLightZones[maxColorLightZonesCount];
+        FanZone fanZones[maxFanZonesCount];
         bool paused = false;
         bool busy = false;
         bool changed = false;
@@ -891,6 +1058,14 @@ namespace Zone
                         statuses.colorLightZones[i] = colorLightZones[i].loopTick(now, sharedSensors, controller);
                     }
                 }
+                for (int i = 0; i < maxFanZonesCount; i++)
+                {
+                    ESP_LOGD(TAG, "fan zone: %d is %d", i, fanZones[i].isEnabled());
+                    if (fanZones[i].isEnabled())
+                    {
+                        statuses.fanZones[i] = fanZones[i].loopTick(now, sharedSensors, controller);
+                    }
+                }
                 busy = false;
             }
             return statuses;
@@ -956,6 +1131,10 @@ namespace Zone
             {
                 doc["color_light_zones"][i] = colorLightZones[i].toJSON();
             }
+            for (int i = 0; i < maxFanZonesCount; i++)
+            {
+                doc["fan_zones"][i] = fanZones[i].toJSON();
+            }
 
             ESP_LOGD(TAG, "Climate config as JSON: %s", doc);
 
@@ -987,7 +1166,10 @@ namespace Zone
             {
                 climateService.colorLightZones[i] = ColorLightZone::fromJSONObj(doc["color_light_zones"][i]);
             }
-
+            for (int i = 0; i < maxFanZonesCount; i++)
+            {
+                climateService.fanZones[i] = FanZone::fromJSONObj(doc["fan_zones"][i]);
+            }
             return climateService;
         }
 
@@ -1021,6 +1203,11 @@ namespace Zone
             {
                 colorLightZones[i].updateFromJSONObj((*doc)["color_light_zones"][i]); // = ColorLightZone::fromJSONObj((*doc)["color_light_zones"][i]);
             }
+
+            for (int i = 0; i < maxFanZonesCount; i++)
+            {
+                fanZones[i].updateFromJSONObj((*doc)["fan_zones"][i]); // = ColorLightZone::fromJSONObj((*doc)["color_light_zones"][i]);
+            }
             ESP_LOGD(TAG, "[OK] Updating from json");
             changed = true;
         }
@@ -1053,6 +1240,11 @@ namespace Zone
             for (int i = 0; i < maxColorLightZonesCount; i++)
             {
                 colorLightZones[i].updateFromJSONObj((*doc)["color_light_zones"][i]); // = ColorLightZone::fromJSONObj((*doc)["color_light_zones"][i]);
+            }
+
+            for (int i = 0; i < maxFanZonesCount; i++)
+            {
+                fanZones[i].updateFromJSONObj((*doc)["fan_zones"][i]); // = ColorLightZone::fromJSONObj((*doc)["color_light_zones"][i]);
             }
             ESP_LOGD(TAG, "[OK] Updating from json");
         }
