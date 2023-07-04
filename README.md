@@ -28,10 +28,10 @@ The main goal of this project is to provide reptiles with the closest environmen
 
 ### Supporter sensors
 
-- DHT22 (temperature and humidity)
-- BME280 (temperature and humidity)
-- DS18B20 (temperature only)
-- SHT31 (temperature and humidity)
+- [DHT22](https://www.dfrobot.com/product-1102.html) (temperature and humidity)
+- [BME280](https://www.amazon.es/AZDelivery-GY-BME280-Sensor-Parent/dp/B082KL18WW) (temperature and humidity)
+- [DS18B20](https://www.dfrobot.com/product-689.html) (temperature only)
+- [SHT31](https://www.dfrobot.com/product-2160.html) (temperature and humidity)
 
 ## Installation
 
