@@ -223,6 +223,58 @@ namespace Event
         }
     };
 
+    class FanEvent : public Event
+    {
+    public:
+        int power = -1;
+        FanEvent() {} // just for empty array of events
+        FanEvent(std::string s, std::string u, int dSec, int p) : Event(s, u, dSec)
+        {
+            power = p;
+        }
+        FanEvent(std::string s, std::string u, int dSec, Transform::Transform t) : Event(s, u, dSec)
+        {
+            transform = t;
+        }
+        static int jsonSize()
+        {
+            return 128 + 16 + Transform::Transform::jsonSize(); // re-calculate
+        }
+        DynamicJsonDocument toJSON()
+        {
+            DynamicJsonDocument doc(jsonSize());
+            doc["set"] = set;
+            doc["since"] = since.toString();
+            doc["until"] = until.toString();
+            doc["duration_sec"] = durationSec;
+            doc["power"] = power;
+            doc["transform"] = transform.toJSON();
+            return doc;
+        }
+
+        static FanEvent fromJSON(std::string json)
+        {
+            DynamicJsonDocument doc(jsonSize());
+            deserializeJson(doc, json);
+
+            return FanEvent::fromJSONObj(doc);
+        }
+
+        static FanEvent fromJSONObj(DynamicJsonDocument doc)
+        {
+            FanEvent event;
+            event.set = doc["set"];
+            event.since = Time::fromString(doc["since"].as<std::string>());
+            event.until = Time::fromString(doc["until"].as<std::string>());
+            event.durationSec = doc["duration_sec"];
+            event.power = doc["power"];
+            event.transform = Transform::Transform::fromJSONObj(doc["transform"]);
+            event.durationMin = event.since.diff(event.until);
+            return event;
+        }
+    };
+
+
     class WateringEvent : public Event
     {
     public:

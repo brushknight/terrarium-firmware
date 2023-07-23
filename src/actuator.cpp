@@ -21,4 +21,10 @@ namespace Actuator
         // digitalWrite(pin, 255);
         analogWrite(pin, value);
     }
+    void digitalPinSet(int pin, int value)
+    {
+        ESP_LOGD(TAG, "GPIO %d to %d", pin, value);
+        // digitalWrite(pin, 255);
+        digitalWrite(pin, value);
+    }
 }
