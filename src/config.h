@@ -50,6 +50,9 @@ const int FAN_2_PIN = 17;
 
 const int FANS[2] = {FAN_1_PIN, FAN_2_PIN};
 
+const int BUZZER_1_PIN = 13;
+const int BUZZERS[1] = {BUZZER_1_PIN};
+
 class SystemConfig
 {
 public:

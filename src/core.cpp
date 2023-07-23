@@ -322,6 +322,7 @@ void setup()
   // Utils::scanForI2C();
 
   Status::setup();
+  Status::setOrange();
 
   ExternalEEPROM externalEEPROM;
 
@@ -334,13 +335,6 @@ void setup()
     vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
   }
 
-  Status::setOrange();
-  Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
-  environmentSensors = &envSensors;
-  environmentSensors->scan();
-  // delay(2000);
-  // environmentSensors->scan();
-
   Actuator::HardwareLayer hwl = Actuator::HardwareLayer();
   Actuator::Controller hardwareControllerOrig = Actuator::Controller(&hwl);
   hardwareController = &hardwareControllerOrig;
@@ -351,6 +345,19 @@ void setup()
   Measure::enable(&hwl);
 
   ESP_LOGD(TAG, "Hardware startup reset performed");
+
+  Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
+  environmentSensors = &envSensors;
+  environmentSensors->scan();
+  // delay(2000);
+  // environmentSensors->scan();
+
+  // disabled for tests
+  // hardwareController->setBuzzer(0, NOTE_G3);
+  // vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
+  // hardwareController->setBuzzer(0, NOTE_G7);
+  // vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
+  // hardwareController->setBuzzer(0, 0);
 
   // hardwareController->test();
 

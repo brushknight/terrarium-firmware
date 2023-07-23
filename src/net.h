@@ -73,21 +73,18 @@ namespace Net
 
             while (!WiFi.isConnected())
             {
-                ESP_LOGI(TAG, "[..] Connecting to wifi | 30 seconds no connection, reconecting");
-                attempts++;
                 delay(1 * 1000);
+                // ESP_LOGI(TAG, "[..] Waiting for wifi to connect | WiFi status: %s -> %s", WiFi.status(), statusToString(WiFi.status()));
 
-                if (attempts % 10 == 0)
-                {
-                    ESP_LOGI(TAG, "WiFi: %s", WiFi.status());
-                    Serial.println(statusToString(WiFi.status()));
-                }
                 if (attempts > 30)
                 {
                     ESP_LOGI(TAG, "[..] Connecting to wifi | 30 seconds no connection, reconecting");
                     attempts = 0;
                     WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
                 }
+                attempts++;
+
+                
             }
 
             updateLastAppliedConfig(systemConfig);
@@ -118,27 +115,27 @@ namespace Net
 
             ESP_LOGI(TAG, "[OK] Starting access point");
         }
-        char *statusToString(int code)
+        std::string statusToString(int code)
         {
             switch (code)
             {
             case WL_IDLE_STATUS:
-                return "idle";
+                return std::string("idle");
             case WL_NO_SSID_AVAIL:
-                return "no SSID found";
+                return std::string("no SSID found");
             case WL_SCAN_COMPLETED:
-                return "scan completed";
+                return std::string("scan completed");
             case WL_CONNECTED:
-                return "connected";
+                return std::string("connected");
             case WL_CONNECT_FAILED:
-                return "connection failed";
+                return std::string("connection failed");
             case WL_CONNECTION_LOST:
-                return "connection lost";
+                return std::string("connection lost");
             case WL_DISCONNECTED:
-                return "disconnected";
+                return std::string("disconnected");
 
             default:
-                return "undefined";
+                return std::string("undefined");
             }
         }
 

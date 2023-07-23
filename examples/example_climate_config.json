@@ -1,0 +1,946 @@
+{
+    "temperature_zones": [
+      {
+        "slug": "hot_corner",
+        "enabled": true,
+        "sensor_ids": [
+          {
+            "port": 0,
+            "type": 1820
+          },
+          {
+            "port": 1,
+            "type": 1820
+          },
+          {
+            "port": -1,
+            "type": -1
+          }
+        ],
+        "events": [
+          {
+            "set": true,
+            "since": "10:00",
+            "until": "18:00",
+            "duration_sec": -1,
+            "temperature": 35,
+            "mode": 0,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": true,
+            "since": "18:00",
+            "until": "20:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": 0,
+            "transform": {
+              "from": 35,
+              "to": 22
+            }
+          },
+          {
+            "set": true,
+            "since": "20:00",
+            "until": "07:00",
+            "duration_sec": -1,
+            "temperature": 22,
+            "mode": 0,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": true,
+            "since": "07:00",
+            "until": "10:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": 0,
+            "transform": {
+              "from": 22,
+              "to": 35
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "heater_port": 0
+      },
+      {
+        "slug": "cool_corner",
+        "enabled": true,
+        "sensor_ids": [
+          {
+            "port": 2,
+            "type": 1820
+          },
+          {
+            "port": 3,
+            "type": 1820
+          },
+          {
+            "port": -1,
+            "type": -1
+          }
+        ],
+        "events": [
+          {
+            "set": true,
+            "since": "10:00",
+            "until": "18:00",
+            "duration_sec": -1,
+            "temperature": 26,
+            "mode": 0,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": true,
+            "since": "18:00",
+            "until": "20:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": 0,
+            "transform": {
+              "from": 26,
+              "to": 18
+            }
+          },
+          {
+            "set": true,
+            "since": "20:00",
+            "until": "07:00",
+            "duration_sec": -1,
+            "temperature": 18,
+            "mode": 0,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": true,
+            "since": "07:00",
+            "until": "10:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": 0,
+            "transform": {
+              "from": 18,
+              "to": 26
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "heater_port": 1
+      },
+      {
+        "slug": "",
+        "enabled": false,
+        "sensor_ids": [
+          {
+            "port": -1,
+            "type": -1
+          },
+          {
+            "port": -1,
+            "type": -1
+          },
+          {
+            "port": -1,
+            "type": -1
+          }
+        ],
+        "events": [
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "heater_port": -1
+      },
+      {
+        "slug": "",
+        "enabled": false,
+        "sensor_ids": [
+          {
+            "port": -1,
+            "type": -1
+          },
+          {
+            "port": -1,
+            "type": -1
+          },
+          {
+            "port": -1,
+            "type": -1
+          }
+        ],
+        "events": [
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "temperature": -1,
+            "mode": -1515870811,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "heater_port": -1
+      }
+    ],
+    "dimmer_zones": [
+      {
+        "slug": "UVB",
+        "enabled": true,
+        "events": [
+          {
+            "set": true,
+            "type": "simple",
+            "since": "08:00",
+            "until": "17:00",
+            "duration_sec": -1,
+            "brightness": 100,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": true,
+            "type": "simple",
+            "since": "17:00",
+            "until": "08:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "dimmer_port": 2
+      },
+      {
+        "slug": "HEAT_bulb",
+        "enabled": true,
+        "events": [
+          {
+            "set": true,
+            "type": "simple",
+            "since": "07:00",
+            "until": "18:00",
+            "duration_sec": -1,
+            "brightness": 100,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": true,
+            "type": "simple",
+            "since": "18:00",
+            "until": "07:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "dimmer_port": 3
+      },
+      {
+        "slug": "",
+        "enabled": false,
+        "events": [
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "dimmer_port": -1
+      },
+      {
+        "slug": "",
+        "enabled": false,
+        "events": [
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "dimmer_port": -1
+      }
+    ],
+    "color_light_zones": [
+      {
+        "slug": "",
+        "enabled": false,
+        "events": [
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "type": "simple",
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "brightness": 0,
+            "color": {
+              "r": 0,
+              "g": 0,
+              "b": 0,
+              "k": 0
+            },
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "actuator": {
+          "type": -1,
+          "i2c_id": 0
+        }
+      }
+    ],
+    "fan_zones": [
+      {
+        "slug": "air_circulation",
+        "enabled": true,
+        "events": [
+          {
+            "set": true,
+            "since": "07:00",
+            "until": "18:00",
+            "duration_sec": -1,
+            "power": 100,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": true,
+            "since": "18:00",
+            "until": "07:00",
+            "duration_sec": -1,
+            "power": 30,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "power": -1,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "power": -1,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "power": -1,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "port": 0
+      },
+      {
+        "slug": "humidity",
+        "enabled": true,
+        "events": [
+          {
+            "set": true,
+            "since": "18:00",
+            "until": "07:00",
+            "duration_sec": -1,
+            "power": 50,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": true,
+            "since": "07:00",
+            "until": "18:00",
+            "duration_sec": -1,
+            "power": 0,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "power": -1,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "power": -1,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          },
+          {
+            "set": false,
+            "since": "00:00",
+            "until": "00:00",
+            "duration_sec": -1,
+            "power": -1,
+            "transform": {
+              "from": 0,
+              "to": 0
+            }
+          }
+        ],
+        "port": 1
+      }
+    ]
+  }

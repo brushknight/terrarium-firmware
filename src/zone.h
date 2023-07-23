@@ -18,10 +18,10 @@ namespace Zone
 
     static const char *TAG = "zone";
 
-    const int maxTemperatureZonesCount = 3;
+    const int maxTemperatureZonesCount = 4;
     const int maxTemperatureZonesSensorsCount = 3;
     const int maxTemperatureZonesEventsCount = 5;
-    const int maxDimmerZonesCount = 3;
+    const int maxDimmerZonesCount = 4;
     const int maxDimmerZonesEventsCount = 5;
     const int maxColorLightZonesCount = 1;
     const int maxColorLightZonesEventsCount = 5;
@@ -765,6 +765,8 @@ namespace Zone
 
         FanZoneStatus loopTick(Time now, Measure::EnvironmentSensors *sharedSensors, Actuator::Controller *controller)
         {
+            ESP_LOGD(TAG, "start of loop tick");
+
             status = FanZoneStatus();
 
             Event::FanEvent activeEvent;
