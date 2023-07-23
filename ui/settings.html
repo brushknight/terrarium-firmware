@@ -11,13 +11,122 @@
             font-family: Arial, Helvetica, Sans-Serif;
             Color: #000000;
         }
+
+
+        .page {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f6f6fe;
+        }
+
+        .wifi_type {}
+
+        .wifi_type__button {
+            width: 90%;
+            height: 50px;
+            border-radius: 10px;
+            border: none;
+            margin: 10px;
+            font-size: 20px;
+        }
+
+        .wifi_type__butto--connect {
+            background-color: #845ef1;
+        }
+
+        .wifi_type__butto--new {
+            background-color: #7198ff;
+        }
+
+        .wifi_settings {}
+
+        .wifi_settings__hint {
+            width: 90%;
+            padding: 10px;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            border-radius: 10px;
+        }
+
+        .time {}
+
+        .time__zone_select {
+            width: 90%;
+            height: 50px;
+            margin: 10px;
+        }
+
+        .animal {}
+
+        .animal_select {
+            width: 90%;
+            height: 50px;
+            margin: 10px;
+        }
+
+        .hide {
+            display: none;
+        }
     </style>
 </head>
 
 <body>
+    <div id="setup">
+        <div class="page wifi_type hide" id="wifi_type">
+            <button class="wifi_type__button wifi_type__butto--connect" onclick="nextPage()">Connect to WiFi</button>
+            <button class="wifi_type__button wifi_type__butto--new" onclick="nextPage()">Create standalone WiFi</button>
+        </div>
 
-    <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100%" 
-        viewBox="0 0 1405.000000 582.000000" preserveAspectRatio="xMidYMid meet">
+        <div class="page wifi_settings hide" id="wifi_settings">
+            <p class="wifi_settings__hint">The terrarium controller requires connection to WiFi to be able to obtain real time from internet cloc (NTP) and send telemetry.</p>
+            <h3>WiFi Settings</h3>
+            <label>SSID (name)</label>
+            <input type="text">
+
+            <label>Password</label>
+            <input type="password">
+            <div>
+                <button onclick="previousPage()">back</button>
+                <button onclick="nextPage()">Next</button>
+            </div>
+        </div>
+
+        <div class="page time hide" id="time">
+            <select class="time__zone_select">
+                <option>Madrid</option>
+            </select>
+
+            <p> what is NTP</p>
+            <div>
+                <button>Enable</button>
+                <button>Disable</button>
+            </div>
+            <div>
+                <button onclick="previousPage()">back</button>
+                <button onclick="nextPage()">Next</button>
+            </div>
+
+        </div>
+
+        <div class="page animal" id="animal">
+            <p>why chosing species is important</p>
+            <select class="animal_select">
+                <option>Panther Chameleon</option>
+            </select>
+            <div>
+                <button onclick="previousPage()">back</button>
+                <button>Save settings</button>
+            </div>
+        </div>
+    </div>
+
+
+    <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 1405.000000 582.000000"
+        preserveAspectRatio="xMidYMid meet">
         <metadata> Created by potrace 1.16, written by Peter Selinger 2001-2019 </metadata>
         <g transform="translate(0.000000,582.000000) scale(0.100000,-0.100000)" fill="#455bff" stroke="none">
             <path
@@ -56,6 +165,9 @@
                 d="M10047 1479 c-108 -25 -213 -102 -262 -190 l-30 -54 0 -270 0 -270 27 -46 c32 -55 101 -120 157 -148 133 -68 349 -68 483 0 63 32 143 113 169 172 23 50 24 61 24 292 l0 240 -33 67 c-49 101 -139 172 -257 202 -64 17 -215 20 -278 5z m237 -161 c58 -18 131 -91 146 -147 7 -28 10 -110 8 -232 l-3 -187 -30 -43 c-18 -26 -50 -53 -80 -68 -43 -23 -62 -26 -145 -26 -83 0 -102 3 -145 26 -30 15 -62 42 -80 68 l-30 43 -3 187 c-2 118 1 204 8 230 18 68 81 128 160 152 40 12 149 10 194 -3z" />
         </g>
     </svg>
+
+
+
     <h3>Configure controller</h3>
     <form action="/api/settings" method="post" id="SettingsForm">
         <div>
@@ -91,6 +203,44 @@
     </form>
 
     <script>
+
+        // new onboarding
+        function hide_all() {
+            var setup = document.getElementById("setup")
+            var children = setup.children;
+            for (var i = 0; i < children.length; i++) {
+                children[i].classList.add('hide')
+                // Do stuff
+            }
+        }
+
+        function show_element(id) {
+            document.getElementById(id).classList.remove('hide')
+        }
+
+
+        var pages = ["wifi_type", "wifi_settings", "time", "animal"]
+
+        var currentPage = 1
+
+        hide_all();
+        show_element(pages[currentPage]);
+
+
+        function nextPage() {
+            currentPage++;
+            hide_all();
+            show_element(pages[currentPage]);
+        }
+
+
+        function previousPage() {
+            currentPage--;
+            hide_all();
+            show_element(pages[currentPage]);
+        }
+
+        // old working code
 
         let form = document.getElementById('SettingsForm');
 
