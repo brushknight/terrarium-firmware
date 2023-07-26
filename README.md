@@ -62,26 +62,66 @@ TODO
 ```
 {"slug":"hot_side","enabled":true,"sensor_ids":[{"port":0,"type":1820},{"port":1,"type":1820},{"port":-1,"type":-1}],"events":[{"set":true,"since":"10:00","until":"18:00","duration_sec":-1,"temperature":35,"mode":0,"transform":{"from":0,"to":0}},{"set":true,"since":"18:00","until":"20:00","duration_sec":-1,"temperature":-1,"mode":0,"transform":{"from":35,"to":22}},{"set":true,"since":"20:00","until":"07:00","duration_sec":-1,"temperature":22,"mode":0,"transform":{"from":0,"to":0}},{"set":true,"since":"07:00","until":"10:00","duration_sec":-1,"temperature":-1,"mode":0,"transform":{"from":22,"to":35}},{"set":false,"since":"00:00","until":"00:00","duration_sec":-1,"temperature":-1,"mode":-1515870811,"transform":{"from":0,"to":0}}],"heater_port":0}
 ```
-- slug: just a name for this zone, used in the report page
-- enabled: if this zone is enabled or not
-- sensor_ids: array of sensors that will be used in aggregation mode, can be 1,2 or 3 sensors per zone
-- events: schedule of desired temperatures
-- heater_port: load output id to be used in this zone
+- `slug`: just a name for this zone, used in the report page
+- `enabled`: if this zone is enabled or not
+- `sensor_ids`: array of sensors that will be used in aggregation mode, can be 1,2 or 3 sensors per zone
+- `events`: schedule of desired temperatures
+- `heater_port`: load output id to be used in this zone
 
 sensors_id: `{"port":0,"type":1820}`
-- port: physical sensors output 
-- type: type of the sensors, can be 22 (DHT22), 31 (SHT31), 280 (BME280), 1820 (DS18B20)
+- `port`: physical sensors output 
+- `type`: type of the sensors, can be 22 (DHT22), 31 (SHT31), 280 (BME280), 1820 (DS18B20)
 
 events: `{"set":true,"since":"10:00","until":"18:00","duration_sec":-1,"temperature":35,"mode":0,"transform":{"from":0,"to":0}}`
-- set: is this event enabled
-- since: HH:MM from what time this event is activated
-- until: HH:MM until what time this event is activated
-- duration_sec: not in use
-- temperature: desired temperature
-- mode: not in use (will be possible to change between PD and PID in the future)
-- transform: make a temperature ramp-up, rump-down linearly during the duration of the event
+- `set`: is this event enabled
+- `since`: HH:MM from what time this event is activated
+- `until`: HH:MM until what time this event is activated
+- `duration_sec`: not in use
+- `temperature`: desired temperature
+- `mode`: not in use (will be possible to change between PD and PID in the future)
+- `transform`: make a temperature ramp-up, rump-down linearly during the duration of the event
 
-To update climate, navigate to  the 
+### Dimmer zones
+```
+{"slug":"UVB","enabled":true,"events":[{"set":true,"type":"simple","since":"08:00","until":"17:00","duration_sec":-1,"brightness":100,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}},{"set":true,"type":"simple","since":"17:00","until":"08:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}},{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}},{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}},{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}}],"dimmer_port":2}
+```
+- `slug`: just a name for this zone, used in the report page
+- `enabled`: if this zone is enabled or not
+- `events`: schedule of desired temperatures
+- `dimmer_port`: load output id to be used in this zone
+
+events: `{"set":true,"type":"simple","since":"08:00","until":"17:00","duration_sec":-1,"brightness":100,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}}`
+- `set`: is this event enabled
+- `type`: not in use
+- `since`: HH:MM from what time this event is activated
+- `until`: HH:MM until what time this event is activated
+- `duration_sec`: not in use
+- `brightness`: desired brightness (0 - off, 1-100 - on due to lack of dimmer hardware)
+- `color`: not in use
+- `transform`: not in use due to lack of dimmer hardware
+
+### Color light zone
+```
+{"slug":"","enabled":false,"events":[{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}},{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}},{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}},{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}},{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}}],"actuator":{"type":-1,"i2c_id":0}}
+```
+- `slug`: just a name for this zone, used in the report page
+- `enabled`: if this zone is enabled or not
+- `events`: schedule of desired temperatures
+- `actuator`: load identification (can be onboard LED or extension module)
+
+events: `{"set":false,"type":"simple","since":"00:00","until":"00:00","duration_sec":-1,"brightness":0,"color":{"r":0,"g":0,"b":0,"k":0},"transform":{"from":0,"to":0}}`
+- `set`: is this event enabled
+- `type`: `simple` or `circadian` (will change color temperature during the cycle)
+- `since`: HH:MM from what time this event is activated
+- `until`: HH:MM until what time this event is activated
+- `duration_sec`: not in use
+- `brightness`: desired brightness
+- `color`: wanted color (for simple mode)
+- `transform`: rump-up rump-down for brightness linearly during the duration of the event
+
+actuator: `{"type":-1,"i2c_id":0}`
+- `type`: 0 - on board, 1 - light dome, 2 - dimmer module
+- `i2c_id`: ID of the external module 
 
 ## Roadmap
 
