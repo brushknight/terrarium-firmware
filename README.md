@@ -123,6 +123,31 @@ actuator: `{"type":-1,"i2c_id":0}`
 - `type`: 0 - on board, 1 - light dome, 2 - dimmer module
 - `i2c_id`: ID of the external module 
 
+
+## Sensors endpoint
+
+http://IP_OF_YOU_CONTROLLER/api/sensors
+
+```
+{"sensors":[{"port":1,"type":"BME280","humidity":38.70117188,"temperature":26.84000015},{"port":2,"type":"BME280","humidity":0,"temperature":0},{"port":2,"type":"DS18B20","humidity":0,"temperature":25.75},{"port":3,"type":"DS18B20","humidity":0,"temperature":24.6875},{"port":4,"type":"DS18B20","humidity":0,"temperature":25.75},{"port":5,"type":"DS18B20","humidity":0,"temperature":25.4375}]}
+```
+- `port`: physical sensors port
+- `type`: type of the sensors
+- `humidity`: Humidity value or 0 is not supported by the given sensor
+- `temperature`: Temperature 
+
+## Metrics endpoint
+
+http://IP_OF_YOU_CONTROLLER/api/metrics
+
+```
+{"metadata":{"wifi":"EDITED","mac":"3485187AE338","time":{"hour":11,"minute":26,"uptime":204},"build_time":1689539428},"system":{"rtc":{"percent":129,"mV":3131}},"climate":{"temperature_zones":{"hot_side":{"heater_status":false,"temperature_error":0,"error":"ERROR: no temperature sensros found","timestamp":0},"chill_side":{"average_temperature":24.875,"target_temperature":26,"heater_status":true,"temperature_error":0.375,"timestamp":1690363562}},"dimmer_zones":{"UVB":{"brightness":100},"HEAT_bulb":{"brightness":100}},"fan_zones":{"air_circulation":{"power":100},"humidity":{"power":0}}}}
+```
+
+- `metadata`: Some generic info about the controller: WiFi, time, firmware version
+- `system`: information about the system: RTC battery status (malfunctioning on the v0.12-rc2 board version)
+- `climate`: everything currently active about the climate
+
 ## Roadmap
 
 If you are curious about the current status of the project and future improvements, check out our [Trello board](https://trello.com/b/peFyU6Do/terrarium-firmware)
