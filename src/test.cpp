@@ -35,7 +35,7 @@ void setup()
   // ESP_LOGD(TAG, "Max alloc psram: %d", ESP.getMaxAllocPsram());
 
   // enable only in debug mode
-  Utils::scanForI2C();
+  // Utils::scanForI2C();
 
   Status::setup();
   Status::setOrange();

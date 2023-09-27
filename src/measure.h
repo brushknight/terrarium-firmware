@@ -272,6 +272,7 @@ namespace Measure
             ESP_LOGI(TAG, "[..] Looking for sensors");
             for (int i = 0; i < sensorPortCount; i++)
             {
+                vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
                 if (scanBME280(i))
                 {
                     list[i + SENSOR_OFFSET_BME280] = BME280(i);

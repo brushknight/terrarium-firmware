@@ -48,6 +48,16 @@ namespace Measure
             // float p = bme.readPressure() / 100.0F;
             *h = bme.readHumidity();
 
+            // reset I2C expander
+            Utils::TCA9548A(0, false);
+
+            if (*t == 0 && *h == 0)
+            {
+                // seems to be an error in the sensor detection
+                ESP_LOGD(TAG, "Null values BME280 at port %d, multiplexer bus %d", port, bus);
+                return false;
+            }
+
             ESP_LOGD(TAG, "[OK] Read BME280 at port %d, bus %d | t:%.2f, h:%.2f", port, bus, *t, *h);
 
             return true;
@@ -181,6 +191,5 @@ namespace Measure
         hl->setExpanderPin(5, HIGH);
         ESP_LOGI(TAG, "[OK] Enabling sensors");
     }
-
 
 }

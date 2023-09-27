@@ -38,9 +38,12 @@ void saveClimateConfig(void *parameter)
       std::string json;
       serializeJson(doc, json);
 
+      Status::setWarning();
       eeprom->saveClimateConfig(&json);
       zoneClimateService->persisted();
       zoneClimateService->resume();
+      Status::setGreen();
+      delay(1000);
     }
 
     vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
@@ -60,8 +63,11 @@ void saveSystemConfig(void *parameter)
 
       ESP_LOGD(TAG, "save system config triggered %s", json.c_str());
 
+      Status::setWarning();
       eeprom->saveSystemConfig(&json);
       systemConfig->persisted();
+      Status::setGreen();
+      delay(1000);
 
       // TODO do system reinit
       realTime->updateTimeZOne(systemConfig->timeZone);
@@ -342,6 +348,15 @@ void setup()
   hardwareController->begin();
   hardwareController->resetPorts();
 
+  // disabled for tests
+  // hardwareController->setBuzzer(0, NOTE_G3);
+  // vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
+  // hardwareController->setBuzzer(0, NOTE_G7);
+  // vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
+  // hardwareController->setBuzzer(0, 0);
+  // hardwareController->test();
+  // hardwareController->setFan(1, 50);
+
   Measure::enable(&hwl);
 
   ESP_LOGD(TAG, "Hardware startup reset performed");
@@ -349,17 +364,9 @@ void setup()
   Measure::EnvironmentSensors envSensors = Measure::EnvironmentSensors();
   environmentSensors = &envSensors;
   environmentSensors->scan();
+
   // delay(2000);
   // environmentSensors->scan();
-
-  // disabled for tests
-  // hardwareController->setBuzzer(0, NOTE_G3);
-  // vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
-  // hardwareController->setBuzzer(0, NOTE_G7);
-  // vTaskDelay(0.1 * 1000 / portTICK_PERIOD_MS);
-  // hardwareController->setBuzzer(0, 0);
-
-  // hardwareController->test();
 
   xTaskCreatePinnedToCore(
       setupTask,

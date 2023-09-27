@@ -9,15 +9,36 @@ namespace Utils
     const int WIFI_PASS_INDEX = WIFI_SSID_INDEX + WIFI_SSID_LEN;
     const int WIFI_PASS_LEN = 32;
 
-    void TCA9548A(uint8_t bus, bool verbose)
+    void TCA9548AInternal(uint8_t bus, int attempts)
     {
+        if (attempts <= 0)
+        {
+            ESP_LOGD(TAG, "TCA9548A %d attemnpts exceeded", bus);
+            return;
+        }
+
         Wire.beginTransmission(0x70); // TCA9548A address
         Wire.write(1 << bus);         // send byte to select bus
         int status = Wire.endTransmission();
-        if (verbose)
+        if (status > 0)
         {
-            ESP_LOGD(TAG, "TCA9548A %d %d", bus, status);
+            ESP_LOGE(TAG, "TCA9548A %d error occured %d", bus, status);
+            // 1: data too long to fit in transmit buffer.
+            // 2: received NACK on transmit of address.
+            // 3: received NACK on transmit of data.
+            // 4: other error.
+            // 5: timeout
+            if (status == 5)
+            {
+                delay(100);
+                TCA9548AInternal(bus, --attempts);
+            }
         }
+    }
+
+    void TCA9548A(uint8_t bus, bool verbose)
+    {
+        TCA9548AInternal(bus, 5);
     }
 
     void scanForI2CLoop()
