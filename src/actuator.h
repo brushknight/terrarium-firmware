@@ -458,8 +458,8 @@ namespace Actuator
 
             hardwareLayer->safetyRelayOn();
 
-            // Only compatible with controller v1.9 and higher
-            // colorLights.list[0] = ColorLight(32, 30);
+            // Only compatible with controller v0.11-rc1 and higher
+           colorLights.list[0] = ColorLight(11, 30);
         }
         void test()
         {
