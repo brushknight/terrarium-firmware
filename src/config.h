@@ -13,13 +13,21 @@
 #define BATTERY_CHECK_INTERVAL_SEC 60 * 5
 #define SYNC_RTC_SEC 60 * 5
 
-// DHT22 sensors pins
-#define ONE_WIRE_0 int(16)
-#define ONE_WIRE_1 int(15)
-#define ONE_WIRE_2 int(7)
-#define ONE_WIRE_3 int(6)
+#define I2C_EXPANDER false
+
+// One wire sensors pins
+// #define ONE_WIRE_0 int(16)
+// #define ONE_WIRE_1 int(15)
+// #define ONE_WIRE_2 int(7)
+// #define ONE_WIRE_3 int(6)
 #define ONE_WIRE_4 int(5)
 #define ONE_WIRE_5 int(4)
+
+// nano controller
+#define ONE_WIRE_0 int(15)
+#define ONE_WIRE_1 int(16)
+#define ONE_WIRE_2 int(17)
+#define ONE_WIRE_3 int(18)
 
 // I2c Busses ports
 #define I2C_BUS_0 int(3)
@@ -38,6 +46,10 @@
 
 const int SENSOR_PINS[6] = {ONE_WIRE_0, ONE_WIRE_1, ONE_WIRE_2, ONE_WIRE_3, ONE_WIRE_4, ONE_WIRE_5};
 const int I2C_BUSES[6] = {I2C_BUS_0, I2C_BUS_1, I2C_BUS_2, I2C_BUS_3, I2C_BUS_4, I2C_BUS_5};
+
+// nano controller
+const int NANO_RELAY_PIN_0 = 9;
+const int RELAY_PINS[1] = {NANO_RELAY_PIN_0};
 
 const int IO_EXPANDER_RELAY_PORTS[4] = {3, 2, 1, 0};
 const int IO_EXPANDER_SENSORS_EN = 5;

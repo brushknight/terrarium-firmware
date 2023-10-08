@@ -36,7 +36,10 @@ namespace Measure
 
         ESP_LOGD(TAG, "[..] Reading BME280 at port %d, multiplexer bus %d", port, bus);
 
-        Utils::TCA9548A(bus, false);
+        if (I2C_EXPANDER)
+        {
+            Utils::TCA9548A(bus, false);
+        }
         bool statusBme = bme.begin(0x76);
 
         if (statusBme)
@@ -74,7 +77,10 @@ namespace Measure
 
         ESP_LOGD(TAG, "[..] Reading SHT31 at port %d, multiplexer bus %d", port, bus);
 
-        Utils::TCA9548A(bus, false);
+        if (I2C_EXPANDER)
+        {
+            Utils::TCA9548A(bus, false);
+        }
         bool sensorStatus = sht31.begin(0x44);
 
         if (sensorStatus)

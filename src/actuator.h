@@ -30,23 +30,23 @@ namespace Actuator
         {
 
             ESP_LOGD(TAG, "[..] Starting PCF8574 (IO expander)");
-            // if (pcf.begin())
-            // {
-            ESP_LOGD(TAG, "[OK] Starting PCF8574 (IO expander)");
-            isGPIOExpanderFound = true;
-
-            ESP_LOGD(TAG, "[..] Resetting PCF8574 (IO expander)");
-            for (int i = 0; i < 8; i++)
+            if (pcf.begin())
             {
-                pcf.pinMode(i, OUTPUT);
-                pcf.digitalWrite(i, LOW);
+                ESP_LOGD(TAG, "[OK] Starting PCF8574 (IO expander)");
+                isGPIOExpanderFound = true;
+
+                ESP_LOGD(TAG, "[..] Resetting PCF8574 (IO expander)");
+                for (int i = 0; i < 8; i++)
+                {
+                    pcf.pinMode(i, OUTPUT);
+                    pcf.digitalWrite(i, LOW);
+                }
+                ESP_LOGD(TAG, "[OK] Resetting PCF8574 (IO expander)");
             }
-            ESP_LOGD(TAG, "[OK] Resetting PCF8574 (IO expander)");
-            // }
-            // else
-            // {
-            // ESP_LOGD(TAG, "[FAIL] PCF8574 (IO expander) not found");
-            // }
+            else
+            {
+                ESP_LOGD(TAG, "[FAIL] PCF8574 (IO expander) not found");
+            }
         }
         void setExpanderRelayPort(int port, bool value)
         {
@@ -67,16 +67,15 @@ namespace Actuator
             }
             else
             {
-                // error
-                // int pinNumber = RELAY_PINS[relayIndex];
-                // if (value)
-                // {
-                //     analogPinHigh(pinNumber);
-                // }
-                // else
-                // {
-                //     analogPinLow(pinNumber);
-                // }
+                int pinNumber = RELAY_PINS[relayIndex];
+                if (value)
+                {
+                    analogPinHigh(pinNumber);
+                }
+                else
+                {
+                    analogPinLow(pinNumber);
+                }
             }
         }
         void setFanTo(int port, int value)
@@ -459,7 +458,7 @@ namespace Actuator
             hardwareLayer->safetyRelayOn();
 
             // Only compatible with controller v0.11-rc1 and higher
-           colorLights.list[0] = ColorLight(11, 30);
+            colorLights.list[0] = ColorLight(11, 30);
         }
         void test()
         {
@@ -495,6 +494,12 @@ namespace Actuator
             colorLights.list[0] = ColorLight(32, 20);
             colorLights.list[1] = ColorLight(25, 20);
             colorLights.list[2] = ColorLight(33, 20);
+        }
+
+        void beginNano()
+        {
+            hardwareLayer->begin();
+            switches.list[0] = Switch(0, hardwareLayer);
         }
 
         void resetPorts()
