@@ -23,17 +23,24 @@
             align-items: center;
             justify-content: center;
             background-color: #f6f6fe;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         .wifi_type {}
 
         .wifi_type__button {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             width: 90%;
             height: 50px;
+            line-height: 50px;
             border-radius: 10px;
             border: none;
-            margin: 10px;
+            margin: 10px 0;
             font-size: 20px;
+            padding-right: 25px;
         }
 
         .wifi_type__button--connect {
@@ -47,7 +54,7 @@
         .wifi_settings {}
 
         .wifi_settings__hint {
-            width: 90%;
+            width: 100%;
             padding: 10px;
             box-sizing: border-box;
             background-color: #ffffff;
@@ -56,24 +63,27 @@
         }
 
         .wifi_settings__input {
-            width: 90%;
+            display: block;
+            width: 100%;
             height: 50px;
             border-radius: 10px;
             border: none;
-            margin: 10px;
+            margin: 10px 0;
             font-size: 20px;
+            box-sizing: border-box;
             padding-left: 20px;
         }
 
         .wifi_settings__input-label {
-            width: 90%;
+            display: block;
+            width: 100%;
             text-align: left;
         }
 
         .page__controls {
             display: flex;
             flex-direction: row;
-            width: 90%;
+            width: 100%;
             padding-top: 50px;
         }
 
@@ -83,15 +93,21 @@
             border: none;
             margin: 10px;
             font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
         }
 
         .page__controls-button--back {
             flex: 1;
+            padding-right: 25px;
         }
 
         .page__controls-button--next {
             flex: 2;
             background-color: #845ef1;
+            padding-left: 25px;
         }
 
         .time {}
@@ -107,7 +123,7 @@
             margin: 10px;
         }
 
-        .time__ntp-warning{
+        .time__ntp-warning {
             width: 90%;
             padding: 10px;
             box-sizing: border-box;
@@ -184,16 +200,27 @@
                 recommended due to lack of internet connectivity.</p>
             <p class="wifi_settings__hint" id="wifi_settings_client_hint">The terrarium controller requires connection
                 to WiFi to be able to obtain
-                real time from internet cloc (NTP) and send telemetry.</p>
+                real time from internet clock (NTP) and send telemetry.</p>
             <label class="wifi_settings__input-label">SSID (name)</label>
             <input class="wifi_settings__input" type="text">
             <label class="wifi_settings__input-label">Password</label>
             <input class="wifi_settings__input" type="password">
             <div class="page__controls">
-                <button class="page__controls-button page__controls-button--back" onclick="previousPage()"> <-
-                        back</button>
-                        <button class="page__controls-button page__controls-button--next" onclick="nextPage()">Next
-                            -></button>
+                <button class="page__controls-button page__controls-button--back" onclick="previousPage()">
+                    <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+                    <svg width="40px" height="40px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12H19M5 12L11 6M5 12L11 18" stroke="#000000" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg> back
+                </button>
+                <button class="page__controls-button page__controls-button--next" onclick="nextPage()">
+                    Next
+                    <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+                    <svg width="40px" height="40px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#000000" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
             </div>
         </div>
 
@@ -209,7 +236,7 @@
                 <div class="time__ntp-container" id="ntp_container">
 
                     <h3>NTP</h3>
-                    <p> what is NTP</p>
+                    <p>Network Time Protocol (NTP) is a protocol that allows the synchronization of system clocks (from desktops to servers) </p>
                     <div class="time__ntp-buttons-container">
                         <button class="time__ntp-button" id="time_ntp_enable" onclick="enableNTP()">Enable</button>
                         <button class="time__ntp-button" id="time_ntp_disable" onclick="disableNTP()">Disable</button>
@@ -221,15 +248,16 @@
                     <button class="page__controls-button page__controls-button--back" onclick="previousPage()">
                         <svg width="40px" height="40px" viewBox="0 0 24 24" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
-                            <path d="M6 12H18M6 12L11 7M6 12L11 17" stroke="#000000" stroke-width="2"
+                            <path d="M5 12H19M5 12L11 6M5 12L11 18" stroke="#000000" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         back
                     </button>
                     <button class="page__controls-button page__controls-button--next" onclick="nextPage()">Next
+                        <?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
                         <svg width="40px" height="40px" viewBox="0 0 24 24" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
-                            <path d="M6 12H18M18 12L13 7M18 12L13 17" stroke="#000000" stroke-width="2"
+                            <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="#000000" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                     </button>
@@ -244,23 +272,26 @@
                 <option>Panther Chameleon</option>
             </select>
             <div class="page__controls">
-                <button class="page__controls-button page__controls-button--back" onclick="previousPage()"> <-
-                        back</button>
-                        <button class="page__controls-button page__controls-button--next" onclick="nextPage()">
+                <button class="page__controls-button page__controls-button--back" onclick="previousPage()">
+                    <svg width="40px" height="40px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12H19M5 12L11 6M5 12L11 18" stroke="#000000" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                    back</button>
+                <button class="page__controls-button page__controls-button--next" onclick="nextPage()">
 
 
-                            Save settigns
-                            <svg width="40px" height="40px" viewBox="0 0 24 24" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4 12.6111L8.92308 17.5L20 6.5" stroke="#000000" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </button>
+                    Save settigns
+                    <svg width="40px" height="40px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 12.6111L8.92308 17.5L20 6.5" stroke="#000000" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
 
-
+    <!-- 
     <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 1405.000000 582.000000"
         preserveAspectRatio="xMidYMid meet">
         <metadata> Created by potrace 1.16, written by Peter Selinger 2001-2019 </metadata>
@@ -338,7 +369,7 @@
         </div>
 
         <input type="submit" value="Save">
-    </form>
+    </form> -->
 
     <script>
 
