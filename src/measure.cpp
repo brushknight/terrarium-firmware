@@ -92,6 +92,46 @@ namespace Measure
         return false;
     }
 
+    bool readHYT221(int port, float *t, float *h)
+    {
+
+        /*
+        ****************************************
+        Template implementation for DS18B20, should be replaced with implementation for HYT221
+        ****************************************
+        */
+
+        int pin = SENSOR_PINS[port];
+
+        ESP_LOGD(TAG, "[..] Reading fake HYT221 at port %d, GPIO %d", port, pin);
+
+        OneWire oneWire(pin);
+        DallasTemperature ds18b20(&oneWire);
+
+        ds18b20.begin();
+        ds18b20.requestTemperatures();
+        // Serial.printf("reading DS18B20 at port %d, GPIO %d\n", port, pin);
+
+        // DeviceAddress addr;
+        // sensors.getAddress(addr, 0);
+        // Serial.printf("DS18B20 DEBUG: address t:%d\n", addr);
+        // float temperature = sensors.getTempC(addr);
+
+        float temperature = ds18b20.getTempCByIndex(0);
+
+        if (temperature == 85.0 || temperature == -127.0)
+        {
+            ESP_LOGE(TAG, "[FAIL] Reading  fake HYT221 at port %d, GPIO %d, error code: %d", port, pin, temperature);
+            return false;
+        }
+
+        *t = temperature;
+
+        ESP_LOGD(TAG, "[OK] Read  fake HYT221 at port %d, GPIO %d | t:%.2f", port, pin, *t);
+
+        return true;
+    }
+
     bool readDS18B20(int port, float *t)
     {
 
@@ -147,6 +187,21 @@ namespace Measure
         float h;
 
         bool success = readSHT31(port, &t, &h);
+
+        if (success)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool scanHYT221(int port)
+    {
+        float t;
+        float h;
+
+        bool success = readHYT221(port, &t, &h);
 
         if (success)
         {
