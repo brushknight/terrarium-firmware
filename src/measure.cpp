@@ -92,6 +92,34 @@ namespace Measure
         return false;
     }
 
+    bool readHYT221(int port, float *t, float *h)
+    {
+        HYT271S hyt271s;
+
+        int bus = I2C_BUSES[port];
+
+        ESP_LOGD(TAG, "[..] Reading HYT271-S at port %d, multiplexer bus %d", port, bus);
+
+        Utils::TCA9548A(bus, false);
+        bool sensorHyt = hyt271s.begin(0x28);
+
+        vTaskDelay(80);
+
+        if (sensorHyt)
+        {
+            ESP_LOGD(TAG, "Found HYT271-S at port %d, multiplexer bus %d", port, bus);
+
+            *t = hyt271s.readTemperature();
+            *h = hyt271s.readHumidity();
+
+            ESP_LOGD(TAG, "[OK] Read HYT271-S at port %d, bus %d | t:%.2f, h:%.2f", port, bus, *t, *h);
+
+            return true;
+        }
+
+        return false;
+    }
+
     bool readDS18B20(int port, float *t)
     {
 
@@ -147,6 +175,21 @@ namespace Measure
         float h;
 
         bool success = readSHT31(port, &t, &h);
+
+        if (success)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool scanHYT221(int port)
+    {
+        float t;
+        float h;
+
+        bool success = readHYT221(port, &t, &h);
 
         if (success)
         {

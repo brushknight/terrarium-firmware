@@ -5,6 +5,7 @@
 #include "DHTStable.h"
 #include "utils.h"
 #include "actuator.h"
+#include "hyt271s.h"
 #include <Adafruit_BME280.h>
 #include <Adafruit_SHT31.h>
 #include <Adafruit_Sensor.h>
@@ -19,24 +20,28 @@ namespace Measure
     const int SENSOR_TYPE_BME280 = 280;
     const int SENSOR_TYPE_DS18B20 = 1820;
     const int SENSOR_TYPE_SHT31 = 31;
+    const int SENSOR_TYPE_HYT221 = 221;
 
-    const int SENSOR_OFFSET_DHT22 = 0;
-    const int SENSOR_OFFSET_BME280 = 6;
-    const int SENSOR_OFFSET_DS18B20 = 12;
-    const int SENSOR_OFFSET_SHT31 = 18;
+    const int SENSOR_OFFSET_DHT22 = 0 * 6;
+    const int SENSOR_OFFSET_BME280 = 1 * 6;
+    const int SENSOR_OFFSET_DS18B20 = 2 * 6;
+    const int SENSOR_OFFSET_SHT31 = 3 * 6;
+    const int SENSOR_OFFSET_HYT221 = 4 * 6;
 
     bool readBME280(int port, float *t, float *h);
     bool readSHT31(int port, float *t, float *h);
     bool readDHT22(int port, float *t, float *h);
     bool readDS18B20(int port, float *t);
+    bool readHYT221(int port, float *t, float *h);
 
     bool scanBME280(int port);
     bool scanSHT31(int port);
     bool scanDHT22(int port);
     bool scanDS18B20(int port);
+    bool scanHYT221(int port);
 
     const int sensorPortCount = 6;
-    const int sensorTypesSupported = 4;
+    const int sensorTypesSupported = 5;
 
     class SensorID
     {
@@ -101,6 +106,10 @@ namespace Measure
             {
                 return "DS18B20";
             }
+            else if (type == SENSOR_TYPE_HYT221)
+            {
+                return "HYT-221";
+            }
             return "unknown";
         }
     };
@@ -144,7 +153,10 @@ namespace Measure
             {
                 return readSHT31(id.port, &t, &h);
             }
-
+            else if (id.type == SENSOR_TYPE_HYT221)
+            {
+                return readHYT221(id.port, &t, &h);
+            }
             return false;
         }
         float temperature()
@@ -210,6 +222,16 @@ namespace Measure
         }
     };
 
+    class HYT221 : public EnvironmentSensor
+    {
+
+    public:
+        HYT221() {}
+        HYT221(int p) : EnvironmentSensor(SensorID(p, SENSOR_TYPE_HYT221))
+        {
+        }
+    };
+
     class EnvironmentSensors
     {
     public:
@@ -232,6 +254,10 @@ namespace Measure
             {
                 return getSHT31(sID.port);
             }
+            else if (sID.type == SENSOR_TYPE_HYT221)
+            {
+                return getHYT221(sID.port);
+            }
             ESP_LOGE(TAG, "ERROR: undefined sensor type");
             return EnvironmentSensor();
         };
@@ -251,6 +277,10 @@ namespace Measure
         {
             return list[port + SENSOR_OFFSET_SHT31];
         };
+        EnvironmentSensor getHYT221(int port)
+        {
+            return list[port + SENSOR_OFFSET_HYT221];
+        };
         bool readDHT22(int port)
         {
             return list[port + SENSOR_OFFSET_DHT22].read();
@@ -267,6 +297,10 @@ namespace Measure
         {
             return list[port + SENSOR_OFFSET_SHT31].read();
         };
+        bool readHYT221(int port)
+        {
+            return list[port + SENSOR_OFFSET_HYT221].read();
+        };
         bool scan()
         {
             ESP_LOGI(TAG, "[..] Looking for sensors");
@@ -280,6 +314,10 @@ namespace Measure
                 if (scanSHT31(i))
                 {
                     list[i + SENSOR_OFFSET_SHT31] = SHT31(i);
+                }
+                if (scanHYT221(i))
+                {
+                    list[i + SENSOR_OFFSET_HYT221] = HYT221(i);
                 }
                 if (scanDS18B20(i))
                 {
@@ -347,6 +385,18 @@ namespace Measure
                     else
                     {
                         ESP_LOGD(TAG, "[OK] SHT31 port: %d", i);
+                    }
+                }
+                ESP_LOGD(TAG, "[..] HYT221 port: %d", i);
+                if (getHYT221(i).enabled())
+                {
+                    if (!readHYT221(i))
+                    {
+                        ESP_LOGE(TAG, "[FAIL] HYT221 port: %d", i);
+                    }
+                    else
+                    {
+                        ESP_LOGD(TAG, "[OK] HYT221 port: %d", i);
                     }
                 }
             }
